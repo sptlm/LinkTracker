@@ -5,9 +5,9 @@ import java.util.Optional;
 
 public interface UserRepository {
 
-    boolean existsById(long chatId);
-
     void save(User user);
 
-    Optional<User> findById(long chatId);
+    boolean existsByChatId(long chatId);
+
+    Optional<User> findByChatId(long chatId);
 }

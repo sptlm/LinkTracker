@@ -6,5 +6,5 @@ public interface Command {
 
     String description();
 
-    String handle(CommandContext context);
+    void handle(CommandContext context);
 }

@@ -1,12 +1,12 @@
 package backend.academy.linktracker.bot.bot;
 
 import backend.academy.linktracker.bot.command.CommandContext;
-import backend.academy.linktracker.bot.command.CommandDispatcher;
+import backend.academy.linktracker.bot.command.CommandRegistry;
+import backend.academy.linktracker.bot.service.BotMessagesService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.Update;
-import com.pengrad.telegrambot.request.SendMessage;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,8 @@ import org.springframework.stereotype.Component;
 public class TelegramUpdateListener implements UpdatesListener {
 
     private final TelegramBot bot;
-    private final CommandDispatcher dispatcher;
+    private final CommandRegistry commandRegistry;
+    private final BotMessagesService messages;
 
     @Override
     public int process(List<Update> updates) {
@@ -34,36 +35,39 @@ public class TelegramUpdateListener implements UpdatesListener {
         }
 
         Message message = update.message();
-        long chatId = message.chat().id();
         String messageText = message.text().trim();
 
-        // Строим контекст из данных Telegram-сообщения
-        // message.from() — отправитель (null в каналах, но не в личных чатах)
-        var from = message.from();
-        CommandContext context = new CommandContext(
-                chatId,
-                from != null ? from.username() : null,
-                from != null ? from.firstName() : null,
-                from != null ? from.lastName() : null,
-                messageText);
-
-        log.atInfo()
-                .addKeyValue("chatId", chatId)
-                .addKeyValue("username", context.username())
-                .addKeyValue("messageText", messageText)
-                .log("Received message");
-
-        if (!messageText.startsWith("/")) {
+        if (messageText.isBlank() || !messageText.startsWith("/")) {
             return;
         }
 
-        String response = dispatcher.dispatch(context);
+        CommandContext context = new CommandContext(bot, message);
+        String commandName = commandRegistry.extractCommandName(messageText);
 
         log.atInfo()
-                .addKeyValue("chatId", chatId)
-                .addKeyValue("command", messageText.split("\\s+")[0])
-                .log("Command dispatched");
+                .addKeyValue("chatId", context.chatId())
+                .addKeyValue("username", context.username())
+                .addKeyValue("messageText", messageText)
+                .log("Received command message");
 
-        bot.execute(new SendMessage(chatId, response));
+        commandRegistry
+                .find(commandName)
+                .ifPresentOrElse(
+                        command -> {
+                            log.atInfo()
+                                    .addKeyValue("chatId", context.chatId())
+                                    .addKeyValue("command", commandName)
+                                    .log("Command dispatched");
+
+                            command.handle(context);
+                        },
+                        () -> {
+                            log.atInfo()
+                                    .addKeyValue("chatId", context.chatId())
+                                    .addKeyValue("command", commandName)
+                                    .log("Unknown command received");
+
+                            context.reply(messages.unknownCommand());
+                        });
     }
 }

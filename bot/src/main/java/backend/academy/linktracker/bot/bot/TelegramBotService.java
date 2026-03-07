@@ -1,7 +1,7 @@
 package backend.academy.linktracker.bot.bot;
 
 import backend.academy.linktracker.bot.command.Command;
-import backend.academy.linktracker.bot.command.CommandDispatcher;
+import backend.academy.linktracker.bot.command.CommandRegistry;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.BotCommand;
 import com.pengrad.telegrambot.request.SetMyCommands;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class TelegramBotService {
 
     private final TelegramBot bot;
-    private final CommandDispatcher dispatcher;
+    private final CommandRegistry commandRegistry;
     private final TelegramUpdateListener updateListener;
 
     @PostConstruct
@@ -28,12 +28,10 @@ public class TelegramBotService {
     }
 
     private void registerCommandsMenu() {
-        List<Command> commands = dispatcher.getCommands();
+        List<Command> commands = commandRegistry.getCommands();
 
         BotCommand[] botCommands = commands.stream()
-                .map(cmd -> new BotCommand(
-                        // Telegram ожидает "start", а не "/start"
-                        cmd.command().substring(1), cmd.description()))
+                .map(cmd -> new BotCommand(cmd.command(), cmd.description()))
                 .toArray(BotCommand[]::new);
 
         try {

@@ -2,18 +2,18 @@ package backend.academy.linktracker.bot.command.impl;
 
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
-import backend.academy.linktracker.bot.command.CommandDispatcher;
-import org.springframework.context.annotation.Lazy;
+import backend.academy.linktracker.bot.command.CommandRegistry;
+import backend.academy.linktracker.bot.service.BotMessagesService;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class HelpCommand implements Command {
 
-    private final CommandDispatcher dispatcher;
-
-    public HelpCommand(@Lazy CommandDispatcher dispatcher) {
-        this.dispatcher = dispatcher;
-    }
+    private final CommandRegistry commandRegistry;
+    private final BotMessagesService messages;
 
     @Override
     public String command() {
@@ -26,11 +26,11 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public String handle(CommandContext context) {
-        StringBuilder sb = new StringBuilder("Доступные команды:\n");
-        for (Command cmd : dispatcher.getCommands()) {
-            sb.append(cmd.command()).append(" — ").append(cmd.description()).append("\n");
-        }
-        return sb.toString().trim();
+    public void handle(CommandContext context) {
+        String commandsText = commandRegistry.getCommands().stream()
+                .map(cmd -> cmd.command() + " — " + cmd.description())
+                .collect(Collectors.joining("\n"));
+
+        context.reply(messages.helpHeader() + "\n" + commandsText);
     }
 }

@@ -2,9 +2,9 @@ package backend.academy.linktracker.bot.command.impl;
 
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
-import backend.academy.linktracker.bot.model.User;
-import backend.academy.linktracker.bot.repository.UserRepository;
-import java.time.Instant;
+import backend.academy.linktracker.bot.service.BotMessagesService;
+import backend.academy.linktracker.bot.service.RegistrationResult;
+import backend.academy.linktracker.bot.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StartCommand implements Command {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
+    private final BotMessagesService messages;
 
     @Override
     public String command() {
@@ -25,28 +26,13 @@ public class StartCommand implements Command {
     }
 
     @Override
-    public String handle(CommandContext context) {
-        if (!userRepository.existsById(context.chatId())) {
-            // Строим модель пользователя из данных Telegram
-            User user = User.builder()
-                    .chatId(context.chatId())
-                    .username(context.username())
-                    .firstName(context.firstName())
-                    .lastName(context.lastName())
-                    .registeredAt(Instant.now())
-                    .build();
+    public void handle(CommandContext context) {
+        RegistrationResult result = userService.registerIfAbsent(context.message());
 
-            userRepository.save(user);
+        String response = result.created()
+                ? messages.startWelcome(result.user().displayName())
+                : messages.welcomeBack(result.user().displayName());
 
-            return "Добро пожаловать, %s! Используйте /help, чтобы посмотреть доступные команды."
-                    .formatted(user.displayName());
-        }
-
-        // Пользователь уже зарегистрирован — приветствуем по имени
-        return userRepository
-                .findById(context.chatId())
-                .map(user -> "С возвращением, %s! Используйте /help, чтобы посмотреть доступные команды."
-                        .formatted(user.displayName()))
-                .orElse("С возвращением! Используйте /help, чтобы посмотреть доступные команды.");
+        context.reply(response);
     }
 }

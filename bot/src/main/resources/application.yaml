@@ -11,3 +11,8 @@ app:
     token: ${TELEGRAM_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE
     update-listener-sleep: 1s
     debug: false
+  messages:
+    unknown-command: "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд."
+    start-welcome: "Добро пожаловать, %s! Используйте /help, чтобы посмотреть доступные команды."
+    welcome-back: "С возвращением, %s! Используйте /help, чтобы посмотреть доступные команды."
+    help-header: "Доступные команды:"
