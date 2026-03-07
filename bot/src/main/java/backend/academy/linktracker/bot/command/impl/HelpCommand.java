@@ -5,15 +5,21 @@ import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.CommandRegistry;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class HelpCommand implements Command {
 
+    @Lazy
     private final CommandRegistry commandRegistry;
+
     private final BotMessagesService messages;
+
+    public HelpCommand(@Lazy CommandRegistry commandRegistry, BotMessagesService messages) {
+        this.commandRegistry = commandRegistry;
+        this.messages = messages;
+    }
 
     @Override
     public String command() {
