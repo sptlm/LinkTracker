@@ -16,22 +16,25 @@ public class UserService {
     public RegistrationResult registerIfAbsent(Message message) {
         long chatId = message.chat().id();
 
-        return userRepository
-                .findByChatId(chatId)
-                .map(user -> new RegistrationResult(user, false))
-                .orElseGet(() -> {
-                    var from = message.from();
+        return userRepository.findByChatId(chatId)
+            .map(user -> new RegistrationResult(user, false))
+            .orElseGet(() -> {
+                var from = message.from();
 
-                    User user = User.builder()
-                            .chatId(chatId)
-                            .username(from != null ? from.username() : null)
-                            .firstName(from != null ? from.firstName() : null)
-                            .lastName(from != null ? from.lastName() : null)
-                            .registeredAt(Instant.now())
-                            .build();
+                User user = User.builder()
+                    .chatId(chatId)
+                    .username(from != null ? from.username() : null)
+                    .firstName(from != null ? from.firstName() : null)
+                    .lastName(from != null ? from.lastName() : null)
+                    .registeredAt(Instant.now())
+                    .build();
 
-                    userRepository.save(user);
-                    return new RegistrationResult(user, true);
-                });
+                userRepository.save(user);
+                return new RegistrationResult(user, true);
+            });
+    }
+
+    public boolean isRegistered(long chatId) {
+        return userRepository.existsByChatId(chatId);
     }
 }

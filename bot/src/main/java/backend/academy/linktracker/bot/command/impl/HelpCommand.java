@@ -11,9 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class HelpCommand implements Command {
 
-    @Lazy
     private final CommandRegistry commandRegistry;
-
     private final BotMessagesService messages;
 
     public HelpCommand(@Lazy CommandRegistry commandRegistry, BotMessagesService messages) {
