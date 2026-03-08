@@ -1,7 +1,6 @@
 package backend.academy.linktracker.scrapper.properties;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,17 +8,13 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-@ConfigurationProperties(prefix = "app.github")
+@ConfigurationProperties(prefix = "app.clients")
 @Validated
 @Getter
 @Setter
 @EqualsAndHashCode
 @NoArgsConstructor
-public class GithubProperties {
-
+public class BotClientProperties {
     @NotBlank
-    private String baseUrl = "https://api.github.com";
-
-    @NotEmpty
-    private String token;
+    private String botBaseUrl = "http://localhost:8080";
 }

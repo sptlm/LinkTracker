@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.properties;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -15,6 +16,9 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode
 @NoArgsConstructor
 public class StackoverflowProperties {
+
+    @NotBlank
+    private String baseUrl = "https://api.stackexchange.com/2.3";
 
     @NotEmpty
     private String key;
