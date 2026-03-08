@@ -34,17 +34,15 @@ public class StartCommand implements Command {
     @Override
     public void handle(CommandContext context) {
         RegistrationResult result = userService.registerIfAbsent(context.message());
-
-        if (result.created()) {
-            try {
-                linkTrackingService.registerChat(context.chatId());
-            } catch (ScrapperClientException e) {
+        try {
+            linkTrackingService.registerChat(context.chatId());
+        } catch (ScrapperClientException e) {
             log.atWarn()
                 .setCause(e)
                 .addKeyValue("chatId", context.chatId())
                 .log("Failed to register chat in scrapper");
         }
-
+        if (result.created()) {
             context.reply(messages.startWelcome(result.user().displayName()));
             return;
         }

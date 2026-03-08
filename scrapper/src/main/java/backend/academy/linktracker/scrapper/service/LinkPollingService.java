@@ -37,13 +37,13 @@ public class LinkPollingService {
         LinkUpdater updater = findUpdater(link);
         LinkUpdateCheckResult result = updater.check(link);
 
-        Instant updatedAt = result.updated()
+        Instant updatedAt = result.changed()
                 ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt) // если времени обновления на сайте нет, то ставим время проверки
                 : link.lastUpdatedAt();
 
         linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
 
-        if (!result.updated()) {
+        if (!result.changed()) {
             log.atDebug()
                     .addKeyValue("linkId", link.id())
                     .addKeyValue("url", link.url())
