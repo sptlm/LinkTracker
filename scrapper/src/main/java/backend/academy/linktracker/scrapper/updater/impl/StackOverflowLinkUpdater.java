@@ -4,10 +4,10 @@ import backend.academy.linktracker.scrapper.client.stackoverflow.StackOverflowCl
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import java.net.URI;
-import java.time.Instant;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import java.net.URI;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

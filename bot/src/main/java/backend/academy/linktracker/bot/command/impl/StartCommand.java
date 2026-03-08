@@ -1,6 +1,5 @@
 package backend.academy.linktracker.bot.command.impl;
 
-import backend.academy.linktracker.bot.client.scrapper.ChatAlreadyExistsException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
@@ -37,10 +36,7 @@ public class StartCommand implements Command {
         try {
             linkTrackingService.registerChat(context.chatId());
         } catch (ScrapperClientException e) {
-            log.atWarn()
-                .setCause(e)
-                .addKeyValue("chatId", context.chatId())
-                .log("Failed to register chat in scrapper");
+            log.atWarn().setCause(e).addKeyValue("chatId", context.chatId()).log("Failed to register chat in scrapper");
         }
         if (result.created()) {
             context.reply(messages.startWelcome(result.user().displayName()));

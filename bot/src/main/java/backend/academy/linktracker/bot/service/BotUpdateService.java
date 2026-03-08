@@ -1,7 +1,6 @@
 package backend.academy.linktracker.bot.service;
 
 import backend.academy.linktracker.bot.api.dto.LinkUpdateRequest;
-import backend.academy.linktracker.bot.service.BotMessagesService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.List;
@@ -30,17 +29,17 @@ public class BotUpdateService {
                 bot.execute(new SendMessage(chatId, text));
 
                 log.atInfo()
-                    .addKeyValue("chatId", chatId)
-                    .addKeyValue("linkId", request.id())
-                    .addKeyValue("url", request.url())
-                    .log("Update notification sent");
+                        .addKeyValue("chatId", chatId)
+                        .addKeyValue("linkId", request.id())
+                        .addKeyValue("url", request.url())
+                        .log("Update notification sent");
             } catch (Exception e) {
                 log.atWarn()
-                    .setCause(e)
-                    .addKeyValue("chatId", chatId)
-                    .addKeyValue("linkId", request.id())
-                    .addKeyValue("url", request.url())
-                    .log("Failed to send update notification");
+                        .setCause(e)
+                        .addKeyValue("chatId", chatId)
+                        .addKeyValue("linkId", request.id())
+                        .addKeyValue("url", request.url())
+                        .log("Failed to send update notification");
             }
         }
     }

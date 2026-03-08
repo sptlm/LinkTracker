@@ -31,7 +31,11 @@ public class ScrapperApiExceptionHandler {
         return build(HttpStatus.NOT_FOUND, "Чат не существует или ссылка не найдена", e);
     }
 
-    @ExceptionHandler({UnsupportedLinkException.class, InvalidRequestException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler({
+        UnsupportedLinkException.class,
+        InvalidRequestException.class,
+        MethodArgumentNotValidException.class
+    })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception e) {
         return build(HttpStatus.BAD_REQUEST, "Некорректные параметры запроса", e);
     }
@@ -43,12 +47,7 @@ public class ScrapperApiExceptionHandler {
 
     private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String description, Exception e) {
         ApiErrorResponse body = new ApiErrorResponse(
-                description,
-                status.name(),
-                e.getClass().getSimpleName(),
-                e.getMessage(),
-                List.of()
-        );
+                description, status.name(), e.getClass().getSimpleName(), e.getMessage(), List.of());
         return ResponseEntity.status(status).body(body);
     }
 }

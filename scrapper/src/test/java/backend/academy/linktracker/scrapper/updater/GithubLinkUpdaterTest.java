@@ -10,9 +10,8 @@ import backend.academy.linktracker.scrapper.client.github.GithubClient;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
-import java.time.Instant;
 import backend.academy.linktracker.scrapper.updater.impl.GithubLinkUpdater;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,8 +29,10 @@ class GithubLinkUpdaterTest {
 
     @Test
     void supports_returnsTrueOnlyForGithubLinks() {
-        TrackedLink githubLink = new TrackedLink(1L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
-        TrackedLink stackLink = new TrackedLink(2L, "https://stackoverflow.com/questions/123", LinkSourceType.STACKOVERFLOW, Instant.now(), null, null);
+        TrackedLink githubLink =
+                new TrackedLink(1L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
+        TrackedLink stackLink = new TrackedLink(
+                2L, "https://stackoverflow.com/questions/123", LinkSourceType.STACKOVERFLOW, Instant.now(), null, null);
 
         assertTrue(githubLinkUpdater.supports(githubLink));
         assertFalse(githubLinkUpdater.supports(stackLink));
@@ -40,13 +41,12 @@ class GithubLinkUpdaterTest {
     @Test
     void check_whenObservedUpdatedAtIsAfterLastUpdated_returnsChanged() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://github.com/user/repo/",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-05T10:00:00Z")
-        );
+                1L,
+                "https://github.com/user/repo/",
+                LinkSourceType.GITHUB,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
         GithubRepositoryResponse response = org.mockito.Mockito.mock(GithubRepositoryResponse.class);
 
         when(githubClient.getRepository("user", "repo")).thenReturn(response);
@@ -63,13 +63,12 @@ class GithubLinkUpdaterTest {
     @Test
     void check_whenGithubReturnsNoTimestamps_returnsUnchangedWithCurrentLinkTimestamp() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-05T10:00:00Z")
-        );
+                1L,
+                "https://github.com/user/repo",
+                LinkSourceType.GITHUB,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
         GithubRepositoryResponse response = org.mockito.Mockito.mock(GithubRepositoryResponse.class);
 
         when(githubClient.getRepository("user", "repo")).thenReturn(response);
@@ -85,13 +84,12 @@ class GithubLinkUpdaterTest {
     @Test
     void check_whenUrlInvalid_throwsIllegalArgumentException() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://github.com/user",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-05T10:00:00Z")
-        );
+                1L,
+                "https://github.com/user",
+                LinkSourceType.GITHUB,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
 
         assertThrows(IllegalArgumentException.class, () -> githubLinkUpdater.check(link));
     }

@@ -47,8 +47,7 @@ public class LinkTrackingService {
                 trackedLink.id(),
                 normalizeList(request.tags()),
                 normalizeList(request.filters()),
-                Instant.now()
-        );
+                Instant.now());
 
         subscriptionRepository.save(subscription);
         return toResponse(trackedLink, subscription);
@@ -63,10 +62,12 @@ public class LinkTrackingService {
 
         ParsedLink parsedLink = supportedLinkParser.parse(request.link());
 
-        TrackedLink trackedLink = linkRepository.findByUrl(parsedLink.normalizedUrl())
+        TrackedLink trackedLink = linkRepository
+                .findByUrl(parsedLink.normalizedUrl())
                 .orElseThrow(() -> new TrackedLinkNotFoundException(parsedLink.normalizedUrl(), chatId));
 
-        LinkSubscription subscription = subscriptionRepository.findByChatIdAndLinkId(chatId, trackedLink.id())
+        LinkSubscription subscription = subscriptionRepository
+                .findByChatIdAndLinkId(chatId, trackedLink.id())
                 .orElseThrow(() -> new TrackedLinkNotFoundException(parsedLink.normalizedUrl(), chatId));
 
         subscriptionRepository.delete(chatId, trackedLink.id());
@@ -82,7 +83,8 @@ public class LinkTrackingService {
         chatService.ensureExists(chatId);
 
         List<LinkResponse> links = subscriptionRepository.findByChatId(chatId).stream()
-                .map(subscription -> linkRepository.findById(subscription.linkId())
+                .map(subscription -> linkRepository
+                        .findById(subscription.linkId())
                         .map(link -> toResponse(link, subscription))
                         .orElse(null))
                 .filter(response -> response != null)
@@ -92,24 +94,19 @@ public class LinkTrackingService {
     }
 
     private TrackedLink findOrCreateLink(ParsedLink parsedLink) {
-        return linkRepository.findByUrl(parsedLink.normalizedUrl())
+        return linkRepository
+                .findByUrl(parsedLink.normalizedUrl())
                 .orElseGet(() -> linkRepository.save(new TrackedLink(
                         linkRepository.nextId(),
                         parsedLink.normalizedUrl(),
                         parsedLink.type(),
                         Instant.now(),
                         null,
-                        null
-                )));
+                        null)));
     }
 
     private LinkResponse toResponse(TrackedLink link, LinkSubscription subscription) {
-        return new LinkResponse(
-                link.id(),
-                link.url(),
-                subscription.tags(),
-                subscription.filters()
-        );
+        return new LinkResponse(link.id(), link.url(), subscription.tags(), subscription.filters());
     }
 
     private List<String> normalizeList(List<String> values) {
@@ -120,8 +117,6 @@ public class LinkTrackingService {
                 .filter(val -> val != null && !val.isBlank())
                 .map(String::trim)
                 .collect(java.util.stream.Collectors.collectingAndThen(
-                        java.util.stream.Collectors.toCollection(LinkedHashSet::new),
-                        List::copyOf
-                ));
+                        java.util.stream.Collectors.toCollection(LinkedHashSet::new), List::copyOf));
     }
 }

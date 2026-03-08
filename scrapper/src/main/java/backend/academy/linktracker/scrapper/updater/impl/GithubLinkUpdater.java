@@ -4,10 +4,10 @@ import backend.academy.linktracker.scrapper.client.github.GithubClient;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import java.net.URI;
-import java.time.Instant;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import java.net.URI;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -27,9 +27,7 @@ public class GithubLinkUpdater implements LinkUpdater {
         RepoCoordinates coordinates = extractCoordinates(link.url());
         GithubRepositoryResponse response = githubClient.getRepository(coordinates.owner(), coordinates.repo());
 
-        Instant observedUpdatedAt = response.pushedAt() != null
-            ? response.pushedAt()
-            : response.updatedAt();
+        Instant observedUpdatedAt = response.pushedAt() != null ? response.pushedAt() : response.updatedAt();
 
         if (observedUpdatedAt == null) {
             return LinkUpdateCheckResult.unchanged(null, link.lastUpdatedAt());

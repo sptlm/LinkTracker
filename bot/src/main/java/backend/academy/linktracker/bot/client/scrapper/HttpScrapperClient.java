@@ -23,10 +23,7 @@ public class HttpScrapperClient implements ScrapperClient {
     @Override
     public void registerChat(long chatId) {
         try {
-            scrapperRestClient.post()
-                .uri("/tg-chat/{id}", chatId)
-                .retrieve()
-                .toBodilessEntity();
+            scrapperRestClient.post().uri("/tg-chat/{id}", chatId).retrieve().toBodilessEntity();
         } catch (HttpClientErrorException.Conflict e) {
             throw new ChatAlreadyExistsException("Chat already exists", e);
         } catch (RestClientException e) {
@@ -37,10 +34,11 @@ public class HttpScrapperClient implements ScrapperClient {
     @Override
     public void deleteChat(long chatId) {
         try {
-            scrapperRestClient.method(HttpMethod.DELETE)
-                .uri("/tg-chat/{id}", chatId)
-                .retrieve()
-                .toBodilessEntity();
+            scrapperRestClient
+                    .method(HttpMethod.DELETE)
+                    .uri("/tg-chat/{id}", chatId)
+                    .retrieve()
+                    .toBodilessEntity();
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
         } catch (RestClientException e) {
@@ -51,11 +49,12 @@ public class HttpScrapperClient implements ScrapperClient {
     @Override
     public ListLinksResponse getLinks(long chatId) {
         try {
-            ListLinksResponse response = scrapperRestClient.get()
-                .uri("/links")
-                .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
-                .retrieve()
-                .body(ListLinksResponse.class);
+            ListLinksResponse response = scrapperRestClient
+                    .get()
+                    .uri("/links")
+                    .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
+                    .retrieve()
+                    .body(ListLinksResponse.class);
 
             return response != null ? response : new ListLinksResponse(List.of(), 0);
         } catch (HttpClientErrorException.NotFound e) {
@@ -68,12 +67,13 @@ public class HttpScrapperClient implements ScrapperClient {
     @Override
     public LinkResponse addLink(long chatId, AddLinkRequest request) {
         try {
-            return scrapperRestClient.post()
-                .uri("/links")
-                .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
-                .body(request)
-                .retrieve()
-                .body(LinkResponse.class);
+            return scrapperRestClient
+                    .post()
+                    .uri("/links")
+                    .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
+                    .body(request)
+                    .retrieve()
+                    .body(LinkResponse.class);
         } catch (HttpClientErrorException.Conflict e) {
             throw new DuplicateLinkException("Link already tracked", e);
         } catch (HttpClientErrorException.NotFound e) {
@@ -86,12 +86,13 @@ public class HttpScrapperClient implements ScrapperClient {
     @Override
     public LinkResponse removeLink(long chatId, RemoveLinkRequest request) {
         try {
-            return scrapperRestClient.method(HttpMethod.DELETE)
-                .uri("/links")
-                .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
-                .body(request)
-                .retrieve()
-                .body(LinkResponse.class);
+            return scrapperRestClient
+                    .method(HttpMethod.DELETE)
+                    .uri("/links")
+                    .header(TG_CHAT_ID_HEADER, String.valueOf(chatId))
+                    .body(request)
+                    .retrieve()
+                    .body(LinkResponse.class);
         } catch (HttpClientErrorException.NotFound e) {
             throw new TrackedLinkNotFoundException("Chat or link not found", e);
         } catch (RestClientException e) {

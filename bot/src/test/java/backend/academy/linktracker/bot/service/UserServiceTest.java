@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.bot.model.User;
 import backend.academy.linktracker.bot.repository.UserRepository;
-import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,11 +38,11 @@ class UserServiceTest {
     void registerIfAbsent_whenUserAlreadyExists_returnsExistingUser() {
         Message message = org.mockito.Mockito.mock(Message.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
         User existingUser = User.builder()
-            .chatId(123L)
-            .username("spirit")
-            .firstName("Spirit")
-            .lastName("User")
-            .build();
+                .chatId(123L)
+                .username("spirit")
+                .firstName("Spirit")
+                .lastName("User")
+                .build();
 
         when(message.chat().id()).thenReturn(123L);
         when(userRepository.findByChatId(123L)).thenReturn(java.util.Optional.of(existingUser));

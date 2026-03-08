@@ -5,7 +5,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.impl.TrackCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.TrackDialogService;

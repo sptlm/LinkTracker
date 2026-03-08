@@ -10,9 +10,8 @@ import backend.academy.linktracker.scrapper.client.stackoverflow.StackOverflowCl
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
-import java.time.Instant;
 import backend.academy.linktracker.scrapper.updater.impl.StackOverflowLinkUpdater;
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,8 +29,10 @@ class StackOverflowLinkUpdaterTest {
 
     @Test
     void supports_returnsTrueOnlyForStackOverflowLinks() {
-        TrackedLink stackLink = new TrackedLink(1L, "https://stackoverflow.com/questions/123", LinkSourceType.STACKOVERFLOW, Instant.now(), null, null);
-        TrackedLink githubLink = new TrackedLink(2L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
+        TrackedLink stackLink = new TrackedLink(
+                1L, "https://stackoverflow.com/questions/123", LinkSourceType.STACKOVERFLOW, Instant.now(), null, null);
+        TrackedLink githubLink =
+                new TrackedLink(2L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
 
         assertTrue(stackOverflowLinkUpdater.supports(stackLink));
         assertFalse(stackOverflowLinkUpdater.supports(githubLink));
@@ -40,13 +41,12 @@ class StackOverflowLinkUpdaterTest {
     @Test
     void check_whenNoStoredLastUpdatedAt_returnsUnchangedWithObservedTimestamp() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://stackoverflow.com/questions/123/title",
-            LinkSourceType.STACKOVERFLOW,
-            Instant.now(),
-            null,
-            null
-        );
+                1L,
+                "https://stackoverflow.com/questions/123/title",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.now(),
+                null,
+                null);
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
@@ -61,13 +61,12 @@ class StackOverflowLinkUpdaterTest {
     @Test
     void check_whenObservedUpdatedAtIsAfterLastUpdated_returnsChanged() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://stackoverflow.com/questions/123/title/",
-            LinkSourceType.STACKOVERFLOW,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-05T10:00:00Z")
-        );
+                1L,
+                "https://stackoverflow.com/questions/123/title/",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
@@ -84,13 +83,12 @@ class StackOverflowLinkUpdaterTest {
     @Test
     void check_whenObservedUpdatedAtIsNotAfterLastUpdated_returnsUnchanged() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://stackoverflow.com/questions/123/title",
-            LinkSourceType.STACKOVERFLOW,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-10T10:00:00Z")
-        );
+                1L,
+                "https://stackoverflow.com/questions/123/title",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-10T10:00:00Z"));
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
@@ -105,13 +103,12 @@ class StackOverflowLinkUpdaterTest {
     @Test
     void check_whenUrlInvalid_throwsIllegalArgumentException() {
         TrackedLink link = new TrackedLink(
-            1L,
-            "https://stackoverflow.com/answers/123",
-            LinkSourceType.STACKOVERFLOW,
-            Instant.now(),
-            null,
-            Instant.parse("2026-03-05T10:00:00Z")
-        );
+                1L,
+                "https://stackoverflow.com/answers/123",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
 
         assertThrows(IllegalArgumentException.class, () -> stackOverflowLinkUpdater.check(link));
     }

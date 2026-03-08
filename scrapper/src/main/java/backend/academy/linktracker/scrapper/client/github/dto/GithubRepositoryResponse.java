@@ -7,5 +7,4 @@ public record GithubRepositoryResponse(
         @JsonProperty("full_name") String fullName,
         @JsonProperty("html_url") String htmlUrl,
         @JsonProperty("pushed_at") Instant pushedAt,
-        @JsonProperty("updated_at") Instant updatedAt
-) {}
+        @JsonProperty("updated_at") Instant updatedAt) {}

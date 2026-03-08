@@ -50,14 +50,8 @@ class BotMessagesServiceTest {
     void updatesMessage_usesProvidedDescription_whenDescriptionIsPresent() {
         when(properties.getUpdatesTemplate()).thenReturn("Обновление по %s: %s");
 
-        String result = botMessagesService.updatesMessage(
-            "https://github.com/user/repo",
-            "Новый коммит в main"
-        );
+        String result = botMessagesService.updatesMessage("https://github.com/user/repo", "Новый коммит в main");
 
-        assertEquals(
-            "Обновление по https://github.com/user/repo: Новый коммит в main",
-            result
-        );
+        assertEquals("Обновление по https://github.com/user/repo: Новый коммит в main", result);
     }
 }

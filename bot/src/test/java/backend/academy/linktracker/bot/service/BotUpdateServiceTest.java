@@ -36,7 +36,7 @@ class BotUpdateServiceTest {
         when(request.description()).thenReturn("Новый коммит");
         when(request.tgChatIds()).thenReturn(List.of(101L, 202L));
         when(messages.updatesMessage("https://github.com/user/repo", "Новый коммит"))
-            .thenReturn("Обновление");
+                .thenReturn("Обновление");
 
         botUpdateService.processUpdate(request);
 
@@ -47,7 +47,6 @@ class BotUpdateServiceTest {
         org.junit.jupiter.api.Assertions.assertEquals(2, requests.size());
     }
 
-
     @Test
     void processUpdate_whenChatIdsNull_doesNothing() {
         LinkUpdateRequest request = org.mockito.Mockito.mock(LinkUpdateRequest.class);
@@ -56,7 +55,7 @@ class BotUpdateServiceTest {
         when(request.description()).thenReturn("Новый коммит");
         when(request.tgChatIds()).thenReturn(null);
         when(messages.updatesMessage("https://github.com/user/repo", "Новый коммит"))
-            .thenReturn("Обновление");
+                .thenReturn("Обновление");
 
         botUpdateService.processUpdate(request);
 

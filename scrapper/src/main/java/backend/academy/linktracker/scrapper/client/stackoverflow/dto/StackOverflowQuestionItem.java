@@ -9,8 +9,7 @@ public record StackOverflowQuestionItem(
         @JsonProperty("link") String link,
         @JsonProperty("answer_count") int answerCount,
         @JsonProperty("is_answered") boolean answered,
-        @JsonProperty("last_activity_date") long lastActivityDate
-) {
+        @JsonProperty("last_activity_date") long lastActivityDate) {
     public Instant lastActivityAt() {
         return Instant.ofEpochSecond(lastActivityDate);
     }

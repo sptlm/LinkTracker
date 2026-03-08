@@ -28,18 +28,13 @@ public class LinkController {
     }
 
     @PostMapping
-    public LinkResponse addLink(
-            @RequestHeader("Tg-Chat-Id") long chatId,
-            @Valid @RequestBody AddLinkRequest request
-    ) {
+    public LinkResponse addLink(@RequestHeader("Tg-Chat-Id") long chatId, @Valid @RequestBody AddLinkRequest request) {
         return linkTrackingService.addLink(chatId, request);
     }
 
     @DeleteMapping
     public LinkResponse removeLink(
-            @RequestHeader("Tg-Chat-Id") long chatId,
-            @Valid @RequestBody RemoveLinkRequest request
-    ) {
+            @RequestHeader("Tg-Chat-Id") long chatId, @Valid @RequestBody RemoveLinkRequest request) {
         return linkTrackingService.removeLink(chatId, request);
     }
 }

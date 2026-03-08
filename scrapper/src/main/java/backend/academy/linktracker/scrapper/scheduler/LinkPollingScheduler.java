@@ -17,9 +17,7 @@ public class LinkPollingScheduler {
 
     @Scheduled(fixedDelayString = "${app.polling.interval}")
     public void poll() {
-        log.atDebug()
-                .addKeyValue("interval", properties.getInterval())
-                .log("Polling cycle started");
+        log.atDebug().addKeyValue("interval", properties.getInterval()).log("Polling cycle started");
 
         linkPollingService.pollUpdates();
     }

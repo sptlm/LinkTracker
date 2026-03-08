@@ -54,17 +54,14 @@ class LinkTrackingServiceTest {
 
     @Test
     void addLink_wrapsArgumentsIntoAddLinkRequest() {
-        LinkResponse expected = new LinkResponse(1L, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+        LinkResponse expected =
+                new LinkResponse(1L, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         when(scrapperClient.addLink(org.mockito.Mockito.eq(123L), org.mockito.Mockito.any(AddLinkRequest.class)))
-            .thenReturn(expected);
+                .thenReturn(expected);
 
         LinkResponse actual = linkTrackingService.addLink(
-            123L,
-            "https://github.com/user/repo",
-            List.of("java"),
-            List.of("branch=main")
-        );
+                123L, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         assertSame(expected, actual);
 
@@ -82,7 +79,7 @@ class LinkTrackingServiceTest {
         LinkResponse expected = new LinkResponse(1L, "https://github.com/user/repo", List.of(), List.of());
 
         when(scrapperClient.removeLink(org.mockito.Mockito.eq(123L), org.mockito.Mockito.any(RemoveLinkRequest.class)))
-            .thenReturn(expected);
+                .thenReturn(expected);
 
         LinkResponse actual = linkTrackingService.removeLink(123L, "https://github.com/user/repo");
 

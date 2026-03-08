@@ -22,7 +22,6 @@ public class LinkPollingService {
     private final List<LinkUpdater> linkUpdaters;
     private final UpdatePublisher updatePublisher;
 
-
     public void pollUpdates() {
         List<TrackedLink> links = linkRepository.findAll();
 
@@ -38,7 +37,9 @@ public class LinkPollingService {
         LinkUpdateCheckResult result = updater.check(link);
 
         Instant updatedAt = result.changed()
-                ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt) // если времени обновления на сайте нет, то ставим время проверки
+                ? (result.newUpdatedAt() != null
+                        ? result.newUpdatedAt()
+                        : checkedAt) // если времени обновления на сайте нет, то ставим время проверки
                 : link.lastUpdatedAt();
 
         linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
@@ -56,12 +57,7 @@ public class LinkPollingService {
             return;
         }
 
-        LinkUpdateRequest request = new LinkUpdateRequest(
-                link.id(),
-                link.url(),
-                result.description(),
-                chatIds
-        );
+        LinkUpdateRequest request = new LinkUpdateRequest(link.id(), link.url(), result.description(), chatIds);
 
         updatePublisher.publish(request);
 

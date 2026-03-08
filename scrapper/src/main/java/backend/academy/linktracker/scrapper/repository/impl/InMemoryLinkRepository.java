@@ -46,8 +46,8 @@ public class InMemoryLinkRepository implements LinkRepository {
     @Override
     public List<TrackedLink> findAll() {
         return linksById.values().stream()
-            .sorted(java.util.Comparator.comparingLong(TrackedLink::id))
-            .toList();
+                .sorted(java.util.Comparator.comparingLong(TrackedLink::id))
+                .toList();
     }
 
     @Override

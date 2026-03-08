@@ -11,8 +11,7 @@ import org.springframework.stereotype.Component;
 public class SupportedLinkParser {
 
     private static final Pattern GITHUB_REPOSITORY = Pattern.compile("^/[^/]+/[^/]+/?$");
-    private static final Pattern STACKOVERFLOW_QUESTION =
-            Pattern.compile("^/questions/\\d+(?:/[^/]+)?/?$");
+    private static final Pattern STACKOVERFLOW_QUESTION = Pattern.compile("^/questions/\\d+(?:/[^/]+)?/?$");
 
     public Optional<URI> parse(String rawText) {
         if (rawText == null || rawText.isBlank()) {

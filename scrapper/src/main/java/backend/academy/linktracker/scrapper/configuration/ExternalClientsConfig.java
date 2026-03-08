@@ -15,11 +15,9 @@ public class ExternalClientsConfig {
 
     @Bean
     public RestClient githubRestClient(RestClient.Builder builder, GithubProperties githubProperties) {
-        log.info("GitHub token configured: {}",
-            githubProperties.getToken());
+        log.info("GitHub token configured: {}", githubProperties.getToken());
 
-        RestClient.Builder clientBuilder = builder
-                .baseUrl(githubProperties.getBaseUrl())
+        RestClient.Builder clientBuilder = builder.baseUrl(githubProperties.getBaseUrl())
                 .defaultHeader("Accept", "application/vnd.github+json")
                 .defaultHeader("X-GitHub-Api-Version", "2022-11-28");
 
@@ -31,17 +29,16 @@ public class ExternalClientsConfig {
     }
 
     @Bean
-    public RestClient stackOverflowRestClient(RestClient.Builder builder, StackoverflowProperties stackoverflowProperties) {
-        return builder
-                .baseUrl(stackoverflowProperties.getBaseUrl())
+    public RestClient stackOverflowRestClient(
+            RestClient.Builder builder, StackoverflowProperties stackoverflowProperties) {
+        return builder.baseUrl(stackoverflowProperties.getBaseUrl())
                 .defaultHeader("Accept", "application/json")
                 .build();
     }
 
     @Bean
     public RestClient botRestClient(RestClient.Builder builder, BotClientProperties properties) {
-        return builder
-                .baseUrl(properties.getBotBaseUrl())
+        return builder.baseUrl(properties.getBotBaseUrl())
                 .defaultHeader("Accept", "application/json")
                 .build();
     }

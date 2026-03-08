@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.TrackedLinkNotFoundException;
-import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.impl.UntrackCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
@@ -105,8 +104,8 @@ class UntrackCommandTest {
         when(messages.linkNotFound()).thenReturn("Ссылка не найдена");
 
         org.mockito.Mockito.doThrow(new TrackedLinkNotFoundException("not found"))
-            .when(linkTrackingService)
-            .removeLink(123L, "https://github.com/user/repo");
+                .when(linkTrackingService)
+                .removeLink(123L, "https://github.com/user/repo");
 
         untrackCommand.handle(context);
 
@@ -121,8 +120,8 @@ class UntrackCommandTest {
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
 
         org.mockito.Mockito.doThrow(new ChatNotRegisteredException("chat not registered"))
-            .when(linkTrackingService)
-            .removeLink(123L, "https://github.com/user/repo");
+                .when(linkTrackingService)
+                .removeLink(123L, "https://github.com/user/repo");
 
         untrackCommand.handle(context);
 

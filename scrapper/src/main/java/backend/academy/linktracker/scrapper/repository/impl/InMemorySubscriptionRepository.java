@@ -32,24 +32,24 @@ public class InMemorySubscriptionRepository implements SubscriptionRepository {
     @Override
     public List<LinkSubscription> findByChatId(long chatId) {
         return subscriptions.values().stream()
-            .filter(subscription -> subscription.chatId() == chatId)
-            .toList();
+                .filter(subscription -> subscription.chatId() == chatId)
+                .toList();
     }
 
     @Override
     public List<LinkSubscription> findByLinkId(long linkId) {
         return subscriptions.values().stream()
-            .filter(subscription -> subscription.linkId() == linkId)
-            .toList();
+                .filter(subscription -> subscription.linkId() == linkId)
+                .toList();
     }
 
     @Override
     public List<Long> findChatIdsByLinkId(long linkId) {
         return subscriptions.values().stream()
-            .filter(subscription -> subscription.linkId() == linkId)
-            .map(LinkSubscription::chatId)
-            .distinct()
-            .toList();
+                .filter(subscription -> subscription.linkId() == linkId)
+                .map(LinkSubscription::chatId)
+                .distinct()
+                .toList();
     }
 
     @Override
@@ -59,8 +59,7 @@ public class InMemorySubscriptionRepository implements SubscriptionRepository {
 
     @Override
     public boolean hasSubscribers(long linkId) {
-        return subscriptions.values().stream()
-            .anyMatch(subscription -> subscription.linkId() == linkId);
+        return subscriptions.values().stream().anyMatch(subscription -> subscription.linkId() == linkId);
     }
 
     private String key(long chatId, long linkId) {

@@ -1,7 +1,6 @@
 package backend.academy.linktracker.scrapper.properties;
 
 import jakarta.validation.constraints.NotNull;
-import java.time.Duration;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

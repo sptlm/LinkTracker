@@ -53,7 +53,7 @@ class StartCommandTest {
 
     @BeforeEach
     void setUp() {
-        startCommand = new StartCommand(userService,linkTrackingService, messages);
+        startCommand = new StartCommand(userService, linkTrackingService, messages);
 
         lenient().when(message.chat()).thenReturn(chat);
         lenient().when(chat.id()).thenReturn(123L);

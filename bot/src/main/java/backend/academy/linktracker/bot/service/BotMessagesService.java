@@ -79,11 +79,10 @@ public class BotMessagesService {
     }
 
     public String updatesMessage(String url, String description) {
-        String safeDescription = description == null || description.isBlank()
-            ? "Есть новые изменения."
-            : description;
+        String safeDescription = description == null || description.isBlank() ? "Есть новые изменения." : description;
         return properties.getUpdatesTemplate().formatted(url, safeDescription);
     }
+
     public String scrapperUnavailable() {
         return properties.getScrapperUnavailable();
     }

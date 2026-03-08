@@ -12,7 +12,6 @@ import org.springframework.web.client.RestClientResponseException;
 @Component
 public class RestStackOverflowClient implements StackOverflowClient {
 
-
     private final RestClient restClient;
 
     public RestStackOverflowClient(@Qualifier("stackOverflowRestClient") RestClient restClient) {
@@ -22,7 +21,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
     @Override
     public StackOverflowQuestionItem getQuestion(long questionId) {
         try {
-            StackOverflowQuestionsResponse response = restClient.get()
+            StackOverflowQuestionsResponse response = restClient
+                    .get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/questions/{id}")
                             .queryParam("site", "stackoverflow")
@@ -33,9 +33,7 @@ public class RestStackOverflowClient implements StackOverflowClient {
             List<StackOverflowQuestionItem> items = response != null ? response.items() : List.of();
             if (items == null || items.isEmpty()) {
                 throw new ExternalServiceException(
-                        "StackOverflow returned empty response for question " + questionId,
-                        null
-                );
+                        "StackOverflow returned empty response for question " + questionId, null);
             }
 
             return items.getFirst();
@@ -43,13 +41,9 @@ public class RestStackOverflowClient implements StackOverflowClient {
             throw new ExternalServiceException(
                     "StackOverflow request failed for question %d, status=%d"
                             .formatted(questionId, e.getStatusCode().value()),
-                    e
-            );
+                    e);
         } catch (Exception e) {
-            throw new ExternalServiceException(
-                    "StackOverflow request failed for question " + questionId,
-                    e
-            );
+            throw new ExternalServiceException("StackOverflow request failed for question " + questionId, e);
         }
     }
 }

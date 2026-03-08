@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.impl.CancelCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.TrackDialogService;

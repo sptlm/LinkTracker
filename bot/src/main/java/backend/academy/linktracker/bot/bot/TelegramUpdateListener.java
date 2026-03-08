@@ -46,10 +46,10 @@ public class TelegramUpdateListener implements UpdatesListener {
         CommandContext context = new CommandContext(bot, message);
 
         log.atInfo()
-            .addKeyValue("chatId", context.chatId())
-            .addKeyValue("username", context.username())
-            .addKeyValue("messageText", messageText)
-            .log("Received message");
+                .addKeyValue("chatId", context.chatId())
+                .addKeyValue("username", context.username())
+                .addKeyValue("messageText", messageText)
+                .log("Received message");
 
         if (messageText.startsWith("/")) {
             processCommand(context, messageText);
@@ -57,9 +57,7 @@ public class TelegramUpdateListener implements UpdatesListener {
         }
 
         if (trackDialogService.processIfActive(context)) {
-            log.atInfo()
-                .addKeyValue("chatId", context.chatId())
-                .log("Track dialog step processed");
+            log.atInfo().addKeyValue("chatId", context.chatId()).log("Track dialog step processed");
         }
     }
 
@@ -70,38 +68,39 @@ public class TelegramUpdateListener implements UpdatesListener {
             trackDialogService.cancel(context.chatId());
 
             log.atInfo()
-                .addKeyValue("chatId", context.chatId())
-                .addKeyValue("cancelledByCommand", commandName)
-                .log("Active dialog cancelled by another command");
+                    .addKeyValue("chatId", context.chatId())
+                    .addKeyValue("cancelledByCommand", commandName)
+                    .log("Active dialog cancelled by another command");
         }
 
-        commandRegistry.find(commandName)
-            .ifPresentOrElse(
-                command -> {
-                    try {
-                        log.atInfo()
-                            .addKeyValue("chatId", context.chatId())
-                            .addKeyValue("command", commandName)
-                            .log("Command dispatched");
+        commandRegistry
+                .find(commandName)
+                .ifPresentOrElse(
+                        command -> {
+                            try {
+                                log.atInfo()
+                                        .addKeyValue("chatId", context.chatId())
+                                        .addKeyValue("command", commandName)
+                                        .log("Command dispatched");
 
-                        command.handle(context);
-                    } catch (Exception e) {
-                        log.atError()
-                            .setCause(e)
-                            .addKeyValue("chatId", context.chatId())
-                            .addKeyValue("command", commandName)
-                            .log("Command handling failed");
+                                command.handle(context);
+                            } catch (Exception e) {
+                                log.atError()
+                                        .setCause(e)
+                                        .addKeyValue("chatId", context.chatId())
+                                        .addKeyValue("command", commandName)
+                                        .log("Command handling failed");
 
-                        context.reply(messages.scrapperUnavailable());
-                    }
-                },
-                () -> {
-                    log.atInfo()
-                        .addKeyValue("chatId", context.chatId())
-                        .addKeyValue("command", commandName)
-                        .log("Unknown command received");
+                                context.reply(messages.scrapperUnavailable());
+                            }
+                        },
+                        () -> {
+                            log.atInfo()
+                                    .addKeyValue("chatId", context.chatId())
+                                    .addKeyValue("command", commandName)
+                                    .log("Unknown command received");
 
-                    context.reply(messages.unknownCommand());
-                });
+                            context.reply(messages.unknownCommand());
+                        });
     }
 }

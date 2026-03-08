@@ -10,8 +10,6 @@ public class ScrapperClientConfiguration {
 
     @Bean
     public RestClient scrapperRestClient(ScrapperProperties properties) {
-        return RestClient.builder()
-                .baseUrl(properties.getBaseUrl())
-                .build();
+        return RestClient.builder().baseUrl(properties.getBaseUrl()).build();
     }
 }

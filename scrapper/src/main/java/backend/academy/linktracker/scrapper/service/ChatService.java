@@ -27,7 +27,8 @@ public class ChatService {
             throw new ChatNotFoundException(chatId);
         }
 
-        subscriptionRepository.findByChatId(chatId)
+        subscriptionRepository
+                .findByChatId(chatId)
                 .forEach(subscription -> subscriptionRepository.delete(subscription.chatId(), subscription.linkId()));
 
         chatRepository.delete(chatId);

@@ -5,8 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 public record LinkUpdateRequest(
-    long id,
-    @NotBlank String url,
-    String description,
-    @NotEmpty List<Long> tgChatIds
-) {}
+        long id,
+        @NotBlank String url,
+        String description,
+        @NotEmpty List<Long> tgChatIds) {}

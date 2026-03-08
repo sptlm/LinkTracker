@@ -1,19 +1,6 @@
 package backend.academy.linktracker.bot.command.impl;
 
 import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
-import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
-import backend.academy.linktracker.bot.command.Command;
-import backend.academy.linktracker.bot.command.CommandContext;
-import backend.academy.linktracker.bot.service.BotMessagesService;
-import backend.academy.linktracker.bot.service.LinkTrackingService;
-import backend.academy.linktracker.bot.service.UserService;
-import java.util.List;
-import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
-import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
 import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
@@ -62,8 +49,8 @@ public class ListCommand implements Command {
 
             if (tag != null) {
                 links = links.stream()
-                    .filter(link -> link.tags() != null && link.tags().contains(tag))
-                    .toList();
+                        .filter(link -> link.tags() != null && link.tags().contains(tag))
+                        .toList();
             }
 
             if (links.isEmpty()) {
@@ -71,18 +58,13 @@ public class ListCommand implements Command {
                 return;
             }
 
-            String text = links.stream()
-                .map(this::formatLink)
-                .collect(Collectors.joining("\n\n"));
+            String text = links.stream().map(this::formatLink).collect(Collectors.joining("\n\n"));
 
             context.reply(text);
         } catch (ChatNotRegisteredException e) {
             context.reply(messages.chatNotRegistered());
         } catch (ScrapperClientException e) {
-            log.atWarn()
-                .setCause(e)
-                .addKeyValue("chatId", context.chatId())
-                .log("Failed to get links from scrapper");
+            log.atWarn().setCause(e).addKeyValue("chatId", context.chatId()).log("Failed to get links from scrapper");
 
             context.reply(messages.scrapperUnavailable());
         }

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -66,21 +65,12 @@ class LinkTrackingServiceTest {
 
     @Test
     void addLink_whenAlreadyTracked_throwsLinkAlreadyTrackedException() {
-        AddLinkRequest request = new AddLinkRequest(
-            "https://github.com/user/repo",
-            List.of("java"),
-            List.of("branch=main")
-        );
+        AddLinkRequest request =
+                new AddLinkRequest("https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         ParsedLink parsedLink = org.mockito.Mockito.mock(ParsedLink.class);
-        TrackedLink trackedLink = new TrackedLink(
-            10L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            null
-        );
+        TrackedLink trackedLink =
+                new TrackedLink(10L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
 
         when(supportedLinkParser.parse("https://github.com/user/repo")).thenReturn(parsedLink);
         when(parsedLink.normalizedUrl()).thenReturn("https://github.com/user/repo");
@@ -115,14 +105,8 @@ class LinkTrackingServiceTest {
     void removeLink_whenSubscriptionDoesNotExist_throwsTrackedLinkNotFoundException() {
         RemoveLinkRequest request = new RemoveLinkRequest("https://github.com/user/repo");
         ParsedLink parsedLink = org.mockito.Mockito.mock(ParsedLink.class);
-        TrackedLink trackedLink = new TrackedLink(
-            10L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            null
-        );
+        TrackedLink trackedLink =
+                new TrackedLink(10L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
 
         when(supportedLinkParser.parse("https://github.com/user/repo")).thenReturn(parsedLink);
         when(parsedLink.normalizedUrl()).thenReturn("https://github.com/user/repo");
@@ -136,21 +120,10 @@ class LinkTrackingServiceTest {
     void removeLink_whenLastSubscriber_deletesSubscriptionAndLink() {
         RemoveLinkRequest request = new RemoveLinkRequest("https://github.com/user/repo");
         ParsedLink parsedLink = org.mockito.Mockito.mock(ParsedLink.class);
-        TrackedLink trackedLink = new TrackedLink(
-            10L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            null
-        );
-        LinkSubscription subscription = new LinkSubscription(
-            123L,
-            10L,
-            List.of("java"),
-            List.of("branch=main"),
-            Instant.now()
-        );
+        TrackedLink trackedLink =
+                new TrackedLink(10L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
+        LinkSubscription subscription =
+                new LinkSubscription(123L, 10L, List.of("java"), List.of("branch=main"), Instant.now());
 
         when(supportedLinkParser.parse("https://github.com/user/repo")).thenReturn(parsedLink);
         when(parsedLink.normalizedUrl()).thenReturn("https://github.com/user/repo");
@@ -172,21 +145,9 @@ class LinkTrackingServiceTest {
     void removeLink_whenOtherSubscribersRemain_deletesOnlySubscription() {
         RemoveLinkRequest request = new RemoveLinkRequest("https://github.com/user/repo");
         ParsedLink parsedLink = org.mockito.Mockito.mock(ParsedLink.class);
-        TrackedLink trackedLink = new TrackedLink(
-            10L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            null
-        );
-        LinkSubscription subscription = new LinkSubscription(
-            123L,
-            10L,
-            List.of("java"),
-            List.of(),
-            Instant.now()
-        );
+        TrackedLink trackedLink =
+                new TrackedLink(10L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
+        LinkSubscription subscription = new LinkSubscription(123L, 10L, List.of("java"), List.of(), Instant.now());
 
         when(supportedLinkParser.parse("https://github.com/user/repo")).thenReturn(parsedLink);
         when(parsedLink.normalizedUrl()).thenReturn("https://github.com/user/repo");
@@ -202,31 +163,16 @@ class LinkTrackingServiceTest {
 
     @Test
     void getLinks_returnsOnlyExistingLinks() {
-        LinkSubscription existingSubscription = new LinkSubscription(
-            123L,
-            10L,
-            List.of("java"),
-            List.of("branch=main"),
-            Instant.now()
-        );
-        LinkSubscription missingLinkSubscription = new LinkSubscription(
-            123L,
-            11L,
-            List.of("sql"),
-            List.of(),
-            Instant.now()
-        );
+        LinkSubscription existingSubscription =
+                new LinkSubscription(123L, 10L, List.of("java"), List.of("branch=main"), Instant.now());
+        LinkSubscription missingLinkSubscription =
+                new LinkSubscription(123L, 11L, List.of("sql"), List.of(), Instant.now());
 
-        TrackedLink trackedLink = new TrackedLink(
-            10L,
-            "https://github.com/user/repo",
-            LinkSourceType.GITHUB,
-            Instant.now(),
-            null,
-            null
-        );
+        TrackedLink trackedLink =
+                new TrackedLink(10L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.now(), null, null);
 
-        when(subscriptionRepository.findByChatId(123L)).thenReturn(List.of(existingSubscription, missingLinkSubscription));
+        when(subscriptionRepository.findByChatId(123L))
+                .thenReturn(List.of(existingSubscription, missingLinkSubscription));
         when(linkRepository.findById(10L)).thenReturn(Optional.of(trackedLink));
         when(linkRepository.findById(11L)).thenReturn(Optional.empty());
 

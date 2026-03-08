@@ -26,8 +26,7 @@ public class TrackDialogService {
             UserDialogStateRepository stateRepository,
             SupportedLinkParser supportedLinkParser,
             LinkTrackingService linkTrackingService,
-            BotMessagesService messages
-    ) {
+            BotMessagesService messages) {
         this.stateRepository = stateRepository;
         this.supportedLinkParser = supportedLinkParser;
         this.linkTrackingService = linkTrackingService;
@@ -87,12 +86,7 @@ public class TrackDialogService {
         List<String> filters = parseCommaSeparated(context.messageText());
 
         try {
-            linkTrackingService.addLink(
-                    context.chatId(),
-                    state.url().toString(),
-                    state.tags(),
-                    filters
-            );
+            linkTrackingService.addLink(context.chatId(), state.url().toString(), state.tags(), filters);
             stateRepository.delete(context.chatId());
             context.reply(messages.linkTracked());
         } catch (DuplicateLinkException e) {
@@ -101,12 +95,12 @@ public class TrackDialogService {
         } catch (ChatNotRegisteredException e) {
             stateRepository.delete(context.chatId());
             context.reply(messages.chatNotRegistered());
-        }catch (ScrapperClientException e) {
+        } catch (ScrapperClientException e) {
             log.atWarn()
-                .setCause(e)
-                .addKeyValue("chatId", context.chatId())
-                .addKeyValue("url", state.url())
-                .log("Failed to add link in scrapper");
+                    .setCause(e)
+                    .addKeyValue("chatId", context.chatId())
+                    .addKeyValue("url", state.url())
+                    .log("Failed to add link in scrapper");
 
             stateRepository.delete(context.chatId());
             context.reply(messages.scrapperUnavailable());

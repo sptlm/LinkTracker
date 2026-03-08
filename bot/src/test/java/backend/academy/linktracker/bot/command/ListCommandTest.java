@@ -8,7 +8,6 @@ import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredExceptio
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
 import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
-import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.impl.ListCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
@@ -104,12 +103,10 @@ class ListCommandTest {
 
         listCommand.handle(context);
 
-        verify(context).reply(
-            "https://github.com/user/repo\n" +
-            "Теги: java, spring\n" +
-            "Фильтры: branch=main\n\n" +
-            "https://stackoverflow.com/questions/123"
-        );
+        verify(context)
+                .reply("https://github.com/user/repo\n" + "Теги: java, spring\n"
+                        + "Фильтры: branch=main\n\n"
+                        + "https://stackoverflow.com/questions/123");
     }
 
     @Test
@@ -136,8 +133,7 @@ class ListCommandTest {
         when(context.messageText()).thenReturn("/list");
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
-        when(linkTrackingService.getLinks(123L))
-            .thenThrow(new ChatNotRegisteredException("chat not registered"));
+        when(linkTrackingService.getLinks(123L)).thenThrow(new ChatNotRegisteredException("chat not registered"));
 
         listCommand.handle(context);
 
@@ -150,8 +146,7 @@ class ListCommandTest {
         when(context.messageText()).thenReturn("/list");
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.scrapperUnavailable()).thenReturn("Scrapper недоступен");
-        when(linkTrackingService.getLinks(123L))
-            .thenThrow(new ScrapperClientException("scrapper unavailable"));
+        when(linkTrackingService.getLinks(123L)).thenThrow(new ScrapperClientException("scrapper unavailable"));
 
         listCommand.handle(context);
 
