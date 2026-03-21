@@ -14,28 +14,34 @@ public class UserService {
     private final UserRepository userRepository;
 
     public RegistrationResult registerIfAbsent(Message message) {
-        long chatId = message.chat().id();
+        com.pengrad.telegrambot.model.User telegramUser = requireSender(message);
+        long userId = telegramUser.id();
 
         return userRepository
-                .findByChatId(chatId)
-                .map(user -> new RegistrationResult(user, false))
-                .orElseGet(() -> {
-                    var from = message.from();
+            .findByUserId(userId)
+            .map(user -> new RegistrationResult(user, false))
+            .orElseGet(() -> {
+                User user = User.builder()
+                    .userId(userId)
+                    .username(telegramUser.username())
+                    .firstName(telegramUser.firstName())
+                    .lastName(telegramUser.lastName())
+                    .registeredAt(Instant.now())
+                    .build();
 
-                    User user = User.builder()
-                            .chatId(chatId)
-                            .username(from != null ? from.username() : null)
-                            .firstName(from != null ? from.firstName() : null)
-                            .lastName(from != null ? from.lastName() : null)
-                            .registeredAt(Instant.now())
-                            .build();
-
-                    userRepository.save(user);
-                    return new RegistrationResult(user, true);
-                });
+                userRepository.save(user);
+                return new RegistrationResult(user, true);
+            });
     }
 
-    public boolean isRegistered(long chatId) {
-        return userRepository.existsByChatId(chatId);
+    public boolean isRegistered(long userId) {
+        return userRepository.existsByUserId(userId);
+    }
+
+    private com.pengrad.telegrambot.model.User requireSender(Message message) {
+        if (message.from() == null) {
+            throw new IllegalArgumentException("Telegram update does not contain sender information");
+        }
+        return message.from();
     }
 }

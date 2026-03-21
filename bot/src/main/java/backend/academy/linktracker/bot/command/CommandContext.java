@@ -4,11 +4,16 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.request.SendMessage;
+import java.util.Objects;
 
 public record CommandContext(TelegramBot bot, Message message) {
 
     public long chatId() {
         return message.chat().id();
+    }
+
+    public long userId() {
+        return requireFrom().id();
     }
 
     public String messageText() {
@@ -19,16 +24,20 @@ public record CommandContext(TelegramBot bot, Message message) {
         return message.from();
     }
 
+    public User requireFrom() {
+        return Objects.requireNonNull(from(), "Telegram update does not contain sender information");
+    }
+
     public String username() {
-        return from() != null ? from().username() : null;
+        return requireFrom().username();
     }
 
     public String firstName() {
-        return from() != null ? from().firstName() : null;
+        return requireFrom().firstName();
     }
 
     public String lastName() {
-        return from() != null ? from().lastName() : null;
+        return requireFrom().lastName();
     }
 
     public void reply(String text) {

@@ -15,8 +15,10 @@ import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import java.net.URI;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -83,13 +85,17 @@ public class LinkTrackingService {
     public ListLinksResponse getLinks(long chatId) {
         chatService.ensureExists(chatId);
 
-        List<LinksPost200Response> links = subscriptionRepository.findByChatId(chatId).stream()
-                .map(subscription -> linkRepository
-                        .findById(subscription.linkId())
-                        .map(link -> toResponse(link, subscription))
-                        .orElse(null))
-                .filter(response -> response != null)
-                .toList();
+        List<LinkSubscription> subscriptions = subscriptionRepository.findByChatId(chatId);
+        Map<Long, LinkSubscription> subscriptionsByLinkId = subscriptions.stream()
+            .collect(java.util.stream.Collectors.toMap(
+                LinkSubscription::linkId,
+                subscription -> subscription,
+                (left, right) -> left,
+                LinkedHashMap::new));
+
+        List<LinksPost200Response> links = linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
+            .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
+            .toList();
 
         return new ListLinksResponse().links(links).size(links.size());
     }

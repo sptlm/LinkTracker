@@ -48,6 +48,7 @@ class UntrackCommandTest {
     @Test
     void handle_whenUserNotRegistered_repliesChatNotRegistered() {
         when(context.chatId()).thenReturn(123L);
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(false);
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
 
@@ -61,6 +62,7 @@ class UntrackCommandTest {
     void handle_whenLinkNotProvided_repliesUsage() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.untrackUsage()).thenReturn("Использование: /untrack <link>");
 
@@ -74,6 +76,7 @@ class UntrackCommandTest {
     void handle_whenLinkIsBlank_repliesUsage() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack   ");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.untrackUsage()).thenReturn("Использование: /untrack <link>");
 
@@ -87,6 +90,7 @@ class UntrackCommandTest {
     void handle_whenLinkRemoved_repliesSuccess() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkRemoved()).thenReturn("Ссылка удалена");
 
@@ -100,6 +104,7 @@ class UntrackCommandTest {
     void handle_whenTrackedLinkNotFound_repliesLinkNotFound() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkNotFound()).thenReturn("Ссылка не найдена");
 
@@ -116,6 +121,7 @@ class UntrackCommandTest {
     void handle_whenChatNotRegisteredInScrapper_repliesChatNotRegistered() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
 
@@ -132,6 +138,7 @@ class UntrackCommandTest {
     void handle_trimsExtractedLink() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack    https://github.com/user/repo   ");
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkRemoved()).thenReturn("Ссылка удалена");
 

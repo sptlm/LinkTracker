@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandRegistry;
 import backend.academy.linktracker.bot.service.BotMessagesService;
+import backend.academy.linktracker.bot.service.BotRegistrationService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Chat;
@@ -39,6 +40,9 @@ class TelegramUpdateListenerTest {
     private TrackDialogService trackDialogService;
 
     @Mock
+    private BotRegistrationService botRegistrationService;
+
+    @Mock
     private Command command;
 
     @Mock
@@ -54,11 +58,13 @@ class TelegramUpdateListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService);
+        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService, botRegistrationService);
 
         lenient().when(update.message()).thenReturn(message);
         lenient().when(message.chat()).thenReturn(chat);
         lenient().when(chat.id()).thenReturn(777L);
+        lenient().when(message.from()).thenReturn(org.mockito.Mockito.mock(com.pengrad.telegrambot.model.User.class));
+        lenient().when(message.from().id()).thenReturn(111L);
     }
 
     @Test
@@ -81,6 +87,7 @@ class TelegramUpdateListenerTest {
 
         listener.process(List.of(update));
 
+        verify(botRegistrationService).ensureRegistered(any());
         verify(bot).execute(any(SendMessage.class));
     }
 

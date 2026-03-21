@@ -46,24 +46,26 @@ class TrackCommandTest {
     @Test
     void handle_whenChatIsNotRegistered_repliesChatNotRegistered() {
         when(context.chatId()).thenReturn(123L);
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(false);
         when(messages.chatNotRegistered()).thenReturn("Сначала зарегистрируйтесь через /start");
 
         trackCommand.handle(context);
 
         verify(context).reply("Сначала зарегистрируйтесь через /start");
-        verify(trackDialogService, never()).start(123L);
+        verify(trackDialogService, never()).start(context);
     }
 
     @Test
     void handle_whenChatIsRegistered_startsDialogAndRepliesTrackStarted() {
         when(context.chatId()).thenReturn(123L);
+        when(context.userId()).thenReturn(123L);
         when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.trackStarted()).thenReturn("Отправьте ссылку");
 
         trackCommand.handle(context);
 
-        verify(trackDialogService).start(123L);
+        verify(trackDialogService).start(context);
         verify(context).reply("Отправьте ссылку");
     }
 }

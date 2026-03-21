@@ -13,6 +13,8 @@ public interface LinkRepository {
 
     Optional<TrackedLink> findById(long id);
 
+    List<TrackedLink> findAllById(List<Long> ids);
+
     Optional<TrackedLink> findByUrl(String url);
 
     List<TrackedLink> findAll();

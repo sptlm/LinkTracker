@@ -15,22 +15,21 @@ public class BotApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleValidation(MethodArgumentNotValidException e) {
-        return new ApiErrorResponse()
-                .description("Некорректные параметры запроса")
-                .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
-                .exceptionName(e.getClass().getSimpleName())
-                .exceptionMessage(e.getMessage())
-                .stacktrace(List.of());
+        return buildBadRequest(e);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleUnreadableBody(HttpMessageNotReadableException e) {
+        return buildBadRequest(e);
+    }
+
+    private ApiErrorResponse buildBadRequest(Exception exception) {
         return new ApiErrorResponse()
             .description("Некорректные параметры запроса")
             .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
-            .exceptionName(e.getClass().getSimpleName())
-            .exceptionMessage(e.getMessage())
+            .exceptionName(exception.getClass().getSimpleName())
+            .exceptionMessage(exception.getMessage())
             .stacktrace(List.of());
     }
 }

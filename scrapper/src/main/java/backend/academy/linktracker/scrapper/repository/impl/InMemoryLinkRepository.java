@@ -3,6 +3,7 @@ package backend.academy.linktracker.scrapper.repository.impl;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +36,15 @@ public class InMemoryLinkRepository implements LinkRepository {
     }
 
     @Override
+    public List<TrackedLink> findAllById(List<Long> ids) {
+        return ids.stream()
+            .map(linksById::get)
+            .filter(link -> link != null)
+            .sorted(Comparator.comparingLong(TrackedLink::id))
+            .toList();
+    }
+
+    @Override
     public Optional<TrackedLink> findByUrl(String url) {
         Long id = idByUrl.get(url);
         if (id == null) {
@@ -45,9 +55,7 @@ public class InMemoryLinkRepository implements LinkRepository {
 
     @Override
     public List<TrackedLink> findAll() {
-        return linksById.values().stream()
-                .sorted(java.util.Comparator.comparingLong(TrackedLink::id))
-                .toList();
+        return linksById.values().stream().sorted(Comparator.comparingLong(TrackedLink::id)).toList();
     }
 
     @Override

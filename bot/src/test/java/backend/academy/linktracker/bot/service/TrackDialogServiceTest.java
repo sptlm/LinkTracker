@@ -11,6 +11,7 @@ import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredExceptio
 import backend.academy.linktracker.bot.client.scrapper.DuplicateLinkException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.bot.command.CommandContext;
+import backend.academy.linktracker.bot.model.DialogSessionKey;
 import backend.academy.linktracker.bot.repository.UserDialogStateRepository;
 import backend.academy.linktracker.bot.state.TrackDialogState;
 import java.net.URI;
@@ -45,15 +46,19 @@ class TrackDialogServiceTest {
     private TrackDialogService trackDialogService;
 
     private final long chatId = 123L;
+    private final long userId = 456L;
+    private DialogSessionKey sessionKey;
 
     @BeforeEach
     void setUp() {
         when(context.chatId()).thenReturn(chatId);
+        when(context.userId()).thenReturn(userId);
+        sessionKey = new DialogSessionKey(chatId, userId);
     }
 
     @Test
     void processIfActive_returnsFalse_whenNoDialogExists() {
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.empty());
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.empty());
 
         boolean processed = trackDialogService.processIfActive(context);
 
@@ -63,7 +68,7 @@ class TrackDialogServiceTest {
 
     @Test
     void processIfActive_whenWaitingLinkAndInvalidLink_repliesInvalidLink() {
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(TrackDialogState.waitingLink()));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(TrackDialogState.waitingLink()));
         when(context.messageText()).thenReturn("tbank://github.com/user/repo");
         when(supportedLinkParser.parse("tbank://github.com/user/repo")).thenReturn(Optional.empty());
         when(messages.invalidLink()).thenReturn("Некорректная ссылка");
@@ -72,7 +77,7 @@ class TrackDialogServiceTest {
 
         assertTrue(processed);
         verify(context).reply("Некорректная ссылка");
-        verify(stateRepository, never()).save(chatId, TrackDialogState.waitingLink());
+        verify(stateRepository, never()).save(sessionKey, TrackDialogState.waitingLink());
         verify(linkTrackingService, never()).addLink(any(Long.class), any(), any(), any());
     }
 
@@ -81,7 +86,7 @@ class TrackDialogServiceTest {
         URI uri = URI.create("https://github.com/user/repo");
         TrackDialogState state = TrackDialogState.waitingFilters(uri, List.of("java", "spring"));
 
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(state));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
         when(context.messageText()).thenReturn("-");
         when(messages.linkTracked()).thenReturn("Ссылка добавлена");
 
@@ -91,7 +96,7 @@ class TrackDialogServiceTest {
 
         verify(linkTrackingService)
                 .addLink(chatId, "https://github.com/user/repo", List.of("java", "spring"), List.of());
-        verify(stateRepository).delete(chatId);
+        verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
 
@@ -100,7 +105,7 @@ class TrackDialogServiceTest {
         URI uri = URI.create("https://github.com/user/repo");
         TrackDialogState state = TrackDialogState.waitingFilters(uri, List.of("java"));
 
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(state));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
         when(context.messageText()).thenReturn("branch=main, author=spirit");
         when(messages.linkTracked()).thenReturn("Ссылка добавлена");
 
@@ -114,7 +119,7 @@ class TrackDialogServiceTest {
                         "https://github.com/user/repo",
                         List.of("java"),
                         List.of("branch=main", "author=spirit"));
-        verify(stateRepository).delete(chatId);
+        verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
 
@@ -123,7 +128,7 @@ class TrackDialogServiceTest {
         URI uri = URI.create("https://github.com/user/repo");
         TrackDialogState state = TrackDialogState.waitingFilters(uri, List.of("java"));
 
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(state));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
         when(context.messageText()).thenReturn("branch=main");
         when(messages.alreadyTracked()).thenReturn("Вы уже подписаны на эту ссылку");
         org.mockito.Mockito.doThrow(new DuplicateLinkException("duplicate"))
@@ -133,7 +138,7 @@ class TrackDialogServiceTest {
         boolean processed = trackDialogService.processIfActive(context);
 
         assertTrue(processed);
-        verify(stateRepository).delete(chatId);
+        verify(stateRepository).delete(sessionKey);
         verify(context).reply("Вы уже подписаны на эту ссылку");
     }
 
@@ -142,7 +147,7 @@ class TrackDialogServiceTest {
         URI uri = URI.create("https://github.com/user/repo");
         TrackDialogState state = TrackDialogState.waitingFilters(uri, List.of("java"));
 
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(state));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
         when(context.messageText()).thenReturn("branch=main");
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
         org.mockito.Mockito.doThrow(new ChatNotRegisteredException("not registered"))
@@ -152,7 +157,7 @@ class TrackDialogServiceTest {
         boolean processed = trackDialogService.processIfActive(context);
 
         assertTrue(processed);
-        verify(stateRepository).delete(chatId);
+        verify(stateRepository).delete(sessionKey);
         verify(context).reply("Чат не зарегистрирован");
     }
 
@@ -161,7 +166,7 @@ class TrackDialogServiceTest {
         URI uri = URI.create("https://github.com/user/repo");
         TrackDialogState state = TrackDialogState.waitingFilters(uri, List.of("java"));
 
-        when(stateRepository.findByChatId(chatId)).thenReturn(Optional.of(state));
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
         when(context.messageText()).thenReturn("branch=main");
         when(messages.scrapperUnavailable()).thenReturn("Scrapper временно недоступен");
         org.mockito.Mockito.doThrow(new ScrapperClientException("unavailable"))
@@ -171,7 +176,7 @@ class TrackDialogServiceTest {
         boolean processed = trackDialogService.processIfActive(context);
 
         assertTrue(processed);
-        verify(stateRepository).delete(chatId);
+        verify(stateRepository).delete(sessionKey);
         verify(context).reply("Scrapper временно недоступен");
     }
 }

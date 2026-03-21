@@ -37,7 +37,7 @@ public class ListCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.chatId())) {
+        if (!userService.isRegistered(context.userId())) {
             context.reply(messages.chatNotRegistered());
             return;
         }
@@ -50,8 +50,8 @@ public class ListCommand implements Command {
 
             if (tag != null) {
                 links = links.stream()
-                        .filter(link -> link.getTags() != null && link.getTags().contains(tag))
-                        .toList();
+                    .filter(link -> link.getTags() != null && link.getTags().contains(tag))
+                    .toList();
             }
 
             if (links.isEmpty()) {

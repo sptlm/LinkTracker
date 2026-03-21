@@ -10,20 +10,20 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class InMemoryUserRepository implements UserRepository {
 
-    private final Map<Long, User> users = new ConcurrentHashMap<>();
+    private final Map<Long, User> usersById = new ConcurrentHashMap<>();
 
     @Override
-    public boolean existsByChatId(long chatId) {
-        return users.containsKey(chatId);
+    public boolean existsByUserId(long userId) {
+        return usersById.containsKey(userId);
     }
 
     @Override
     public void save(User user) {
-        users.put(user.getChatId(), user);
+        usersById.put(user.getUserId(), user);
     }
 
     @Override
-    public Optional<User> findByChatId(long chatId) {
-        return Optional.ofNullable(users.get(chatId));
+    public Optional<User> findByUserId(long userId) {
+        return Optional.ofNullable(usersById.get(userId));
     }
 }

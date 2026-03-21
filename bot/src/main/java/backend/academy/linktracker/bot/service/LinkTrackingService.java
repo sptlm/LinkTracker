@@ -20,10 +20,6 @@ public class LinkTrackingService {
         scrapperClient.registerChat(chatId);
     }
 
-    public void deleteChat(long chatId) {
-        scrapperClient.deleteChat(chatId);
-    }
-
     public ListLinksResponse getLinks(long chatId) {
         return scrapperClient.getLinks(chatId);
     }
