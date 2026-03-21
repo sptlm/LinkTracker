@@ -40,7 +40,6 @@ class CancelCommandTest {
 
     @Test
     void handle_whenActiveDialogExists_cancelsAndRepliesTrackCancelled() {
-        when(context.chatId()).thenReturn(123L);
         when(trackDialogService.hasActiveDialog(context)).thenReturn(true);
         when(messages.trackCancelled()).thenReturn("Диалог отменен");
 
@@ -52,8 +51,6 @@ class CancelCommandTest {
 
     @Test
     void handle_whenNoActiveDialog_repliesNothingToCancel() {
-        when(context.chatId()).thenReturn(123L);
-        when(trackDialogService.hasActiveDialog(context)).thenReturn(false);
         when(messages.nothingToCancel()).thenReturn("Нечего отменять");
 
         cancelCommand.handle(context);

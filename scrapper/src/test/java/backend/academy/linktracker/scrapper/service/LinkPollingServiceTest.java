@@ -14,6 +14,7 @@ import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
 import java.time.Instant;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,8 +37,14 @@ class LinkPollingServiceTest {
     @Mock
     private UpdatePublisher updatePublisher;
 
-    @InjectMocks
     private LinkPollingService linkPollingService;
+
+    @BeforeEach
+    void setUp() {
+        linkPollingService = new LinkPollingService(
+            linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher);
+    }
+
 
     /**
      * Требование: Планировщик отправляет обновление только пользователям, которые следят за ссылкой.
