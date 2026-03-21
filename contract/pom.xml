@@ -219,7 +219,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/bot-api.yaml</inputSpec>
+                            <inputSpec>${pom.baseUri}/src/main/resources/bot-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <library>spring-boot</library>
                             <apiPackage>backend.academy.linktracker.bot.generated.api</apiPackage>
@@ -239,7 +239,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/scrapper-api.yaml</inputSpec>
+                            <inputSpec>${pom.baseUri}/src/main/resources/scrapper-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
                             <library>spring-boot</library>
                             <apiPackage>backend.academy.linktracker.scrapper.generated.api</apiPackage>
