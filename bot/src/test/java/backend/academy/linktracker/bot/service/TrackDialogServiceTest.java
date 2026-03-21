@@ -66,6 +66,53 @@ class TrackDialogServiceTest {
         verify(context, never()).reply(any());
     }
 
+
+    /**
+     * Требование: Пользователь отправляет /track и корректную ссылку (например, https://github.com/user/repo),
+     * а затем теги и фильтры.
+     * Данные сохранены в локальное хранилище.
+     */
+    @Test
+    void processIfActive_whenWaitingLinkAndValidLink_savesWaitingTagsState() {
+        URI uri = URI.create("https://github.com/user/repo");
+
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(TrackDialogState.waitingLink()));
+        when(context.messageText()).thenReturn("https://github.com/user/repo");
+        when(supportedLinkParser.parse("https://github.com/user/repo")).thenReturn(Optional.of(uri));
+        when(messages.trackAskTags()).thenReturn("Теперь пришлите теги");
+
+        boolean processed = trackDialogService.processIfActive(context);
+
+        assertTrue(processed);
+        verify(stateRepository).save(sessionKey, TrackDialogState.waitingTags(uri));
+        verify(context).reply("Теперь пришлите теги");
+    }
+
+    /**
+     * Требование: Пользователь отправляет /track и корректную ссылку (например, https://github.com/user/repo),
+     * а затем теги и фильтры.
+     * Данные сохранены в локальное хранилище.
+     */
+    @Test
+    void processIfActive_whenWaitingTags_savesWaitingFiltersState() {
+        URI uri = URI.create("https://github.com/user/repo");
+        TrackDialogState state = TrackDialogState.waitingTags(uri);
+
+        when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(state));
+        when(context.messageText()).thenReturn("java, backend");
+        when(messages.trackAskFilters()).thenReturn("Теперь пришлите фильтры");
+
+        boolean processed = trackDialogService.processIfActive(context);
+
+        assertTrue(processed);
+        verify(stateRepository).save(sessionKey, TrackDialogState.waitingFilters(uri, List.of("java", "backend")));
+        verify(context).reply("Теперь пришлите фильтры");
+    }
+
+    /**
+     * Требование: Пользователь отправляет /track и некорректную ссылку (например, tbank://github.com/user/repo).
+     * Бот уведомляет пользователя, что ссылка некорректна.
+     */
     @Test
     void processIfActive_whenWaitingLinkAndInvalidLink_repliesInvalidLink() {
         when(stateRepository.findById(sessionKey)).thenReturn(Optional.of(TrackDialogState.waitingLink()));
@@ -95,11 +142,16 @@ class TrackDialogServiceTest {
         assertTrue(processed);
 
         verify(linkTrackingService)
-                .addLink(chatId, "https://github.com/user/repo", List.of("java", "spring"), List.of());
+            .addLink(chatId, "https://github.com/user/repo", List.of("java", "spring"), List.of());
         verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
 
+    /**
+     * Требование: Пользователь отправляет /track и корректную ссылку (например, https://github.com/user/repo),
+     * а затем теги и фильтры.
+     * Данные сохранены в локальное хранилище.
+     */
     @Test
     void processIfActive_whenWaitingFiltersAndSuccess_repliesLinkTracked() {
         URI uri = URI.create("https://github.com/user/repo");
@@ -114,15 +166,19 @@ class TrackDialogServiceTest {
         assertTrue(processed);
 
         verify(linkTrackingService)
-                .addLink(
-                        chatId,
-                        "https://github.com/user/repo",
-                        List.of("java"),
-                        List.of("branch=main", "author=spirit"));
+            .addLink(
+                chatId,
+                "https://github.com/user/repo",
+                List.of("java"),
+                List.of("branch=main", "author=spirit"));
         verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
 
+    /**
+     * Требование: Пользователь в рамках запроса /track отправляет ссылку, на которую уже подписан.
+     * Бот уведомляет пользователя, что он уже подписан на эту ссылку.
+     */
     @Test
     void processIfActive_whenDuplicateLink_repliesAlreadyTracked() {
         URI uri = URI.create("https://github.com/user/repo");
@@ -132,8 +188,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.alreadyTracked()).thenReturn("Вы уже подписаны на эту ссылку");
         org.mockito.Mockito.doThrow(new DuplicateLinkException("duplicate"))
-                .when(linkTrackingService)
-                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+            .when(linkTrackingService)
+            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 
@@ -151,8 +207,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
         org.mockito.Mockito.doThrow(new ChatNotRegisteredException("not registered"))
-                .when(linkTrackingService)
-                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+            .when(linkTrackingService)
+            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 
@@ -170,8 +226,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.scrapperUnavailable()).thenReturn("Scrapper временно недоступен");
         org.mockito.Mockito.doThrow(new ScrapperClientException("unavailable"))
-                .when(linkTrackingService)
-                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+            .when(linkTrackingService)
+            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 
