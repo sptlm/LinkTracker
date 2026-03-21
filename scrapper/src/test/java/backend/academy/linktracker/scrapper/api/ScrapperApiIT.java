@@ -20,7 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class ScrapperApiIntegrationTest {
+class ScrapperApiIT {
 
     @Autowired
     private MockMvc mockMvc;

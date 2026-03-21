@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(BotUpdatesController.class)
 @Import(BotApiExceptionHandler.class)
-class BotUpdatesControllerIntegrationTest {
+class BotUpdatesControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
