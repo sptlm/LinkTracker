@@ -14,15 +14,21 @@ import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
 import java.time.Instant;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class LinkPollingServiceTest {
+
+    @BeforeEach
+    void setUp() {
+        linkPollingService = new LinkPollingService(
+                linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher);
+    }
 
     @Mock
     private LinkRepository linkRepository;
@@ -36,7 +42,6 @@ class LinkPollingServiceTest {
     @Mock
     private UpdatePublisher updatePublisher;
 
-    @InjectMocks
     private LinkPollingService linkPollingService;
 
     /**
