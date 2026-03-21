@@ -64,7 +64,6 @@ class TelegramUpdateListenerTest {
     @Test
     void shouldDispatchKnownCommand() {
         when(message.text()).thenReturn("/start anything");
-        when(commandRegistry.extractCommandName("/start anything")).thenReturn("/start");
         when(commandRegistry.find("/start")).thenReturn(Optional.of(command));
 
         listener.process(List.of(update));
@@ -76,7 +75,6 @@ class TelegramUpdateListenerTest {
     @Test
     void shouldReplyOnUnknownCommand() {
         when(message.text()).thenReturn("/unknown arg");
-        when(commandRegistry.extractCommandName("/unknown arg")).thenReturn("/unknown");
         when(commandRegistry.find("/unknown")).thenReturn(Optional.empty());
         when(messages.unknownCommand())
                 .thenReturn("Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.");
