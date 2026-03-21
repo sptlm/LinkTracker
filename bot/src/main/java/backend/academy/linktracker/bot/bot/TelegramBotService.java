@@ -6,10 +6,13 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.BotCommand;
 import com.pengrad.telegrambot.request.SetMyCommands;
 import com.pengrad.telegrambot.response.BaseResponse;
-import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -20,11 +23,34 @@ public class TelegramBotService {
     private final TelegramBot bot;
     private final CommandRegistry commandRegistry;
     private final TelegramUpdateListener updateListener;
+    private final AtomicBoolean pollingStarted = new AtomicBoolean(false);
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent.class)
     public void start() {
+        if (!pollingStarted.compareAndSet(false, true)) {
+            return;
+        }
+
+        shuttingDown.set(false);
         registerCommandsMenu();
         startListening();
+    }
+
+    @PreDestroy
+    public void stop() {
+        if (!pollingStarted.compareAndSet(true, false)) {
+            return;
+        }
+
+        shuttingDown.set(true);
+
+        try {
+            bot.removeGetUpdatesListener();
+            log.atInfo().log("Telegram updates listener stopped");
+        } catch (Exception e) {
+            log.atWarn().setCause(e).log("Failed to stop Telegram updates listener cleanly");
+        }
     }
 
     private void registerCommandsMenu() {
@@ -52,19 +78,21 @@ public class TelegramBotService {
     }
 
     private void startListening() {
-        bot.setUpdatesListener(
-                updateListener,
-                // Обработчик ошибок
-                e -> {
-                    if (e.response() != null) {
-                        log.atError()
-                                .addKeyValue("errorCode", e.response().errorCode())
-                                .addKeyValue("description", e.response().description())
-                                .log("Telegram API error during updates polling");
-                    } else {
-                        log.atError().setCause(e).log("Network error during updates polling");
-                    }
-                });
+        bot.setUpdatesListener(updateListener, e -> {
+            if (shuttingDown.get()) {
+                log.atDebug().setCause(e).log("Telegram polling stopped during shutdown");
+                return;
+            }
+
+            if (e.response() != null) {
+                log.atError()
+                        .addKeyValue("errorCode", e.response().errorCode())
+                        .addKeyValue("description", e.response().description())
+                        .log("Telegram API error during updates polling");
+            } else {
+                log.atError().setCause(e).log("Network error during updates polling");
+            }
+        });
 
         log.atInfo().log("Telegram bot started and listening for updates");
     }
