@@ -16,5 +16,5 @@ import org.springframework.validation.annotation.Validated;
 @NoArgsConstructor
 public class BotClientProperties {
     @NotBlank
-    private String botBaseUrl = "http://localhost:8080";
+    private String botBaseUrl;
 }

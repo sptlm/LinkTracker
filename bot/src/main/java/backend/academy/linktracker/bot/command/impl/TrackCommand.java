@@ -28,12 +28,12 @@ public class TrackCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.chatId())) {
+        if (!userService.isRegistered(context.userId())) {
             context.reply(messages.chatNotRegistered());
             return;
         }
 
-        trackDialogService.start(context.chatId());
+        trackDialogService.start(context);
         context.reply(messages.trackStarted());
     }
 }

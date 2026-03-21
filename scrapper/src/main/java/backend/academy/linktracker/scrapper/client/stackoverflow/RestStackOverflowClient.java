@@ -4,11 +4,13 @@ import backend.academy.linktracker.scrapper.api.exception.ExternalServiceExcepti
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionsResponse;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+@Slf4j
 @Component
 public class RestStackOverflowClient implements StackOverflowClient {
 
@@ -38,11 +40,17 @@ public class RestStackOverflowClient implements StackOverflowClient {
 
             return items.getFirst();
         } catch (RestClientResponseException e) {
+            log.atError()
+                    .setCause(e)
+                    .addKeyValue("questionId", questionId)
+                    .addKeyValue("status", e.getStatusCode().value())
+                    .log("StackOverflow request failed");
             throw new ExternalServiceException(
                     "StackOverflow request failed for question %d, status=%d"
                             .formatted(questionId, e.getStatusCode().value()),
                     e);
         } catch (Exception e) {
+            log.atError().setCause(e).addKeyValue("questionId", questionId).log("StackOverflow request failed");
             throw new ExternalServiceException("StackOverflow request failed for question " + questionId, e);
         }
     }

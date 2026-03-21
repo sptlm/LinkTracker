@@ -1,5 +1,6 @@
 package backend.academy.linktracker.bot.repository.impl;
 
+import backend.academy.linktracker.bot.model.DialogSessionKey;
 import backend.academy.linktracker.bot.repository.UserDialogStateRepository;
 import backend.academy.linktracker.bot.state.TrackDialogState;
 import java.util.Map;
@@ -10,20 +11,20 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class InMemoryUserDialogStateRepository implements UserDialogStateRepository {
 
-    private final Map<Long, TrackDialogState> stateByChatId = new ConcurrentHashMap<>();
+    private final Map<DialogSessionKey, TrackDialogState> statesBySessionKey = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<TrackDialogState> findByChatId(long chatId) {
-        return Optional.ofNullable(stateByChatId.get(chatId));
+    public Optional<TrackDialogState> findById(DialogSessionKey sessionKey) {
+        return Optional.ofNullable(statesBySessionKey.get(sessionKey));
     }
 
     @Override
-    public void save(long chatId, TrackDialogState state) {
-        stateByChatId.put(chatId, state);
+    public void save(DialogSessionKey sessionKey, TrackDialogState state) {
+        statesBySessionKey.put(sessionKey, state);
     }
 
     @Override
-    public void delete(long chatId) {
-        stateByChatId.remove(chatId);
+    public void delete(DialogSessionKey sessionKey) {
+        statesBySessionKey.remove(sessionKey);
     }
 }

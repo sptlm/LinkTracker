@@ -29,7 +29,7 @@ class UserServiceTest {
 
     @Test
     void isRegistered_returnsRepositoryValue() {
-        when(userRepository.existsByChatId(123L)).thenReturn(true);
+        when(userRepository.existsByUserId(123L)).thenReturn(true);
 
         assertTrue(userService.isRegistered(123L));
     }
@@ -38,14 +38,14 @@ class UserServiceTest {
     void registerIfAbsent_whenUserAlreadyExists_returnsExistingUser() {
         Message message = org.mockito.Mockito.mock(Message.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
         User existingUser = User.builder()
-                .chatId(123L)
+                .userId(123L)
                 .username("spirit")
                 .firstName("Spirit")
                 .lastName("User")
                 .build();
 
-        when(message.chat().id()).thenReturn(123L);
-        when(userRepository.findByChatId(123L)).thenReturn(java.util.Optional.of(existingUser));
+        when(message.from().id()).thenReturn(123L);
+        when(userRepository.findByUserId(123L)).thenReturn(java.util.Optional.of(existingUser));
 
         RegistrationResult result = userService.registerIfAbsent(message);
 
@@ -58,11 +58,11 @@ class UserServiceTest {
     void registerIfAbsent_whenUserDoesNotExist_savesNewUser() {
         Message message = org.mockito.Mockito.mock(Message.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
 
-        when(message.chat().id()).thenReturn(123L);
+        when(message.from().id()).thenReturn(123L);
         when(message.from().username()).thenReturn("spirit");
         when(message.from().firstName()).thenReturn("Spirit");
         when(message.from().lastName()).thenReturn("User");
-        when(userRepository.findByChatId(123L)).thenReturn(java.util.Optional.empty());
+        when(userRepository.findByUserId(123L)).thenReturn(java.util.Optional.empty());
 
         RegistrationResult result = userService.registerIfAbsent(message);
 
@@ -70,7 +70,7 @@ class UserServiceTest {
         verify(userRepository).save(captor.capture());
 
         User savedUser = captor.getValue();
-        org.junit.jupiter.api.Assertions.assertEquals(123L, savedUser.getChatId());
+        org.junit.jupiter.api.Assertions.assertEquals(123L, savedUser.getUserId());
         org.junit.jupiter.api.Assertions.assertEquals("spirit", savedUser.getUsername());
         org.junit.jupiter.api.Assertions.assertEquals("Spirit", savedUser.getFirstName());
         org.junit.jupiter.api.Assertions.assertEquals("User", savedUser.getLastName());

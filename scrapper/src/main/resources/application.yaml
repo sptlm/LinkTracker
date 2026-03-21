@@ -7,13 +7,13 @@ spring:
 
 app:
   clients:
-    bot-base-url: http://localhost:8080
+    bot-base-url: ${BOT_BASE_URL}
   stackoverflow:
-    base-url: https://api.stackexchange.com/2.3
-    key: ${STACKOVERFLOW_KEY} # Use env variable. DO NOT KEEP TOKEN HERE
-    access-token: ${STACKOVERFLOW_ACCESS_KEY} # Use env variable. DO NOT KEEP TOKEN HERE
+    base-url: ${STACKOVERFLOW_BASE_URL}
+    key: ${STACKOVERFLOW_KEY}
+    access-token: ${STACKOVERFLOW_ACCESS_KEY}
   github:
-    base-url: https://api.github.com
-    token: ${GITHUB_TOKEN:asd} # Use env variable. DO NOT KEEP TOKEN HERE
+    base-url: ${GITHUB_BASE_URL}
+    token: ${GITHUB_TOKEN}
   polling:
-    interval: 60000
+    interval: 60s

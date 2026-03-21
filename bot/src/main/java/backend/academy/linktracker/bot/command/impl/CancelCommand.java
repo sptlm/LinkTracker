@@ -26,8 +26,8 @@ public class CancelCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (trackDialogService.hasActiveDialog(context.chatId())) {
-            trackDialogService.cancel(context.chatId());
+        if (trackDialogService.hasActiveDialog(context)) {
+            trackDialogService.cancel(context);
             context.reply(messages.trackCancelled());
             return;
         }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandRegistry;
 import backend.academy.linktracker.bot.service.BotMessagesService;
+import backend.academy.linktracker.bot.service.BotRegistrationService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Chat;
@@ -39,6 +40,9 @@ class TelegramUpdateListenerTest {
     private TrackDialogService trackDialogService;
 
     @Mock
+    private BotRegistrationService botRegistrationService;
+
+    @Mock
     private Command command;
 
     @Mock
@@ -54,17 +58,18 @@ class TelegramUpdateListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService);
+        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService, botRegistrationService);
 
         lenient().when(update.message()).thenReturn(message);
         lenient().when(message.chat()).thenReturn(chat);
         lenient().when(chat.id()).thenReturn(777L);
+        lenient().when(message.from()).thenReturn(org.mockito.Mockito.mock(com.pengrad.telegrambot.model.User.class));
+        lenient().when(message.from().id()).thenReturn(111L);
     }
 
     @Test
     void shouldDispatchKnownCommand() {
         when(message.text()).thenReturn("/start anything");
-        when(commandRegistry.extractCommandName("/start anything")).thenReturn("/start");
         when(commandRegistry.find("/start")).thenReturn(Optional.of(command));
 
         listener.process(List.of(update));
@@ -76,13 +81,13 @@ class TelegramUpdateListenerTest {
     @Test
     void shouldReplyOnUnknownCommand() {
         when(message.text()).thenReturn("/unknown arg");
-        when(commandRegistry.extractCommandName("/unknown arg")).thenReturn("/unknown");
         when(commandRegistry.find("/unknown")).thenReturn(Optional.empty());
         when(messages.unknownCommand())
                 .thenReturn("Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд.");
 
         listener.process(List.of(update));
 
+        verify(botRegistrationService).ensureRegistered(any());
         verify(bot).execute(any(SendMessage.class));
     }
 

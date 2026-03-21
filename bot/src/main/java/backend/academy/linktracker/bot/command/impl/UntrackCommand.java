@@ -30,7 +30,7 @@ public class UntrackCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.chatId())) {
+        if (!userService.isRegistered(context.userId())) {
             context.reply(messages.chatNotRegistered());
             return;
         }

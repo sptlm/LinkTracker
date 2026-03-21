@@ -5,8 +5,10 @@ import java.util.List;
 
 public record TrackDialogState(TrackDialogStep step, URI url, List<String> tags) {
 
+    private static final TrackDialogState WAITING_LINK = new TrackDialogState(TrackDialogStep.WAITING_LINK, null, List.of());
+
     public static TrackDialogState waitingLink() {
-        return new TrackDialogState(TrackDialogStep.WAITING_LINK, null, List.of());
+        return WAITING_LINK;
     }
 
     public static TrackDialogState waitingTags(URI url) {

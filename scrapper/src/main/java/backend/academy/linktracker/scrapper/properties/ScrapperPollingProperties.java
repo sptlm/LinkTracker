@@ -1,6 +1,6 @@
 package backend.academy.linktracker.scrapper.properties;
 
-import jakarta.validation.constraints.NotNull;
+import java.time.Duration;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +16,5 @@ import org.springframework.validation.annotation.Validated;
 @NoArgsConstructor
 public class ScrapperPollingProperties {
 
-    @NotNull
-    private String interval = "60000";
+    private Duration interval;
 }

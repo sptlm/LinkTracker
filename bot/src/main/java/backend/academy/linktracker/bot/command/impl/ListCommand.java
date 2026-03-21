@@ -3,7 +3,6 @@ package backend.academy.linktracker.bot.command.impl;
 import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
-import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
@@ -37,7 +36,7 @@ public class ListCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.chatId())) {
+        if (!userService.isRegistered(context.userId())) {
             context.reply(messages.chatNotRegistered());
             return;
         }
@@ -46,7 +45,7 @@ public class ListCommand implements Command {
 
         try {
             ListLinksResponse response = linkTrackingService.getLinks(context.chatId());
-            List<LinksPost200Response> links = response.getLinks() == null ? List.of() : response.getLinks();
+            List<LinkResponse> links = response.getLinks() == null ? List.of() : response.getLinks();
 
             if (tag != null) {
                 links = links.stream()
@@ -79,7 +78,7 @@ public class ListCommand implements Command {
         return parts[1].trim();
     }
 
-    private String formatLink(LinksPost200Response link) {
+    private String formatLink(LinkResponse link) {
         StringBuilder sb = new StringBuilder(link.getUrl().toString());
 
         if (link.getTags() != null && !link.getTags().isEmpty()) {

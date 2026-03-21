@@ -1,12 +1,12 @@
 package backend.academy.linktracker.scrapper.service;
 
-import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
-import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
-import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
-import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import backend.academy.linktracker.scrapper.api.exception.InvalidRequestException;
 import backend.academy.linktracker.scrapper.api.exception.LinkAlreadyTrackedException;
 import backend.academy.linktracker.scrapper.api.exception.TrackedLinkNotFoundException;
+import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
+import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
+import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
+import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import backend.academy.linktracker.scrapper.model.LinkSubscription;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.parser.ParsedLink;
@@ -15,8 +15,10 @@ import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import java.net.URI;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +31,7 @@ public class LinkTrackingService {
     private final SubscriptionRepository subscriptionRepository;
     private final SupportedLinkParser supportedLinkParser;
 
-    public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
+    public LinkResponse addLink(long chatId, AddLinkRequest request) {
         chatService.ensureExists(chatId);
 
         if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
@@ -54,7 +56,7 @@ public class LinkTrackingService {
         return toResponse(trackedLink, subscription);
     }
 
-    public LinksPost200Response removeLink(long chatId, RemoveLinkRequest request) {
+    public LinkResponse removeLink(long chatId, RemoveLinkRequest request) {
         chatService.ensureExists(chatId);
 
         if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
@@ -83,12 +85,16 @@ public class LinkTrackingService {
     public ListLinksResponse getLinks(long chatId) {
         chatService.ensureExists(chatId);
 
-        List<LinksPost200Response> links = subscriptionRepository.findByChatId(chatId).stream()
-                .map(subscription -> linkRepository
-                        .findById(subscription.linkId())
-                        .map(link -> toResponse(link, subscription))
-                        .orElse(null))
-                .filter(response -> response != null)
+        List<LinkSubscription> subscriptions = subscriptionRepository.findByChatId(chatId);
+        Map<Long, LinkSubscription> subscriptionsByLinkId = subscriptions.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        LinkSubscription::linkId,
+                        subscription -> subscription,
+                        (left, right) -> left,
+                        LinkedHashMap::new));
+
+        List<LinkResponse> links = linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
+                .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
                 .toList();
 
         return new ListLinksResponse().links(links).size(links.size());
@@ -106,8 +112,12 @@ public class LinkTrackingService {
                         null)));
     }
 
-    private LinksPost200Response toResponse(TrackedLink link, LinkSubscription subscription) {
-        return new LinksPost200Response().id(link.id()).url(URI.create(link.url())).tags(subscription.tags()).filters(subscription.filters());
+    private LinkResponse toResponse(TrackedLink link, LinkSubscription subscription) {
+        return new LinkResponse()
+                .id(link.id())
+                .url(URI.create(link.url()))
+                .tags(subscription.tags())
+                .filters(subscription.filters());
     }
 
     private List<String> normalizeList(List<String> values) {

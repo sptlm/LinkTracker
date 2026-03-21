@@ -9,10 +9,10 @@ import lombok.ToString;
 @Getter
 @Builder
 @ToString
-@EqualsAndHashCode(of = "chatId")
+@EqualsAndHashCode(of = "userId")
 public class User {
 
-    private final long chatId;
+    private final long userId;
 
     private final String username;
 
@@ -22,7 +22,6 @@ public class User {
 
     private final Instant registeredAt;
 
-    // Приоритет: firstName → @username → "пользователь"
     public String displayName() {
         if (firstName != null && !firstName.isBlank()) {
             return firstName;

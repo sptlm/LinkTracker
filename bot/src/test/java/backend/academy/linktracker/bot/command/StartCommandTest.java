@@ -8,9 +8,8 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.bot.command.impl.StartCommand;
 import backend.academy.linktracker.bot.model.User;
 import backend.academy.linktracker.bot.service.BotMessagesService;
-import backend.academy.linktracker.bot.service.LinkTrackingService;
+import backend.academy.linktracker.bot.service.BotRegistrationService;
 import backend.academy.linktracker.bot.service.RegistrationResult;
-import backend.academy.linktracker.bot.service.UserService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
@@ -29,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class StartCommandTest {
 
     @Mock
-    private UserService userService;
+    private BotRegistrationService botRegistrationService;
 
     @Mock
     private BotMessagesService messages;
@@ -43,9 +42,6 @@ class StartCommandTest {
     @Mock
     private Chat chat;
 
-    @Mock
-    private LinkTrackingService linkTrackingService;
-
     @Captor
     private ArgumentCaptor<SendMessage> sendMessageCaptor;
 
@@ -53,21 +49,20 @@ class StartCommandTest {
 
     @BeforeEach
     void setUp() {
-        startCommand = new StartCommand(userService, linkTrackingService, messages);
+        startCommand = new StartCommand(botRegistrationService, messages);
 
         lenient().when(message.chat()).thenReturn(chat);
         lenient().when(chat.id()).thenReturn(123L);
+        lenient().when(message.from()).thenReturn(org.mockito.Mockito.mock(com.pengrad.telegrambot.model.User.class));
+        lenient().when(message.from().id()).thenReturn(99L);
     }
 
     @Test
     void shouldSendWelcomeMessageForNewUser() {
-        User user = User.builder()
-                .chatId(123L)
-                .firstName("Ivan")
-                .registeredAt(Instant.now())
-                .build();
+        User user = User.builder().userId(99L).firstName("Ivan").registeredAt(Instant.now()).build();
 
-        when(userService.registerIfAbsent(message)).thenReturn(new RegistrationResult(user, true));
+        when(botRegistrationService.ensureRegistered(new CommandContext(bot, message)))
+                .thenReturn(new RegistrationResult(user, true));
         when(messages.startWelcome("Ivan"))
                 .thenReturn("Добро пожаловать, Ivan! Используйте /help, чтобы посмотреть доступные команды.");
 
@@ -84,13 +79,10 @@ class StartCommandTest {
 
     @Test
     void shouldSendWelcomeBackMessageForExistingUser() {
-        User user = User.builder()
-                .chatId(123L)
-                .firstName("Ivan")
-                .registeredAt(Instant.now())
-                .build();
+        User user = User.builder().userId(99L).firstName("Ivan").registeredAt(Instant.now()).build();
 
-        when(userService.registerIfAbsent(message)).thenReturn(new RegistrationResult(user, false));
+        when(botRegistrationService.ensureRegistered(new CommandContext(bot, message)))
+                .thenReturn(new RegistrationResult(user, false));
         when(messages.welcomeBack("Ivan"))
                 .thenReturn("С возвращением, Ivan! Используйте /help, чтобы посмотреть доступные команды.");
 

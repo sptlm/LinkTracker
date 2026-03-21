@@ -7,7 +7,7 @@ public interface UserRepository {
 
     void save(User user);
 
-    boolean existsByChatId(long chatId);
+    boolean existsByUserId(long userId);
 
-    Optional<User> findByChatId(long chatId);
+    Optional<User> findByUserId(long userId);
 }
