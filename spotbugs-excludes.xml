@@ -68,4 +68,8 @@
     <Match>
         <Package name="~.*\.jmh_generated"/>
     </Match>
+    <Match>
+        <Package name="~backend\.academy\.linktracker\..*\.generated\..*"/>
+        <Bug pattern="XSS_SERVLET"/>
+    </Match>
 </FindBugsFilter>

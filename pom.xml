@@ -309,6 +309,9 @@
                         <rulesets>
                             <ruleset>pmd.xml</ruleset>
                         </rulesets>
+                        <excludeRoots>
+                            <excludeRoot>${project.build.directory}/generated-sources</excludeRoot>
+                        </excludeRoots>
                     </configuration>
                     <dependencies>
                         <dependency>

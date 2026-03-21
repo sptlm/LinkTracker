@@ -9,7 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.client.RestClient;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(classes = TestScrapperApplication.class)
 @Import(TestcontainersConfiguration.class)
 public class EndToEndIntegrationTest {
