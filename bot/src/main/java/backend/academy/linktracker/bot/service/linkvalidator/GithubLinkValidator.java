@@ -26,8 +26,6 @@ public class GithubLinkValidator implements LinkValidator {
         }
 
         String[] segments = path.split("/");
-        return segments.length == 3 || (segments.length == 4 && segments[3].isEmpty())
-                ? !segments[1].isEmpty() && !segments[2].isEmpty()
-                : false;
+        return (segments.length == 3 || (segments.length == 4 && segments[3].isEmpty())) && !segments[1].isEmpty() && !segments[2].isEmpty();
     }
 }

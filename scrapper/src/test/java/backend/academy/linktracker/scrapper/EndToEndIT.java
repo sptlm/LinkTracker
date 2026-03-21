@@ -14,7 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(classes = TestScrapperApplication.class)
 @Import(TestcontainersConfiguration.class)
-public class EndToEndIntegrationTest {
+public class EndToEndIT {
 
     @Autowired
     @Qualifier("scrapperContainer")

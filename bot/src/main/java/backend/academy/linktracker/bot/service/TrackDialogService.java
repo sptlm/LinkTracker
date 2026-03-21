@@ -63,7 +63,7 @@ public class TrackDialogService {
         return true;
     }
 
-    private void handleWaitingLink(CommandContext context, TrackDialogState state) {
+    private void handleWaitingLink(CommandContext context, TrackDialogState ignored) {
         URI uri = supportedLinkParser.parse(context.messageText()).orElse(null);
         if (uri == null) {
             context.reply(messages.invalidLink());
