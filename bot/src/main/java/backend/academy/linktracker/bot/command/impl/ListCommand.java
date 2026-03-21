@@ -2,8 +2,9 @@ package backend.academy.linktracker.bot.command.impl;
 
 import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
-import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
+import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
+import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
+import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.service.BotMessagesService;
@@ -45,11 +46,11 @@ public class ListCommand implements Command {
 
         try {
             ListLinksResponse response = linkTrackingService.getLinks(context.chatId());
-            List<LinkResponse> links = response.links() == null ? List.of() : response.links();
+            List<LinksPost200Response> links = response.getLinks() == null ? List.of() : response.getLinks();
 
             if (tag != null) {
                 links = links.stream()
-                        .filter(link -> link.tags() != null && link.tags().contains(tag))
+                        .filter(link -> link.getTags() != null && link.getTags().contains(tag))
                         .toList();
             }
 
@@ -78,15 +79,15 @@ public class ListCommand implements Command {
         return parts[1].trim();
     }
 
-    private String formatLink(LinkResponse link) {
-        StringBuilder sb = new StringBuilder(link.url());
+    private String formatLink(LinksPost200Response link) {
+        StringBuilder sb = new StringBuilder(link.getUrl().toString());
 
-        if (link.tags() != null && !link.tags().isEmpty()) {
-            sb.append("\nТеги: ").append(String.join(", ", link.tags()));
+        if (link.getTags() != null && !link.getTags().isEmpty()) {
+            sb.append("\nТеги: ").append(String.join(", ", link.getTags()));
         }
 
-        if (link.filters() != null && !link.filters().isEmpty()) {
-            sb.append("\nФильтры: ").append(String.join(", ", link.filters()));
+        if (link.getFilters() != null && !link.getFilters().isEmpty()) {
+            sb.append("\nФильтры: ").append(String.join(", ", link.getFilters()));
         }
 
         return sb.toString();

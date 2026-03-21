@@ -62,7 +62,7 @@ public class TelegramUpdateListener implements UpdatesListener {
     }
 
     private void processCommand(CommandContext context, String messageText) {
-        String commandName = commandRegistry.extractCommandName(messageText);
+        String commandName = extractCommandName(messageText);
 
         if (trackDialogService.hasActiveDialog(context.chatId()) && !"/cancel".equals(commandName)) {
             trackDialogService.cancel(context.chatId());
@@ -102,5 +102,9 @@ public class TelegramUpdateListener implements UpdatesListener {
 
                             context.reply(messages.unknownCommand());
                         });
+    }
+
+    private String extractCommandName(String text) {
+        return text.trim().split("\\s+", 2)[0];
     }
 }

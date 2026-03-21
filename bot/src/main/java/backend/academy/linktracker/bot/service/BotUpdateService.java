@@ -1,6 +1,6 @@
 package backend.academy.linktracker.bot.service;
 
-import backend.academy.linktracker.bot.api.dto.LinkUpdateRequest;
+import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
 import java.util.List;
@@ -16,9 +16,9 @@ public class BotUpdateService {
     private final TelegramBot bot;
     private final BotMessagesService messages;
 
-    public void processUpdate(LinkUpdateRequest request) {
-        String text = messages.updatesMessage(request.url(), request.description());
-        List<Long> chatIds = request.tgChatIds() == null ? List.of() : request.tgChatIds();
+    public void processUpdate(LinkUpdate request) {
+        String text = messages.updatesMessage(String.valueOf(request.getUrl()), request.getDescription());
+        List<Long> chatIds = request.getTgChatIds() == null ? List.of() : request.getTgChatIds();
 
         for (Long chatId : chatIds) {
             if (chatId == null) {
@@ -30,15 +30,15 @@ public class BotUpdateService {
 
                 log.atInfo()
                         .addKeyValue("chatId", chatId)
-                        .addKeyValue("linkId", request.id())
-                        .addKeyValue("url", request.url())
+                        .addKeyValue("linkId", request.getId())
+                        .addKeyValue("url", request.getUrl())
                         .log("Update notification sent");
             } catch (Exception e) {
                 log.atWarn()
                         .setCause(e)
                         .addKeyValue("chatId", chatId)
-                        .addKeyValue("linkId", request.id())
-                        .addKeyValue("url", request.url())
+                        .addKeyValue("linkId", request.getId())
+                        .addKeyValue("url", request.getUrl())
                         .log("Failed to send update notification");
             }
         }

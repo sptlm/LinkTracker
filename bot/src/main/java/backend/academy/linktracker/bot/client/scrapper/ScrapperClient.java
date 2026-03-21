@@ -1,9 +1,9 @@
 package backend.academy.linktracker.bot.client.scrapper;
 
-import backend.academy.linktracker.bot.client.scrapper.dto.AddLinkRequest;
-import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.RemoveLinkRequest;
+import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
+import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
+import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
+import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 
 public interface ScrapperClient {
 

@@ -1,9 +1,9 @@
 package backend.academy.linktracker.bot.client.scrapper;
 
-import backend.academy.linktracker.bot.client.scrapper.dto.AddLinkRequest;
-import backend.academy.linktracker.bot.client.scrapper.dto.LinkResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.ListLinksResponse;
-import backend.academy.linktracker.bot.client.scrapper.dto.RemoveLinkRequest;
+import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
+import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
+import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
+import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
@@ -56,7 +56,7 @@ public class HttpScrapperClient implements ScrapperClient {
                     .retrieve()
                     .body(ListLinksResponse.class);
 
-            return response != null ? response : new ListLinksResponse(List.of(), 0);
+            return response != null ? response : new ListLinksResponse().links(List.of()).size(0);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
         } catch (RestClientException e) {

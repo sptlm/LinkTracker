@@ -1,6 +1,6 @@
 package backend.academy.linktracker.bot.api;
 
-import backend.academy.linktracker.bot.api.dto.ApiErrorResponse;
+import backend.academy.linktracker.bot.generated.dto.ApiErrorResponse;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,24 +15,22 @@ public class BotApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleValidation(MethodArgumentNotValidException e) {
-        return ApiErrorResponse.builder()
+        return new ApiErrorResponse()
                 .description("Некорректные параметры запроса")
                 .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
                 .exceptionName(e.getClass().getSimpleName())
                 .exceptionMessage(e.getMessage())
-                .stacktrace(List.of())
-                .build();
+                .stacktrace(List.of());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiErrorResponse handleUnreadableBody(HttpMessageNotReadableException e) {
-        return ApiErrorResponse.builder()
-                .description("Некорректные параметры запроса")
-                .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
-                .exceptionName(e.getClass().getSimpleName())
-                .exceptionMessage(e.getMessage())
-                .stacktrace(List.of())
-                .build();
+        return new ApiErrorResponse()
+            .description("Некорректные параметры запроса")
+            .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+            .exceptionName(e.getClass().getSimpleName())
+            .exceptionMessage(e.getMessage())
+            .stacktrace(List.of());
     }
 }

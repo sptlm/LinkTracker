@@ -1,6 +1,7 @@
 package backend.academy.linktracker.bot.api;
 
-import backend.academy.linktracker.bot.api.dto.LinkUpdateRequest;
+import backend.academy.linktracker.bot.generated.api.UpdatesApi;
+import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.bot.service.BotUpdateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class BotUpdatesController {
+public class BotUpdatesController implements UpdatesApi {
 
     private final BotUpdateService botUpdateService;
 
+    @Override
     @PostMapping("/updates")
-    public ResponseEntity<Void> updates(@Valid @RequestBody LinkUpdateRequest request) {
+    public ResponseEntity<Void> updatesPost(@Valid @RequestBody LinkUpdate request) {
         botUpdateService.processUpdate(request);
         return ResponseEntity.ok().build();
     }

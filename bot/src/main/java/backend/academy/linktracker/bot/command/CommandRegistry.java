@@ -28,7 +28,5 @@ public class CommandRegistry {
                 .toList();
     }
 
-    public String extractCommandName(String text) {
-        return text.trim().split("\\s+", 2)[0];
-    }
+
 }

@@ -1,11 +1,12 @@
 package backend.academy.linktracker.scrapper.service;
 
-import backend.academy.linktracker.scrapper.client.bot.dto.LinkUpdateRequest;
+import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +58,7 @@ public class LinkPollingService {
             return;
         }
 
-        LinkUpdateRequest request = new LinkUpdateRequest(link.id(), link.url(), result.description(), chatIds);
+        LinkUpdate request = new LinkUpdate().id(link.id()).url(URI.create(link.url())).description(result.description()).tgChatIds(chatIds);
 
         updatePublisher.publish(request);
 

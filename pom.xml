@@ -29,6 +29,7 @@
         <module>bot</module>
         <module>build-report-aggregate</module>
         <module>scrapper</module>
+        <module>contract</module>
     </modules>
 
     <scm>

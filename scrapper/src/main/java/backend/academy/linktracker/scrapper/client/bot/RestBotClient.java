@@ -1,7 +1,7 @@
 package backend.academy.linktracker.scrapper.client.bot;
 
+import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
-import backend.academy.linktracker.scrapper.client.bot.dto.LinkUpdateRequest;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,7 +17,7 @@ public class RestBotClient implements BotClient {
     }
 
     @Override
-    public void sendUpdate(LinkUpdateRequest request) {
+    public void sendUpdate(LinkUpdate request) {
         try {
             restClient.post().uri("/updates").body(request).retrieve().toBodilessEntity();
         } catch (RestClientResponseException e) {

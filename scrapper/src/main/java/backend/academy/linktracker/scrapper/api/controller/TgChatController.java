@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.api.controller;
 
+import backend.academy.linktracker.scrapper.generated.api.TgChatApi;
 import backend.academy.linktracker.scrapper.service.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/tg-chat")
 @RequiredArgsConstructor
-public class TgChatController {
+public class TgChatController implements TgChatApi {
 
     private final ChatService chatService;
 
@@ -26,5 +27,15 @@ public class TgChatController {
     public ResponseEntity<Void> delete(@PathVariable("id") long chatId) {
         chatService.delete(chatId);
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> tgChatIdDelete(Long id) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<Void> tgChatIdPost(Long id) {
+        return null;
     }
 }
