@@ -18,24 +18,14 @@ public class TgChatController implements TgChatApi {
     private final ChatService chatService;
 
     @PostMapping("/{id}")
-    public ResponseEntity<Void> register(@PathVariable("id") long chatId) {
+    public ResponseEntity<Void> tgChatIdPost(@PathVariable("id") Long chatId) {
         chatService.register(chatId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") long chatId) {
+    public ResponseEntity<Void> tgChatIdDelete(@PathVariable("id") Long chatId) {
         chatService.delete(chatId);
         return ResponseEntity.ok().build();
-    }
-
-    @Override
-    public ResponseEntity<Void> tgChatIdDelete(Long id) {
-        return null;
-    }
-
-    @Override
-    public ResponseEntity<Void> tgChatIdPost(Long id) {
-        return null;
     }
 }
