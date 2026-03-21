@@ -14,8 +14,8 @@ public class ExternalClientsConfig {
     @Bean
     public RestClient githubRestClient(RestClient.Builder builder, GithubProperties githubProperties) {
         RestClient.Builder clientBuilder = builder.baseUrl(githubProperties.getBaseUrl())
-            .defaultHeader("Accept", "application/vnd.github+json")
-            .defaultHeader("X-GitHub-Api-Version", "2022-11-28");
+                .defaultHeader("Accept", "application/vnd.github+json")
+                .defaultHeader("X-GitHub-Api-Version", "2022-11-28");
 
         if (StringUtils.hasText(githubProperties.getToken())) {
             clientBuilder.defaultHeader("Authorization", "Bearer " + githubProperties.getToken());
@@ -26,16 +26,16 @@ public class ExternalClientsConfig {
 
     @Bean
     public RestClient stackOverflowRestClient(
-        RestClient.Builder builder, StackoverflowProperties stackoverflowProperties) {
+            RestClient.Builder builder, StackoverflowProperties stackoverflowProperties) {
         return builder.baseUrl(stackoverflowProperties.getBaseUrl())
-            .defaultHeader("Accept", "application/json")
-            .build();
+                .defaultHeader("Accept", "application/json")
+                .build();
     }
 
     @Bean
     public RestClient botRestClient(RestClient.Builder builder, BotClientProperties properties) {
         return builder.baseUrl(properties.getBotBaseUrl())
-            .defaultHeader("Accept", "application/json")
-            .build();
+                .defaultHeader("Accept", "application/json")
+                .build();
     }
 }

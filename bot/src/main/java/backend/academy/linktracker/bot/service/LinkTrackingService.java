@@ -25,7 +25,8 @@ public class LinkTrackingService {
     }
 
     public LinkResponse addLink(long chatId, String link, List<String> tags, List<String> filters) {
-        return scrapperClient.addLink(chatId, new AddLinkRequest().link(URI.create(link)).tags(tags).filters(filters));
+        return scrapperClient.addLink(
+                chatId, new AddLinkRequest().link(URI.create(link)).tags(tags).filters(filters));
     }
 
     public LinkResponse removeLink(long chatId, String link) {

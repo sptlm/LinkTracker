@@ -32,17 +32,19 @@ class ScrapperApiIntegrationTest {
     void shouldAddAndGetLinkForRegisteredChat() throws Exception {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
 
-        mockMvc.perform(post("/links")
-                .header("Tg-Chat-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\",\"tags\":[\"java\"],\"filters\":[\"branch=main\"]}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.url").value("https://github.com/user/repo"));
+        mockMvc.perform(
+                        post("/links")
+                                .header("Tg-Chat-Id", 1)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"link\":\"https://github.com/user/repo\",\"tags\":[\"java\"],\"filters\":[\"branch=main\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value("https://github.com/user/repo"));
 
         mockMvc.perform(get("/links").header("Tg-Chat-Id", 1))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.size").value(1))
-            .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
     }
 
     /**
@@ -53,20 +55,20 @@ class ScrapperApiIntegrationTest {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
 
         mockMvc.perform(post("/links")
-                .header("Tg-Chat-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isOk());
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(delete("/links")
-                .header("Tg-Chat-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isOk());
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/links").header("Tg-Chat-Id", 1))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.size").value(0));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(0));
     }
 
     /**
@@ -77,21 +79,21 @@ class ScrapperApiIntegrationTest {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
 
         mockMvc.perform(post("/links")
-                .header("Tg-Chat-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isOk());
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(delete("/links")
-                .header("Tg-Chat-Id", 999)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isNotFound());
+                        .header("Tg-Chat-Id", 999)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/links").header("Tg-Chat-Id", 1))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.size").value(1))
-            .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(1))
+                .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
     }
 
     /**
@@ -102,10 +104,10 @@ class ScrapperApiIntegrationTest {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
 
         mockMvc.perform(post("/links")
-                .header("Tg-Chat-Id", 2)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isNotFound());
+                        .header("Tg-Chat-Id", 2)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isNotFound());
     }
 
     /**
@@ -117,10 +119,10 @@ class ScrapperApiIntegrationTest {
         mockMvc.perform(delete("/tg-chat/1")).andExpect(status().isOk());
 
         mockMvc.perform(post("/links")
-                .header("Tg-Chat-Id", 1)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"link\":\"https://github.com/user/repo\"}"))
-            .andExpect(status().isNotFound());
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isNotFound());
     }
 
     /**

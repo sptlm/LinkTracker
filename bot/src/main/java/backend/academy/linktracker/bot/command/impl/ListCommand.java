@@ -2,14 +2,13 @@ package backend.academy.linktracker.bot.command.impl;
 
 import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
-import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
-import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
-import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
 import backend.academy.linktracker.bot.service.UserService;
+import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
+import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +49,8 @@ public class ListCommand implements Command {
 
             if (tag != null) {
                 links = links.stream()
-                    .filter(link -> link.getTags() != null && link.getTags().contains(tag))
-                    .toList();
+                        .filter(link -> link.getTags() != null && link.getTags().contains(tag))
+                        .toList();
             }
 
             if (links.isEmpty()) {

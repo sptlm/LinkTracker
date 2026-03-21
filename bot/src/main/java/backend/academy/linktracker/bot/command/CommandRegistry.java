@@ -27,6 +27,4 @@ public class CommandRegistry {
                 .sorted(Comparator.comparing(Command::command))
                 .toList();
     }
-
-
 }

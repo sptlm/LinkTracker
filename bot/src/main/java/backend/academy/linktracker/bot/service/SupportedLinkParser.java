@@ -26,10 +26,10 @@ public class SupportedLinkParser {
             }
 
             return linkValidators.stream()
-                .filter(validator -> validator.supports(uri))
-                .filter(validator -> validator.isValid(uri))
-                .findFirst()
-                .map(validator -> uri);
+                    .filter(validator -> validator.supports(uri))
+                    .filter(validator -> validator.isValid(uri))
+                    .findFirst()
+                    .map(validator -> uri);
         } catch (URISyntaxException e) {
             return Optional.empty();
         }

@@ -3,10 +3,9 @@ package backend.academy.linktracker.scrapper.parser.site;
 import backend.academy.linktracker.scrapper.api.exception.UnsupportedLinkException;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.parser.ParsedLink;
-import org.springframework.stereotype.Component;
-
 import java.net.URI;
 import java.util.Locale;
+import org.springframework.stereotype.Component;
 
 @Component
 public class GithubSiteLinkParser implements SiteLinkParser {

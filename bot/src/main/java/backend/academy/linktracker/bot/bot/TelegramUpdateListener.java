@@ -31,7 +31,10 @@ public class TelegramUpdateListener implements UpdatesListener {
             try {
                 processUpdate(update);
             } catch (Exception e) {
-                log.atError().setCause(e).addKeyValue("updateId", update.updateId()).log("Failed to process update");
+                log.atError()
+                        .setCause(e)
+                        .addKeyValue("updateId", update.updateId())
+                        .log("Failed to process update");
             }
         }
         return CONFIRMED_UPDATES_ALL;
@@ -56,11 +59,11 @@ public class TelegramUpdateListener implements UpdatesListener {
         CommandContext context = new CommandContext(bot, message);
 
         log.atInfo()
-            .addKeyValue("chatId", context.chatId())
-            .addKeyValue("userId", context.userId())
-            .addKeyValue("username", context.username())
-            .addKeyValue("messageText", messageText)
-            .log("Received message");
+                .addKeyValue("chatId", context.chatId())
+                .addKeyValue("userId", context.userId())
+                .addKeyValue("username", context.username())
+                .addKeyValue("messageText", messageText)
+                .log("Received message");
 
         if (messageText.startsWith("/")) {
             processCommand(context, messageText);
@@ -70,9 +73,9 @@ public class TelegramUpdateListener implements UpdatesListener {
         botRegistrationService.ensureRegistered(context);
         if (trackDialogService.processIfActive(context)) {
             log.atInfo()
-                .addKeyValue("chatId", context.chatId())
-                .addKeyValue("userId", context.userId())
-                .log("Track dialog step processed");
+                    .addKeyValue("chatId", context.chatId())
+                    .addKeyValue("userId", context.userId())
+                    .log("Track dialog step processed");
         }
     }
 
@@ -87,44 +90,44 @@ public class TelegramUpdateListener implements UpdatesListener {
             trackDialogService.cancel(context);
 
             log.atInfo()
-                .addKeyValue("chatId", context.chatId())
-                .addKeyValue("userId", context.userId())
-                .addKeyValue("cancelledByCommand", commandName)
-                .log("Active dialog cancelled by another command");
+                    .addKeyValue("chatId", context.chatId())
+                    .addKeyValue("userId", context.userId())
+                    .addKeyValue("cancelledByCommand", commandName)
+                    .log("Active dialog cancelled by another command");
         }
 
         commandRegistry
-            .find(commandName)
-            .ifPresentOrElse(
-                command -> {
-                    try {
-                        log.atInfo()
-                            .addKeyValue("chatId", context.chatId())
-                            .addKeyValue("userId", context.userId())
-                            .addKeyValue("command", commandName)
-                            .log("Command dispatched");
+                .find(commandName)
+                .ifPresentOrElse(
+                        command -> {
+                            try {
+                                log.atInfo()
+                                        .addKeyValue("chatId", context.chatId())
+                                        .addKeyValue("userId", context.userId())
+                                        .addKeyValue("command", commandName)
+                                        .log("Command dispatched");
 
-                        command.handle(context);
-                    } catch (Exception e) {
-                        log.atError()
-                            .setCause(e)
-                            .addKeyValue("chatId", context.chatId())
-                            .addKeyValue("userId", context.userId())
-                            .addKeyValue("command", commandName)
-                            .log("Command handling failed");
+                                command.handle(context);
+                            } catch (Exception e) {
+                                log.atError()
+                                        .setCause(e)
+                                        .addKeyValue("chatId", context.chatId())
+                                        .addKeyValue("userId", context.userId())
+                                        .addKeyValue("command", commandName)
+                                        .log("Command handling failed");
 
-                        context.reply(messages.scrapperUnavailable());
-                    }
-                },
-                () -> {
-                    log.atInfo()
-                        .addKeyValue("chatId", context.chatId())
-                        .addKeyValue("userId", context.userId())
-                        .addKeyValue("command", commandName)
-                        .log("Unknown command received");
+                                context.reply(messages.scrapperUnavailable());
+                            }
+                        },
+                        () -> {
+                            log.atInfo()
+                                    .addKeyValue("chatId", context.chatId())
+                                    .addKeyValue("userId", context.userId())
+                                    .addKeyValue("command", commandName)
+                                    .log("Unknown command received");
 
-                    context.reply(messages.unknownCommand());
-                });
+                            context.reply(messages.unknownCommand());
+                        });
     }
 
     private String extractCommandName(String text) {

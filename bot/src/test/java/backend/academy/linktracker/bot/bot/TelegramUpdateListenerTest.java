@@ -58,7 +58,8 @@ class TelegramUpdateListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService, botRegistrationService);
+        listener =
+                new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService, botRegistrationService);
 
         lenient().when(update.message()).thenReturn(message);
         lenient().when(message.chat()).thenReturn(chat);

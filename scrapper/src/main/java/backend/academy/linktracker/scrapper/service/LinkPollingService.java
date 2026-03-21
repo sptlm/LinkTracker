@@ -58,7 +58,11 @@ public class LinkPollingService {
             return;
         }
 
-        LinkUpdate request = new LinkUpdate().id(link.id()).url(URI.create(link.url())).description(result.description()).tgChatIds(chatIds);
+        LinkUpdate request = new LinkUpdate()
+                .id(link.id())
+                .url(URI.create(link.url()))
+                .description(result.description())
+                .tgChatIds(chatIds);
 
         updatePublisher.publish(request);
 

@@ -59,7 +59,11 @@ class StartCommandTest {
 
     @Test
     void shouldSendWelcomeMessageForNewUser() {
-        User user = User.builder().userId(99L).firstName("Ivan").registeredAt(Instant.now()).build();
+        User user = User.builder()
+                .userId(99L)
+                .firstName("Ivan")
+                .registeredAt(Instant.now())
+                .build();
 
         when(botRegistrationService.ensureRegistered(new CommandContext(bot, message)))
                 .thenReturn(new RegistrationResult(user, true));
@@ -79,7 +83,11 @@ class StartCommandTest {
 
     @Test
     void shouldSendWelcomeBackMessageForExistingUser() {
-        User user = User.builder().userId(99L).firstName("Ivan").registeredAt(Instant.now()).build();
+        User user = User.builder()
+                .userId(99L)
+                .firstName("Ivan")
+                .registeredAt(Instant.now())
+                .build();
 
         when(botRegistrationService.ensureRegistered(new CommandContext(bot, message)))
                 .thenReturn(new RegistrationResult(user, false));

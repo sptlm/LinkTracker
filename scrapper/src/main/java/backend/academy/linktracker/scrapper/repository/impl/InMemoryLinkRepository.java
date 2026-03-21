@@ -38,10 +38,10 @@ public class InMemoryLinkRepository implements LinkRepository {
     @Override
     public List<TrackedLink> findAllById(List<Long> ids) {
         return ids.stream()
-            .map(linksById::get)
-            .filter(link -> link != null)
-            .sorted(Comparator.comparingLong(TrackedLink::id))
-            .toList();
+                .map(linksById::get)
+                .filter(link -> link != null)
+                .sorted(Comparator.comparingLong(TrackedLink::id))
+                .toList();
     }
 
     @Override
@@ -55,7 +55,9 @@ public class InMemoryLinkRepository implements LinkRepository {
 
     @Override
     public List<TrackedLink> findAll() {
-        return linksById.values().stream().sorted(Comparator.comparingLong(TrackedLink::id)).toList();
+        return linksById.values().stream()
+                .sorted(Comparator.comparingLong(TrackedLink::id))
+                .toList();
     }
 
     @Override

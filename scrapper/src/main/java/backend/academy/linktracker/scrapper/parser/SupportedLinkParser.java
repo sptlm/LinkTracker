@@ -31,9 +31,9 @@ public class SupportedLinkParser {
         }
 
         return siteLinkParsers.stream()
-            .filter(parser -> parser.supports(uri))
-            .findFirst()
-            .map(parser -> parser.parse(uri))
-            .orElseThrow(() -> new UnsupportedLinkException(rawLink));
+                .filter(parser -> parser.supports(uri))
+                .findFirst()
+                .map(parser -> parser.parse(uri))
+                .orElseThrow(() -> new UnsupportedLinkException(rawLink));
     }
 }

@@ -27,18 +27,18 @@ public class TrackDialogService {
     private final Map<TrackDialogStep, BiConsumer<CommandContext, TrackDialogState>> handlers;
 
     public TrackDialogService(
-        UserDialogStateRepository stateRepository,
-        SupportedLinkParser supportedLinkParser,
-        LinkTrackingService linkTrackingService,
-        BotMessagesService messages) {
+            UserDialogStateRepository stateRepository,
+            SupportedLinkParser supportedLinkParser,
+            LinkTrackingService linkTrackingService,
+            BotMessagesService messages) {
         this.stateRepository = stateRepository;
         this.supportedLinkParser = supportedLinkParser;
         this.linkTrackingService = linkTrackingService;
         this.messages = messages;
         this.handlers = Map.of(
-            TrackDialogStep.WAITING_LINK, this::handleWaitingLink,
-            TrackDialogStep.WAITING_TAGS, this::handleWaitingTags,
-            TrackDialogStep.WAITING_FILTERS, this::handleWaitingFilters);
+                TrackDialogStep.WAITING_LINK, this::handleWaitingLink,
+                TrackDialogStep.WAITING_TAGS, this::handleWaitingTags,
+                TrackDialogStep.WAITING_FILTERS, this::handleWaitingFilters);
     }
 
     public void start(CommandContext context) {
@@ -95,11 +95,11 @@ public class TrackDialogService {
             context.reply(messages.chatNotRegistered());
         } catch (ScrapperClientException e) {
             log.atWarn()
-                .setCause(e)
-                .addKeyValue("chatId", context.chatId())
-                .addKeyValue("userId", context.userId())
-                .addKeyValue("url", state.url())
-                .log("Failed to add link in scrapper");
+                    .setCause(e)
+                    .addKeyValue("chatId", context.chatId())
+                    .addKeyValue("userId", context.userId())
+                    .addKeyValue("url", state.url())
+                    .log("Failed to add link in scrapper");
 
             stateRepository.delete(sessionKey(context));
             context.reply(messages.scrapperUnavailable());
@@ -108,10 +108,10 @@ public class TrackDialogService {
 
     private void handleUnexpectedStep(CommandContext context, TrackDialogState state) {
         log.atWarn()
-            .addKeyValue("chatId", context.chatId())
-            .addKeyValue("userId", context.userId())
-            .addKeyValue("step", state.step())
-            .log("Unknown dialog state encountered");
+                .addKeyValue("chatId", context.chatId())
+                .addKeyValue("userId", context.userId())
+                .addKeyValue("step", state.step())
+                .log("Unknown dialog state encountered");
         stateRepository.delete(sessionKey(context));
         context.reply(messages.nothingToCancel());
     }
@@ -131,9 +131,9 @@ public class TrackDialogService {
         }
 
         return Arrays.stream(normalized.split(","))
-            .map(String::trim)
-            .filter(val -> !val.isBlank())
-            .distinct()
-            .toList();
+                .map(String::trim)
+                .filter(val -> !val.isBlank())
+                .distinct()
+                .toList();
     }
 }

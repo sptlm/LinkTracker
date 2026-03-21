@@ -8,7 +8,6 @@ import backend.academy.linktracker.bot.command.impl.ListCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
 import backend.academy.linktracker.bot.service.UserService;
-import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import com.pengrad.telegrambot.TelegramBot;
@@ -90,9 +89,8 @@ class ListCommandTest {
         Map<String, Object> parameters = sendMessageCaptor.getValue().getParameters();
         assertThat(parameters.get("chat_id")).isEqualTo(123L);
         assertThat(parameters.get("text"))
-                .isEqualTo(
-                        "https://github.com/user/repo\nТеги: java\nФильтры: branch=main\n\n"
-                                + "https://stackoverflow.com/questions/123\nТеги: backend");
+                .isEqualTo("https://github.com/user/repo\nТеги: java\nФильтры: branch=main\n\n"
+                        + "https://stackoverflow.com/questions/123\nТеги: backend");
     }
 
     /**
@@ -103,7 +101,8 @@ class ListCommandTest {
     void shouldSendNoTrackedLinksMessage() {
         when(message.text()).thenReturn("/list");
         when(userService.isRegistered(999L)).thenReturn(true);
-        when(linkTrackingService.getLinks(123L)).thenReturn(new ListLinksResponse().links(List.of()).size(0));
+        when(linkTrackingService.getLinks(123L))
+                .thenReturn(new ListLinksResponse().links(List.of()).size(0));
         when(messages.noTrackedLinks()).thenReturn("У вас нет отслеживаемых ссылок.");
 
         listCommand.handle(new CommandContext(bot, message));

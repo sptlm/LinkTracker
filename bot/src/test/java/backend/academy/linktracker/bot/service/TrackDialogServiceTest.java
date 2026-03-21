@@ -66,7 +66,6 @@ class TrackDialogServiceTest {
         verify(context, never()).reply(any());
     }
 
-
     /**
      * Требование: Пользователь отправляет /track и корректную ссылку (например, https://github.com/user/repo),
      * а затем теги и фильтры.
@@ -142,7 +141,7 @@ class TrackDialogServiceTest {
         assertTrue(processed);
 
         verify(linkTrackingService)
-            .addLink(chatId, "https://github.com/user/repo", List.of("java", "spring"), List.of());
+                .addLink(chatId, "https://github.com/user/repo", List.of("java", "spring"), List.of());
         verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
@@ -166,11 +165,11 @@ class TrackDialogServiceTest {
         assertTrue(processed);
 
         verify(linkTrackingService)
-            .addLink(
-                chatId,
-                "https://github.com/user/repo",
-                List.of("java"),
-                List.of("branch=main", "author=spirit"));
+                .addLink(
+                        chatId,
+                        "https://github.com/user/repo",
+                        List.of("java"),
+                        List.of("branch=main", "author=spirit"));
         verify(stateRepository).delete(sessionKey);
         verify(context).reply("Ссылка добавлена");
     }
@@ -188,8 +187,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.alreadyTracked()).thenReturn("Вы уже подписаны на эту ссылку");
         org.mockito.Mockito.doThrow(new DuplicateLinkException("duplicate"))
-            .when(linkTrackingService)
-            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+                .when(linkTrackingService)
+                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 
@@ -207,8 +206,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
         org.mockito.Mockito.doThrow(new ChatNotRegisteredException("not registered"))
-            .when(linkTrackingService)
-            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+                .when(linkTrackingService)
+                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 
@@ -226,8 +225,8 @@ class TrackDialogServiceTest {
         when(context.messageText()).thenReturn("branch=main");
         when(messages.scrapperUnavailable()).thenReturn("Scrapper временно недоступен");
         org.mockito.Mockito.doThrow(new ScrapperClientException("unavailable"))
-            .when(linkTrackingService)
-            .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
+                .when(linkTrackingService)
+                .addLink(chatId, "https://github.com/user/repo", List.of("java"), List.of("branch=main"));
 
         boolean processed = trackDialogService.processIfActive(context);
 

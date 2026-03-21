@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -41,10 +40,9 @@ class LinkPollingServiceTest {
 
     @BeforeEach
     void setUp() {
-        linkPollingService = new LinkPollingService(
-            linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher);
+        linkPollingService =
+                new LinkPollingService(linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher);
     }
-
 
     /**
      * Требование: Планировщик отправляет обновление только пользователям, которые следят за ссылкой.
@@ -63,7 +61,8 @@ class LinkPollingServiceTest {
         when(linkRepository.findAll()).thenReturn(List.of(link));
         when(linkUpdater.supports(link)).thenReturn(true);
         when(linkUpdater.check(link))
-                .thenReturn(LinkUpdateCheckResult.changed("GitHub repository updated: user/repo", Instant.parse("2026-03-21T10:00:00Z")));
+                .thenReturn(LinkUpdateCheckResult.changed(
+                        "GitHub repository updated: user/repo", Instant.parse("2026-03-21T10:00:00Z")));
         when(subscriptionRepository.findChatIdsByLinkId(10L)).thenReturn(List.of(1L, 3L));
 
         linkPollingService.pollUpdates();
@@ -71,7 +70,8 @@ class LinkPollingServiceTest {
         ArgumentCaptor<LinkUpdate> captor = ArgumentCaptor.forClass(LinkUpdate.class);
         verify(updatePublisher).publish(captor.capture());
         verify(linkRepository).updatePollingState(any(Long.class), any(Instant.class), any(Instant.class));
-        org.junit.jupiter.api.Assertions.assertEquals(List.of(1L, 3L), captor.getValue().getTgChatIds());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                List.of(1L, 3L), captor.getValue().getTgChatIds());
     }
 
     /**
@@ -91,7 +91,8 @@ class LinkPollingServiceTest {
         when(linkRepository.findAll()).thenReturn(List.of(link));
         when(linkUpdater.supports(link)).thenReturn(true);
         when(linkUpdater.check(link))
-                .thenReturn(LinkUpdateCheckResult.changed("GitHub repository updated: user/repo", Instant.parse("2026-03-21T10:00:00Z")));
+                .thenReturn(LinkUpdateCheckResult.changed(
+                        "GitHub repository updated: user/repo", Instant.parse("2026-03-21T10:00:00Z")));
         when(subscriptionRepository.findChatIdsByLinkId(10L)).thenReturn(List.of());
 
         linkPollingService.pollUpdates();

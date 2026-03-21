@@ -26,10 +26,10 @@ public class BotApiExceptionHandler {
 
     private ApiErrorResponse buildBadRequest(Exception exception) {
         return new ApiErrorResponse()
-            .description("Некорректные параметры запроса")
-            .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
-            .exceptionName(exception.getClass().getSimpleName())
-            .exceptionMessage(exception.getMessage())
-            .stacktrace(List.of());
+                .description("Некорректные параметры запроса")
+                .code(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                .exceptionName(exception.getClass().getSimpleName())
+                .exceptionMessage(exception.getMessage())
+                .stacktrace(List.of());
     }
 }

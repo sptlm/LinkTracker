@@ -18,20 +18,20 @@ public class UserService {
         long userId = telegramUser.id();
 
         return userRepository
-            .findByUserId(userId)
-            .map(user -> new RegistrationResult(user, false))
-            .orElseGet(() -> {
-                User user = User.builder()
-                    .userId(userId)
-                    .username(telegramUser.username())
-                    .firstName(telegramUser.firstName())
-                    .lastName(telegramUser.lastName())
-                    .registeredAt(Instant.now())
-                    .build();
+                .findByUserId(userId)
+                .map(user -> new RegistrationResult(user, false))
+                .orElseGet(() -> {
+                    User user = User.builder()
+                            .userId(userId)
+                            .username(telegramUser.username())
+                            .firstName(telegramUser.firstName())
+                            .lastName(telegramUser.lastName())
+                            .registeredAt(Instant.now())
+                            .build();
 
-                userRepository.save(user);
-                return new RegistrationResult(user, true);
-            });
+                    userRepository.save(user);
+                    return new RegistrationResult(user, true);
+                });
     }
 
     public boolean isRegistered(long userId) {

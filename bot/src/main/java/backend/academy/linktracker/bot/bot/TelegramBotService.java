@@ -6,10 +6,9 @@ import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.BotCommand;
 import com.pengrad.telegrambot.request.SetMyCommands;
 import com.pengrad.telegrambot.response.BaseResponse;
-import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -58,20 +57,20 @@ public class TelegramBotService {
         List<Command> commands = commandRegistry.getCommands();
 
         BotCommand[] botCommands = commands.stream()
-            .map(cmd -> new BotCommand(cmd.command(), cmd.description()))
-            .toArray(BotCommand[]::new);
+                .map(cmd -> new BotCommand(cmd.command(), cmd.description()))
+                .toArray(BotCommand[]::new);
 
         try {
             BaseResponse response = bot.execute(new SetMyCommands(botCommands));
             if (response.isOk()) {
                 log.atInfo()
-                    .addKeyValue("commandCount", botCommands.length)
-                    .log("Bot commands successfully registered in Telegram menu");
+                        .addKeyValue("commandCount", botCommands.length)
+                        .log("Bot commands successfully registered in Telegram menu");
             } else {
                 log.atWarn()
-                    .addKeyValue("errorCode", response.errorCode())
-                    .addKeyValue("description", response.description())
-                    .log("Failed to register bot commands in Telegram menu");
+                        .addKeyValue("errorCode", response.errorCode())
+                        .addKeyValue("description", response.description())
+                        .log("Failed to register bot commands in Telegram menu");
             }
         } catch (Exception e) {
             log.atWarn().setCause(e).log("Exception while registering bot commands menu, skipping");
@@ -87,9 +86,9 @@ public class TelegramBotService {
 
             if (e.response() != null) {
                 log.atError()
-                    .addKeyValue("errorCode", e.response().errorCode())
-                    .addKeyValue("description", e.response().description())
-                    .log("Telegram API error during updates polling");
+                        .addKeyValue("errorCode", e.response().errorCode())
+                        .addKeyValue("description", e.response().description())
+                        .log("Telegram API error during updates polling");
             } else {
                 log.atError().setCause(e).log("Network error during updates polling");
             }

@@ -56,7 +56,9 @@ public class HttpScrapperClient implements ScrapperClient {
                     .retrieve()
                     .body(ListLinksResponse.class);
 
-            return response != null ? response : new ListLinksResponse().links(List.of()).size(0);
+            return response != null
+                    ? response
+                    : new ListLinksResponse().links(List.of()).size(0);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
         } catch (RestClientException e) {

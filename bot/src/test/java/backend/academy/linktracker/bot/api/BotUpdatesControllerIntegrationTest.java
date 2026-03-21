@@ -7,9 +7,9 @@ import backend.academy.linktracker.bot.service.BotUpdateService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(BotUpdatesController.class)
@@ -29,10 +29,7 @@ class BotUpdatesControllerIntegrationTest {
      */
     @Test
     void shouldReturnOkForValidUpdateRequest() throws Exception {
-        mockMvc.perform(post("/updates")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    """
+        mockMvc.perform(post("/updates").contentType(MediaType.APPLICATION_JSON).content("""
                     {
                       \"id\": 1,
                       \"url\": \"https://github.com/user/repo\",
@@ -40,7 +37,7 @@ class BotUpdatesControllerIntegrationTest {
                       \"tgChatIds\": [1, 2]
                     }
                     """))
-            .andExpect(status().isOk());
+                .andExpect(status().isOk());
     }
 
     /**
@@ -51,8 +48,8 @@ class BotUpdatesControllerIntegrationTest {
     @Test
     void shouldReturnBadRequestForMalformedUpdateRequest() throws Exception {
         mockMvc.perform(post("/updates")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"id\": \"bad\", \"url\": }"))
-            .andExpect(status().isBadRequest());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": \"bad\", \"url\": }"))
+                .andExpect(status().isBadRequest());
     }
 }

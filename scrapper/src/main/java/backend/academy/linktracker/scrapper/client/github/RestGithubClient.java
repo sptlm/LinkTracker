@@ -22,30 +22,34 @@ public class RestGithubClient implements GithubClient {
     public GithubRepositoryResponse getRepository(String owner, String repo) {
         try {
             GithubRepositoryResponse response = restClient
-                .get()
-                .uri("/repos/{owner}/{repo}", owner, repo)
-                .retrieve()
-                .body(GithubRepositoryResponse.class);
+                    .get()
+                    .uri("/repos/{owner}/{repo}", owner, repo)
+                    .retrieve()
+                    .body(GithubRepositoryResponse.class);
 
             if (response == null) {
                 throw new ExternalServiceException(
-                    "GitHub returned empty response for repository %s/%s".formatted(owner, repo), null);
+                        "GitHub returned empty response for repository %s/%s".formatted(owner, repo), null);
             }
 
             return response;
         } catch (RestClientResponseException e) {
             log.atError()
-                .setCause(e)
-                .addKeyValue("owner", owner)
-                .addKeyValue("repo", repo)
-                .addKeyValue("status", e.getStatusCode().value())
-                .log("GitHub request failed");
+                    .setCause(e)
+                    .addKeyValue("owner", owner)
+                    .addKeyValue("repo", repo)
+                    .addKeyValue("status", e.getStatusCode().value())
+                    .log("GitHub request failed");
             throw new ExternalServiceException(
-                "GitHub request failed for repository %s/%s, status=%d"
-                    .formatted(owner, repo, e.getStatusCode().value()),
-                e);
+                    "GitHub request failed for repository %s/%s, status=%d"
+                            .formatted(owner, repo, e.getStatusCode().value()),
+                    e);
         } catch (Exception e) {
-            log.atError().setCause(e).addKeyValue("owner", owner).addKeyValue("repo", repo).log("GitHub request failed");
+            log.atError()
+                    .setCause(e)
+                    .addKeyValue("owner", owner)
+                    .addKeyValue("repo", repo)
+                    .log("GitHub request failed");
             throw new ExternalServiceException("GitHub request failed for repository %s/%s".formatted(owner, repo), e);
         }
     }

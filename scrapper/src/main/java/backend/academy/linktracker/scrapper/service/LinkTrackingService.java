@@ -1,12 +1,12 @@
 package backend.academy.linktracker.scrapper.service;
 
+import backend.academy.linktracker.scrapper.api.exception.InvalidRequestException;
+import backend.academy.linktracker.scrapper.api.exception.LinkAlreadyTrackedException;
+import backend.academy.linktracker.scrapper.api.exception.TrackedLinkNotFoundException;
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
-import backend.academy.linktracker.scrapper.api.exception.InvalidRequestException;
-import backend.academy.linktracker.scrapper.api.exception.LinkAlreadyTrackedException;
-import backend.academy.linktracker.scrapper.api.exception.TrackedLinkNotFoundException;
 import backend.academy.linktracker.scrapper.model.LinkSubscription;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.parser.ParsedLink;
@@ -34,7 +34,9 @@ public class LinkTrackingService {
     public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
         chatService.ensureExists(chatId);
 
-        if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
+        if (request == null
+                || request.getLink() == null
+                || request.getLink().toString().isBlank()) {
             throw new InvalidRequestException("Ссылка обязательна");
         }
 
@@ -59,7 +61,9 @@ public class LinkTrackingService {
     public LinksPost200Response removeLink(long chatId, RemoveLinkRequest request) {
         chatService.ensureExists(chatId);
 
-        if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
+        if (request == null
+                || request.getLink() == null
+                || request.getLink().toString().isBlank()) {
             throw new InvalidRequestException("Ссылка обязательна");
         }
 
@@ -87,15 +91,16 @@ public class LinkTrackingService {
 
         List<LinkSubscription> subscriptions = subscriptionRepository.findByChatId(chatId);
         Map<Long, LinkSubscription> subscriptionsByLinkId = subscriptions.stream()
-            .collect(java.util.stream.Collectors.toMap(
-                LinkSubscription::linkId,
-                subscription -> subscription,
-                (left, right) -> left,
-                LinkedHashMap::new));
+                .collect(java.util.stream.Collectors.toMap(
+                        LinkSubscription::linkId,
+                        subscription -> subscription,
+                        (left, right) -> left,
+                        LinkedHashMap::new));
 
-        List<LinksPost200Response> links = linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
-            .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
-            .toList();
+        List<LinksPost200Response> links =
+                linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
+                        .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
+                        .toList();
 
         return new ListLinksResponse().links(links).size(links.size());
     }
@@ -113,7 +118,11 @@ public class LinkTrackingService {
     }
 
     private LinksPost200Response toResponse(TrackedLink link, LinkSubscription subscription) {
-        return new LinksPost200Response().id(link.id()).url(URI.create(link.url())).tags(subscription.tags()).filters(subscription.filters());
+        return new LinksPost200Response()
+                .id(link.id())
+                .url(URI.create(link.url()))
+                .tags(subscription.tags())
+                .filters(subscription.filters());
     }
 
     private List<String> normalizeList(List<String> values) {

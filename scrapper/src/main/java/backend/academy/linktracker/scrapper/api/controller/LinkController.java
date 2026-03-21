@@ -2,12 +2,10 @@ package backend.academy.linktracker.scrapper.api.controller;
 
 import backend.academy.linktracker.scrapper.generated.api.LinksApi;
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
-import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import backend.academy.linktracker.scrapper.service.LinkTrackingService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,13 +29,14 @@ public class LinkController implements LinksApi {
     }
 
     @PostMapping
-    public ResponseEntity<LinksPost200Response> linksPost(@RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest request) {
+    public ResponseEntity<LinksPost200Response> linksPost(
+            @RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest request) {
         return ResponseEntity.ok(linkTrackingService.addLink(chatId, request));
     }
 
     @DeleteMapping
     public ResponseEntity<LinksPost200Response> linksDelete(
-            @RequestHeader("Tg-Chat-Id") Long chatId,@RequestBody RemoveLinkRequest request) {
+            @RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
         return ResponseEntity.ok(linkTrackingService.removeLink(chatId, request));
     }
 }
