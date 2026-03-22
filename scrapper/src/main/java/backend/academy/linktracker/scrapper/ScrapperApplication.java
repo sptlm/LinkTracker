@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(excludeName = {
-    "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration",
-    "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+    "org.springframework.boot.data.jpa.autoconfigure.JpaRepositoriesAutoConfiguration",
+    "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
 })
 @ConfigurationPropertiesScan
 @EnableScheduling
