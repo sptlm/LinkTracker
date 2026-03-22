@@ -131,7 +131,7 @@ public class SqlLinkRepository implements LinkRepository {
                 .update();
     }
 
-    private static TrackedLink mapRow(ResultSet rs, int rowNum) throws SQLException {
+    private static TrackedLink mapRow(ResultSet rs, int ignoredRowNum) throws SQLException {
         return new TrackedLink(
                 rs.getLong("id"),
                 rs.getString("url"),

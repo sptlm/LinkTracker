@@ -133,7 +133,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
                 """;
     }
 
-    private static LinkSubscription mapRow(ResultSet rs, int rowNum) throws SQLException {
+    private static LinkSubscription mapRow(ResultSet rs, int ignoredRowNum) throws SQLException {
         Array tagsArray = rs.getArray("tags");
         List<String> tags = tagsArray == null ? List.of() : Arrays.asList((String[]) tagsArray.getArray());
 
