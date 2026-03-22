@@ -55,8 +55,8 @@ class ChatServiceTest {
 
     @Test
     void delete_whenChatExists_deletesSubscriptionsAndChat() {
-        LinkSubscription first = new LinkSubscription(123L, 10L, List.of("java"), List.of(), Instant.now());
-        LinkSubscription second = new LinkSubscription(123L, 20L, List.of("sql"), List.of("score>10"), Instant.now());
+        LinkSubscription first = new LinkSubscription(123L, 10L, List.of("java"), Instant.now());
+        LinkSubscription second = new LinkSubscription(123L, 20L, List.of("sql"), Instant.now());
 
         when(chatRepository.exists(123L)).thenReturn(true);
         when(subscriptionRepository.findByChatId(123L)).thenReturn(List.of(first, second));

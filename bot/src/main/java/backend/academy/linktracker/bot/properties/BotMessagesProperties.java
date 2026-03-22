@@ -35,8 +35,6 @@ public class BotMessagesProperties {
     @NotBlank
     private String trackAskTags = "Теперь пришлите теги через запятую или отправьте '-' если теги не нужны.";
 
-    @NotBlank
-    private String trackAskFilters = "Теперь пришлите фильтры через запятую или отправьте '-' если фильтры не нужны.";
 
     @NotBlank
     private String trackCancelled = "Отслеживание ссылки отменено.";

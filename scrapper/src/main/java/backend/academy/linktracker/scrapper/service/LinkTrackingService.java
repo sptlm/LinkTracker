@@ -47,12 +47,8 @@ public class LinkTrackingService {
             throw new LinkAlreadyTrackedException(trackedLink.url(), chatId);
         }
 
-        LinkSubscription subscription = new LinkSubscription(
-                chatId,
-                trackedLink.id(),
-                normalizeList(request.getTags()),
-                normalizeList(request.getFilters()),
-                Instant.now());
+        LinkSubscription subscription =
+                new LinkSubscription(chatId, trackedLink.id(), normalizeList(request.getTags()), Instant.now());
 
         subscriptionRepository.save(subscription);
         return toResponse(trackedLink, subscription);
@@ -122,7 +118,7 @@ public class LinkTrackingService {
                 .id(link.id())
                 .url(URI.create(link.url()))
                 .tags(subscription.tags())
-                .filters(subscription.filters());
+                .filters(List.of());
     }
 
     private List<String> normalizeList(List<String> values) {

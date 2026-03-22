@@ -3,7 +3,6 @@ package backend.academy.linktracker.bot.bot;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.CommandRegistry;
 import backend.academy.linktracker.bot.service.BotMessagesService;
-import backend.academy.linktracker.bot.service.BotRegistrationService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
@@ -23,7 +22,6 @@ public class TelegramUpdateListener implements UpdatesListener {
     private final CommandRegistry commandRegistry;
     private final BotMessagesService messages;
     private final TrackDialogService trackDialogService;
-    private final BotRegistrationService botRegistrationService;
 
     @Override
     public int process(List<Update> updates) {
@@ -70,7 +68,6 @@ public class TelegramUpdateListener implements UpdatesListener {
             return;
         }
 
-        botRegistrationService.ensureRegistered(context);
         if (trackDialogService.processIfActive(context)) {
             log.atInfo()
                     .addKeyValue("chatId", context.chatId())
@@ -81,10 +78,6 @@ public class TelegramUpdateListener implements UpdatesListener {
 
     private void processCommand(CommandContext context, String messageText) {
         String commandName = extractCommandName(messageText);
-
-        if (!"/start".equals(commandName)) {
-            botRegistrationService.ensureRegistered(context);
-        }
 
         if (trackDialogService.hasActiveDialog(context) && !"/cancel".equals(commandName)) {
             trackDialogService.cancel(context);

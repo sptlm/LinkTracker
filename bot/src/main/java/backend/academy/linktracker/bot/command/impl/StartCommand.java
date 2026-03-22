@@ -3,17 +3,16 @@ package backend.academy.linktracker.bot.command.impl;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.service.BotMessagesService;
-import backend.academy.linktracker.bot.service.BotRegistrationService;
-import backend.academy.linktracker.bot.service.RegistrationResult;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class StartCommand implements Command {
 
-    private final BotRegistrationService botRegistrationService;
     private final BotMessagesService messages;
+
+    public StartCommand(BotMessagesService messages) {
+        this.messages = messages;
+    }
 
     @Override
     public String command() {
@@ -27,12 +26,16 @@ public class StartCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        RegistrationResult result = botRegistrationService.ensureRegistered(context);
-        if (result.created()) {
-            context.reply(messages.startWelcome(result.user().displayName()));
-            return;
-        }
+        context.reply(messages.startWelcome(resolveDisplayName(context)));
+    }
 
-        context.reply(messages.welcomeBack(result.user().displayName()));
+    private String resolveDisplayName(CommandContext context) {
+        if (context.firstName() != null && !context.firstName().isBlank()) {
+            return context.firstName();
+        }
+        if (context.username() != null && !context.username().isBlank()) {
+            return "@" + context.username();
+        }
+        return "пользователь";
     }
 }

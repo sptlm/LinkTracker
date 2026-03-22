@@ -5,12 +5,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.TrackedLinkNotFoundException;
 import backend.academy.linktracker.bot.command.impl.UntrackCommand;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
-import backend.academy.linktracker.bot.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,9 +20,6 @@ class UntrackCommandTest {
 
     @Mock
     private LinkTrackingService linkTrackingService;
-
-    @Mock
-    private UserService userService;
 
     @Mock
     private BotMessagesService messages;
@@ -46,22 +41,8 @@ class UntrackCommandTest {
     }
 
     @Test
-    void handle_whenUserNotRegistered_repliesChatNotRegistered() {
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(false);
-        when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
-
-        untrackCommand.handle(context);
-
-        verify(context).reply("Чат не зарегистрирован");
-        verify(linkTrackingService, never()).removeLink(org.mockito.Mockito.anyLong(), org.mockito.Mockito.anyString());
-    }
-
-    @Test
     void handle_whenLinkNotProvided_repliesUsage() {
-        when(context.userId()).thenReturn(123L);
         when(context.messageText()).thenReturn("asd");
-        when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.untrackUsage()).thenReturn("Использование: /untrack <link>");
 
         untrackCommand.handle(context);
@@ -73,8 +54,6 @@ class UntrackCommandTest {
     @Test
     void handle_whenLinkIsBlank_repliesUsage() {
         when(context.messageText()).thenReturn("/untrack   ");
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.untrackUsage()).thenReturn("Использование: /untrack <link>");
 
         untrackCommand.handle(context);
@@ -87,8 +66,6 @@ class UntrackCommandTest {
     void handle_whenLinkRemoved_repliesSuccess() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkRemoved()).thenReturn("Ссылка удалена");
 
         untrackCommand.handle(context);
@@ -101,8 +78,6 @@ class UntrackCommandTest {
     void handle_whenTrackedLinkNotFound_repliesLinkNotFound() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkNotFound()).thenReturn("Ссылка не найдена");
 
         org.mockito.Mockito.doThrow(new TrackedLinkNotFoundException("not found"))
@@ -115,28 +90,9 @@ class UntrackCommandTest {
     }
 
     @Test
-    void handle_whenChatNotRegisteredInScrapper_repliesChatNotRegistered() {
-        when(context.chatId()).thenReturn(123L);
-        when(context.messageText()).thenReturn("/untrack https://github.com/user/repo");
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(true);
-        when(messages.chatNotRegistered()).thenReturn("Чат не зарегистрирован");
-
-        org.mockito.Mockito.doThrow(new ChatNotRegisteredException("chat not registered"))
-                .when(linkTrackingService)
-                .removeLink(123L, "https://github.com/user/repo");
-
-        untrackCommand.handle(context);
-
-        verify(context).reply("Чат не зарегистрирован");
-    }
-
-    @Test
     void handle_trimsExtractedLink() {
         when(context.chatId()).thenReturn(123L);
         when(context.messageText()).thenReturn("/untrack    https://github.com/user/repo   ");
-        when(context.userId()).thenReturn(123L);
-        when(userService.isRegistered(123L)).thenReturn(true);
         when(messages.linkRemoved()).thenReturn("Ссылка удалена");
 
         untrackCommand.handle(context);

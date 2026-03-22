@@ -29,7 +29,7 @@ public class ChatService {
 
         subscriptionRepository
                 .findByChatId(chatId)
-                .forEach(subscription -> subscriptionRepository.delete(subscription.chatId(), subscription.linkId()));
+                .forEach(subscription -> subscriptionRepository.delete(chatId, subscription.linkId()));
 
         chatRepository.delete(chatId);
     }
