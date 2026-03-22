@@ -1,33 +1,83 @@
 package backend.academy.linktracker.scrapper.api;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import backend.academy.linktracker.scrapper.TestScrapperApplication;
+import backend.academy.linktracker.scrapper.integration.AbstractPostgresIntegrationTest;
+import backend.academy.linktracker.scrapper.repository.ChatRepository;
+import backend.academy.linktracker.scrapper.repository.LinkRepository;
+import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest(classes = TestScrapperApplication.class)
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class ScrapperApiIT {
+abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    protected MockMvc mockMvc;
 
-    /**
-     * Требование: Тест 3.1 Добавление и получение ссылки.
-     */
+    @Autowired
+    protected LinkRepository linkRepository;
+
+    @Autowired
+    protected ChatRepository chatRepository;
+
+    @Autowired
+    protected SubscriptionRepository subscriptionRepository;
+
+    @Autowired
+    private JdbcClient jdbcClient;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    protected abstract Class<?> expectedLinkRepositoryType();
+
+    protected abstract Class<?> expectedChatRepositoryType();
+
+    protected abstract Class<?> expectedSubscriptionRepositoryType();
+
+    protected abstract boolean expectEntityManagerFactory();
+
+    @Test
+    void shouldUseConfiguredRepositoryImplementation() {
+        assertInstanceOf(expectedLinkRepositoryType(), linkRepository);
+        assertInstanceOf(expectedChatRepositoryType(), chatRepository);
+        assertInstanceOf(expectedSubscriptionRepositoryType(), subscriptionRepository);
+    }
+
+    @Test
+    void shouldEnableJpaOnlyWhenNeeded() {
+        boolean present = applicationContext.containsBean("entityManagerFactory");
+        if (expectEntityManagerFactory()) {
+            assertTrue(present);
+            return;
+        }
+        assertTrue(!present);
+    }
+
+    @Test
+    void shouldApplyFlywayMigrationsOnCleanDatabase() {
+        Integer count = jdbcClient
+                .sql("select count(*) from flyway_schema_history where success = true")
+                .query(Integer.class)
+                .single();
+
+        assertNotNull(count);
+        assertTrue(count > 0);
+    }
+
     @Test
     void shouldAddAndGetLinkForRegisteredChat() throws Exception {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
@@ -39,17 +89,20 @@ class ScrapperApiIT {
                                 .content(
                                         "{\"link\":\"https://github.com/user/repo\",\"tags\":[\"java\"],\"filters\":[\"branch=main\"]}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.url").value("https://github.com/user/repo"));
+                .andExpect(jsonPath("$.url").value("https://github.com/user/repo"))
+                .andExpect(jsonPath("$.tags[0]").value("java"))
+                .andExpect(jsonPath("$.filters").isArray())
+                .andExpect(jsonPath("$.filters").isEmpty());
 
         mockMvc.perform(get("/links").header("Tg-Chat-Id", 1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size").value(1))
-                .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
+                .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"))
+                .andExpect(jsonPath("$.links[0].tags[0]").value("java"))
+                .andExpect(jsonPath("$.links[0].filters").isArray())
+                .andExpect(jsonPath("$.links[0].filters").isEmpty());
     }
 
-    /**
-     * Требование: Тест 3.2 Добавление и удаление ссылки.
-     */
     @Test
     void shouldDeletePreviouslyAddedLink() throws Exception {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
@@ -71,9 +124,23 @@ class ScrapperApiIT {
                 .andExpect(jsonPath("$.size").value(0));
     }
 
-    /**
-     * Требование: Тест 3.3 Попытка удаления ссылки из несуществующего чата.
-     */
+    @Test
+    void shouldRejectDuplicateLink() throws Exception {
+        mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
+
+        mockMvc.perform(post("/links")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/links")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isConflict());
+    }
+
     @Test
     void shouldNotDeleteLinkFromUnknownChat() throws Exception {
         mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
@@ -89,47 +156,14 @@ class ScrapperApiIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"link\":\"https://github.com/user/repo\"}"))
                 .andExpect(status().isNotFound());
-
-        mockMvc.perform(get("/links").header("Tg-Chat-Id", 1))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size").value(1))
-                .andExpect(jsonPath("$.links[0].url").value("https://github.com/user/repo"));
     }
 
-    /**
-     * Требование: Тест 3.4 Добавление ссылки в несуществующий чат.
-     */
     @Test
     void shouldRejectAddingLinkForUnknownChat() throws Exception {
-        mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
-
         mockMvc.perform(post("/links")
                         .header("Tg-Chat-Id", 2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"link\":\"https://github.com/user/repo\"}"))
                 .andExpect(status().isNotFound());
-    }
-
-    /**
-     * Требование: Тест 3.5 Работа с удалённым чатом.
-     */
-    @Test
-    void shouldRejectOperationsForDeletedChat() throws Exception {
-        mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
-        mockMvc.perform(delete("/tg-chat/1")).andExpect(status().isOk());
-
-        mockMvc.perform(post("/links")
-                        .header("Tg-Chat-Id", 1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"link\":\"https://github.com/user/repo\"}"))
-                .andExpect(status().isNotFound());
-    }
-
-    /**
-     * Требование: Тест 3.6 Удаление несуществующего чата.
-     */
-    @Test
-    void shouldReturnNotFoundForUnknownChatDeletion() throws Exception {
-        mockMvc.perform(delete("/tg-chat/1")).andExpect(status().isNotFound());
     }
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class LinkTrackingService {
     private final SubscriptionRepository subscriptionRepository;
     private final SupportedLinkParser supportedLinkParser;
 
+    @Transactional
     public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
         chatService.ensureExists(chatId);
 
@@ -47,17 +49,14 @@ public class LinkTrackingService {
             throw new LinkAlreadyTrackedException(trackedLink.url(), chatId);
         }
 
-        LinkSubscription subscription = new LinkSubscription(
-                chatId,
-                trackedLink.id(),
-                normalizeList(request.getTags()),
-                normalizeList(request.getFilters()),
-                Instant.now());
+        LinkSubscription subscription =
+                new LinkSubscription(chatId, trackedLink.id(), normalizeList(request.getTags()), Instant.now());
 
         subscriptionRepository.save(subscription);
         return toResponse(trackedLink, subscription);
     }
 
+    @Transactional
     public LinksPost200Response removeLink(long chatId, RemoveLinkRequest request) {
         chatService.ensureExists(chatId);
 
@@ -122,7 +121,7 @@ public class LinkTrackingService {
                 .id(link.id())
                 .url(URI.create(link.url()))
                 .tags(subscription.tags())
-                .filters(subscription.filters());
+                .filters(List.of());
     }
 
     private List<String> normalizeList(List<String> values) {

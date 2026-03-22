@@ -19,6 +19,8 @@ public interface LinkRepository {
 
     List<TrackedLink> findAll();
 
+    List<TrackedLink> findPage(long offset, int limit);
+
     void updatePollingState(long linkId, Instant lastCheckedAt, Instant lastUpdatedAt);
 
     void deleteById(long id);

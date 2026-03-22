@@ -34,10 +34,6 @@ public class BotMessagesService {
         return properties.getTrackAskTags();
     }
 
-    public String trackAskFilters() {
-        return properties.getTrackAskFilters();
-    }
-
     public String trackCancelled() {
         return properties.getTrackCancelled();
     }

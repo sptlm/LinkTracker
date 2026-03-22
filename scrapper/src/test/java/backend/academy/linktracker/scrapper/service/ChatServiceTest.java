@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,7 @@ import backend.academy.linktracker.scrapper.api.exception.ChatAlreadyRegisteredE
 import backend.academy.linktracker.scrapper.api.exception.ChatNotFoundException;
 import backend.academy.linktracker.scrapper.model.LinkSubscription;
 import backend.academy.linktracker.scrapper.repository.ChatRepository;
+import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import java.time.Instant;
 import java.util.List;
@@ -26,6 +28,9 @@ class ChatServiceTest {
 
     @Mock
     private SubscriptionRepository subscriptionRepository;
+
+    @Mock
+    private LinkRepository linkRepository;
 
     @InjectMocks
     private ChatService chatService;
@@ -54,17 +59,21 @@ class ChatServiceTest {
     }
 
     @Test
-    void delete_whenChatExists_deletesSubscriptionsAndChat() {
-        LinkSubscription first = new LinkSubscription(123L, 10L, List.of("java"), List.of(), Instant.now());
-        LinkSubscription second = new LinkSubscription(123L, 20L, List.of("sql"), List.of("score>10"), Instant.now());
+    void delete_whenChatExists_deletesSubscriptionsAndOrphanLinks() {
+        LinkSubscription first = new LinkSubscription(123L, 10L, List.of("java"), Instant.now());
+        LinkSubscription second = new LinkSubscription(123L, 20L, List.of("sql"), Instant.now());
 
         when(chatRepository.exists(123L)).thenReturn(true);
         when(subscriptionRepository.findByChatId(123L)).thenReturn(List.of(first, second));
+        when(subscriptionRepository.hasSubscribers(10L)).thenReturn(false);
+        when(subscriptionRepository.hasSubscribers(20L)).thenReturn(true);
 
         chatService.delete(123L);
 
         verify(subscriptionRepository).delete(123L, 10L);
         verify(subscriptionRepository).delete(123L, 20L);
+        verify(linkRepository).deleteById(10L);
+        verify(linkRepository, never()).deleteById(20L);
         verify(chatRepository).delete(123L);
     }
 

@@ -1,12 +1,10 @@
 package backend.academy.linktracker.bot.command.impl;
 
-import backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException;
 import backend.academy.linktracker.bot.client.scrapper.ScrapperClientException;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.LinkTrackingService;
-import backend.academy.linktracker.bot.service.UserService;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import java.util.List;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Component;
 public class ListCommand implements Command {
 
     private final LinkTrackingService linkTrackingService;
-    private final UserService userService;
     private final BotMessagesService messages;
 
     @Override
@@ -36,11 +33,6 @@ public class ListCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.userId())) {
-            context.reply(messages.chatNotRegistered());
-            return;
-        }
-
         String tag = extractOptionalTag(context.messageText());
 
         try {
@@ -59,13 +51,9 @@ public class ListCommand implements Command {
             }
 
             String text = links.stream().map(this::formatLink).collect(Collectors.joining("\n\n"));
-
             context.reply(text);
-        } catch (ChatNotRegisteredException e) {
-            context.reply(messages.chatNotRegistered());
         } catch (ScrapperClientException e) {
             log.atWarn().setCause(e).addKeyValue("chatId", context.chatId()).log("Failed to get links from scrapper");
-
             context.reply(messages.scrapperUnavailable());
         }
     }
@@ -83,10 +71,6 @@ public class ListCommand implements Command {
 
         if (link.getTags() != null && !link.getTags().isEmpty()) {
             sb.append("\nТеги: ").append(String.join(", ", link.getTags()));
-        }
-
-        if (link.getFilters() != null && !link.getFilters().isEmpty()) {
-            sb.append("\nФильтры: ").append(String.join(", ", link.getFilters()));
         }
 
         return sb.toString();

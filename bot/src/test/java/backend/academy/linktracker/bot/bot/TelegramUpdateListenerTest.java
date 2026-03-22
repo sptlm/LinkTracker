@@ -9,8 +9,8 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandRegistry;
 import backend.academy.linktracker.bot.service.BotMessagesService;
-import backend.academy.linktracker.bot.service.BotRegistrationService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
+import backend.academy.linktracker.bot.telegram.TelegramUpdateListener;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.Message;
@@ -40,9 +40,6 @@ class TelegramUpdateListenerTest {
     private TrackDialogService trackDialogService;
 
     @Mock
-    private BotRegistrationService botRegistrationService;
-
-    @Mock
     private Command command;
 
     @Mock
@@ -58,8 +55,7 @@ class TelegramUpdateListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener =
-                new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService, botRegistrationService);
+        listener = new TelegramUpdateListener(bot, commandRegistry, messages, trackDialogService);
 
         lenient().when(update.message()).thenReturn(message);
         lenient().when(message.chat()).thenReturn(chat);
@@ -88,13 +84,13 @@ class TelegramUpdateListenerTest {
 
         listener.process(List.of(update));
 
-        verify(botRegistrationService).ensureRegistered(any());
         verify(bot).execute(any(SendMessage.class));
     }
 
     @Test
     void shouldIgnoreNonCommandMessages() {
         when(message.text()).thenReturn("hello");
+        when(trackDialogService.processIfActive(any())).thenReturn(false);
 
         listener.process(List.of(update));
 
