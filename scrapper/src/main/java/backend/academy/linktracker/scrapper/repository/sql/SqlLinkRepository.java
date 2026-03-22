@@ -40,7 +40,14 @@ public class SqlLinkRepository implements LinkRepository {
         jdbcClient.sql(
                         """
                         insert into tracked_link (id, url, type, created_at, last_checked_at, last_updated_at)
-                        values (:id, :url, :type, :createdAt, :lastCheckedAt, :lastUpdatedAt)
+                        values (
+                            :id,
+                            :url,
+                            :type,
+                            cast(:createdAt as timestamptz),
+                            cast(:lastCheckedAt as timestamptz),
+                            cast(:lastUpdatedAt as timestamptz)
+                        )
                         """)
                 .param("id", link.id())
                 .param("url", link.url())
