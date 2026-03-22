@@ -10,6 +10,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.jpa.autoconfigure.EntityManagerFactoryDependsOnPostProcessor;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,5 +68,13 @@ public class OrmPersistenceConfiguration {
         properties.put("hibernate.hbm2ddl.auto", ddlAuto);
         properties.put("hibernate.jdbc.time_zone", jdbcTimeZone);
         return properties;
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class FlywayJpaDependencyConfiguration extends EntityManagerFactoryDependsOnPostProcessor {
+
+        FlywayJpaDependencyConfiguration() {
+            super("flywayInitializer");
+        }
     }
 }
