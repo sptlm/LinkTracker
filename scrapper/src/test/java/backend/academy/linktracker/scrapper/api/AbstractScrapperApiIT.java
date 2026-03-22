@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +14,7 @@ import backend.academy.linktracker.scrapper.integration.AbstractPostgresIntegrat
 import backend.academy.linktracker.scrapper.repository.ChatRepository;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
+import backend.academy.linktracker.scrapper.repository.TagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -37,6 +39,9 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
     protected SubscriptionRepository subscriptionRepository;
 
     @Autowired
+    protected TagRepository tagRepository;
+
+    @Autowired
     private JdbcClient jdbcClient;
 
     @Autowired
@@ -48,6 +53,8 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
 
     protected abstract Class<?> expectedSubscriptionRepositoryType();
 
+    protected abstract Class<?> expectedTagRepositoryType();
+
     protected abstract boolean expectEntityManagerFactory();
 
     @Test
@@ -55,6 +62,7 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
         assertInstanceOf(expectedLinkRepositoryType(), linkRepository);
         assertInstanceOf(expectedChatRepositoryType(), chatRepository);
         assertInstanceOf(expectedSubscriptionRepositoryType(), subscriptionRepository);
+        assertInstanceOf(expectedTagRepositoryType(), tagRepository);
     }
 
     @Test
@@ -138,6 +146,62 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
                         .header("Tg-Chat-Id", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"link\":\"https://github.com/user/repo\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void shouldManageTagsSeparatelyFromLinks() throws Exception {
+        mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
+
+        mockMvc.perform(post("/links")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tags\":[\"java\"]}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/tags")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tag\":\"backend\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tags[0]").value("backend"))
+                .andExpect(jsonPath("$.tags[1]").value("java"));
+
+        mockMvc.perform(get("/tags").header("Tg-Chat-Id", 1).param("link", "https://github.com/user/repo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tags[0]").value("backend"))
+                .andExpect(jsonPath("$.tags[1]").value("java"));
+
+        mockMvc.perform(put("/tags")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tags\":[\"orm\",\"sql\",\"orm\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tags[0]").value("orm"))
+                .andExpect(jsonPath("$.tags[1]").value("sql"));
+
+        mockMvc.perform(delete("/tags")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tag\":\"orm\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tags[0]").value("sql"));
+    }
+
+    @Test
+    void shouldRejectDuplicateTag() throws Exception {
+        mockMvc.perform(post("/tg-chat/1")).andExpect(status().isOk());
+
+        mockMvc.perform(post("/links")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tags\":[\"java\"]}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/tags")
+                        .header("Tg-Chat-Id", 1)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"link\":\"https://github.com/user/repo\",\"tag\":\"java\"}"))
                 .andExpect(status().isConflict());
     }
 

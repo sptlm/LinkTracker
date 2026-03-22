@@ -26,8 +26,13 @@ public class ScrapperApiExceptionHandler {
         return build(HttpStatus.CONFLICT, "Ссылка уже отслеживается", e);
     }
 
-    @ExceptionHandler(TrackedLinkNotFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleTrackedLinkNotFound(TrackedLinkNotFoundException e) {
+    @ExceptionHandler(TagAlreadyAssignedException.class)
+    public ResponseEntity<ApiErrorResponse> handleTagAlreadyAssigned(TagAlreadyAssignedException e) {
+        return build(HttpStatus.CONFLICT, "Тег уже назначен", e);
+    }
+
+    @ExceptionHandler({TrackedLinkNotFoundException.class, TagNotFoundException.class})
+    public ResponseEntity<ApiErrorResponse> handleTrackedLinkNotFound(RuntimeException e) {
         return build(HttpStatus.NOT_FOUND, "Чат не существует или ссылка не найдена", e);
     }
 

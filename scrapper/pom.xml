@@ -221,6 +221,18 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <targetPath>db/migration</targetPath>
+                <directory>../migrations</directory>
+                <includes>
+                    <include>*.sql</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <!-- .proto gRPC compilation: -->
             <!-- <plugin> -->
@@ -241,5 +253,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
