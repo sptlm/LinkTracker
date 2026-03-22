@@ -23,7 +23,8 @@ LinkTracker — это проект для отслеживания обновл
   - `/list`
   - `/untrack <ссылка>`
 - Регистрация Telegram-чата в scrapper.
-- Хранение подписок и тегов в PostgreSQL.
+- Хранение чатов, ссылок, подписок и тегов в PostgreSQL.
+- Отдельный CRUD тегов через `/tags`.
 - Два режима доступа к БД в scrapper:
   - `SQL` — через `JdbcClient`
   - `ORM` — через JPA / Hibernate
@@ -208,7 +209,8 @@ ORM-конфигурация находится здесь. `scrapper/src/main/j
 
 - SQL миграции лежат в `scrapper/src/main/resources/db/migration`.
 - Основная миграция схемы — `V1__create_scrapper_schema.sql`. `scrapper/src/main/resources/db/migration/V1__create_scrapper_schema.sql`.
-- При запуске scrapper создаётся `Flyway` bean, который вызывает `migrate()` на старте. `scrapper/src/main/java/backend/academy/linktracker/scrapper/configuration/FlywayConfiguration.java`.
+- Миграции запускаются программно автоконфигурацией Spring Boot + Flyway при старте приложения. Настройка включена в `scrapper/src/main/resources/application.yaml`.
+- Для ORM-режима `EntityManagerFactory` дополнительно зависит от `Flyway`, чтобы JPA стартовала только после применения миграций. `scrapper/src/main/java/backend/academy/linktracker/scrapper/configuration/OrmPersistenceConfiguration.java`.
 
 То есть порядок ожидается такой:
 
@@ -228,6 +230,10 @@ ORM-конфигурация находится здесь. `scrapper/src/main/j
 - `GET /links` — получить список отслеживаемых ссылок. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/LinkController.java`.
 - `POST /links` — добавить ссылку. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/LinkController.java`.
 - `DELETE /links` — удалить ссылку. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/LinkController.java`.
+- `GET /tags` — получить теги конкретной отслеживаемой ссылки. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/TagController.java`.
+- `POST /tags` — добавить тег к существующей подписке. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/TagController.java`.
+- `PUT /tags` — заменить набор тегов у существующей подписки. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/TagController.java`.
+- `DELETE /tags` — удалить отдельный тег у существующей подписки. `scrapper/src/main/java/backend/academy/linktracker/scrapper/api/controller/TagController.java`.
 
 ### Bot
 

@@ -158,6 +158,151 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+
+  /tags:
+    get:
+      summary: Получить теги ссылки
+      parameters:
+        - name: Tg-Chat-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: link
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        '200':
+          description: Теги успешно получены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkTagsResponse'
+        '400':
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Чат не существует или ссылка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+    post:
+      summary: Добавить тег к отслеживаемой ссылке
+      parameters:
+        - name: Tg-Chat-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTagOperationRequest'
+        required: true
+      responses:
+        '200':
+          description: Тег успешно добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkTagsResponse'
+        '400':
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Чат не существует или ссылка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '409':
+          description: Тег уже назначен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+    put:
+      summary: Заменить набор тегов у ссылки
+      parameters:
+        - name: Tg-Chat-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTagsUpdateRequest'
+        required: true
+      responses:
+        '200':
+          description: Теги успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkTagsResponse'
+        '400':
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Чат не существует или ссылка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+    delete:
+      summary: Удалить тег у отслеживаемой ссылки
+      parameters:
+        - name: Tg-Chat-Id
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkTagOperationRequest'
+        required: true
+      responses:
+        '200':
+          description: Тег успешно удалён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkTagsResponse'
+        '400':
+          description: Некорректные параметры запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Чат не существует, ссылка или тег не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
 components:
   schemas:
     LinkResponse:
@@ -222,3 +367,34 @@ components:
         link:
           type: string
           format: uri
+    LinkTagOperationRequest:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+        tag:
+          type: string
+    LinkTagsUpdateRequest:
+      type: object
+      properties:
+        link:
+          type: string
+          format: uri
+        tags:
+          type: array
+          items:
+            type: string
+    LinkTagsResponse:
+      type: object
+      properties:
+        linkId:
+          type: integer
+          format: int64
+        url:
+          type: string
+          format: uri
+        tags:
+          type: array
+          items:
+            type: string
