@@ -9,7 +9,6 @@ spring:
     username: ${SCRAPPER_DATASOURCE_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
     password: ${SCRAPPER_DATASOURCE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     open-in-view: false

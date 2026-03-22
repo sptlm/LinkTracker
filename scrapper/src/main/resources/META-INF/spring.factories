@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+backend.academy.linktracker.scrapper.configuration.PersistenceAccessTypeEnvironmentPostProcessor

@@ -16,6 +16,7 @@ import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,17 +39,33 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
     @Autowired
     private JdbcClient jdbcClient;
 
+    @Autowired
+    private ApplicationContext applicationContext;
+
     protected abstract Class<?> expectedLinkRepositoryType();
 
     protected abstract Class<?> expectedChatRepositoryType();
 
     protected abstract Class<?> expectedSubscriptionRepositoryType();
 
+    protected abstract boolean expectEntityManagerFactory();
+
     @Test
     void shouldUseConfiguredRepositoryImplementation() {
         assertInstanceOf(expectedLinkRepositoryType(), linkRepository);
         assertInstanceOf(expectedChatRepositoryType(), chatRepository);
         assertInstanceOf(expectedSubscriptionRepositoryType(), subscriptionRepository);
+    }
+
+
+    @Test
+    void shouldEnableJpaOnlyWhenNeeded() {
+        boolean present = applicationContext.containsBean("entityManagerFactory");
+        if (expectEntityManagerFactory()) {
+            assertTrue(present);
+            return;
+        }
+        assertTrue(!present);
     }
 
     @Test

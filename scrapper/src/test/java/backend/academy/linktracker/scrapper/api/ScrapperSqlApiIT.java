@@ -22,4 +22,9 @@ class ScrapperSqlApiIT extends AbstractScrapperApiIT {
     protected Class<?> expectedSubscriptionRepositoryType() {
         return SqlSubscriptionRepository.class;
     }
+
+    @Override
+    protected boolean expectEntityManagerFactory() {
+        return false;
+    }
 }

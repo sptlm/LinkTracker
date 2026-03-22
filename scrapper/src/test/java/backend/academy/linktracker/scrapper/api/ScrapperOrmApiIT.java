@@ -22,4 +22,9 @@ class ScrapperOrmApiIT extends AbstractScrapperApiIT {
     protected Class<?> expectedSubscriptionRepositoryType() {
         return OrmSubscriptionRepository.class;
     }
+
+    @Override
+    protected boolean expectEntityManagerFactory() {
+        return true;
+    }
 }
