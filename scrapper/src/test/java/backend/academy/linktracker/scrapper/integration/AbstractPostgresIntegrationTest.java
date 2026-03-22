@@ -1,6 +1,6 @@
 package backend.academy.linktracker.scrapper.integration;
 
-import backend.academy.linktracker.scrapper.TestScrapperApplication;
+import backend.academy.linktracker.scrapper.ScrapperApplication;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +13,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers(disabledWithoutDocker = true)
-@SpringBootTest(classes = TestScrapperApplication.class)
+@SpringBootTest(classes = ScrapperApplication.class)
 @ActiveProfiles("test")
 public abstract class AbstractPostgresIntegrationTest {
 

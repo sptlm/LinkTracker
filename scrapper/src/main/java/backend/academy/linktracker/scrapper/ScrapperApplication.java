@@ -5,7 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(excludeName = {
+    "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration",
+    "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
+})
 @ConfigurationPropertiesScan
 @EnableScheduling
 public class ScrapperApplication {
