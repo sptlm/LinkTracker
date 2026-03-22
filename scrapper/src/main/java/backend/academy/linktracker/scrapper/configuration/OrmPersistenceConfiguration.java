@@ -4,6 +4,7 @@ import backend.academy.linktracker.scrapper.repository.orm.entity.LinkSubscripti
 import backend.academy.linktracker.scrapper.repository.orm.entity.TgChatEntity;
 import backend.academy.linktracker.scrapper.repository.orm.entity.TrackedLinkEntity;
 import backend.academy.linktracker.scrapper.repository.orm.jpa.LinkSubscriptionJpaRepository;
+import org.flywaydb.core.Flyway;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.HashMap;
 import java.util.Map;
@@ -74,7 +75,7 @@ public class OrmPersistenceConfiguration {
     static class FlywayJpaDependencyConfiguration extends EntityManagerFactoryDependsOnPostProcessor {
 
         FlywayJpaDependencyConfiguration() {
-            super("flywayInitializer");
+            super(Flyway.class);
         }
     }
 }
