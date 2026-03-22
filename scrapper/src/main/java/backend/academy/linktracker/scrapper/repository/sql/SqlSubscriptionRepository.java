@@ -6,6 +6,8 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -42,7 +44,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
                         "insert into link_subscription (chat_id, link_id, created_at) values (:chatId, :linkId, :createdAt)")
                 .param("chatId", subscription.chatId())
                 .param("linkId", subscription.linkId())
-                .param("createdAt", subscription.createdAt())
+                .param("createdAt", toOffsetDateTime(subscription.createdAt()))
                 .update();
 
         for (String tag : subscription.tags()) {
@@ -132,5 +134,9 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
                 rs.getLong("link_id"),
                 tags,
                 rs.getTimestamp("created_at").toInstant());
+    }
+
+    private static OffsetDateTime toOffsetDateTime(Instant instant) {
+        return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
     }
 }
