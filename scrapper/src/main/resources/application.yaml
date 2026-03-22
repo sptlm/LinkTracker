@@ -5,10 +5,11 @@ spring:
   application:
     name: scrapper
   datasource:
-    url: ${SCRAPPER_DATASOURCE_URL:jdbc:postgresql://localhost:5432/linktracker}
-    username: ${SCRAPPER_DATASOURCE_USERNAME:postgres}
-    password: ${SCRAPPER_DATASOURCE_PASSWORD:postgres}
+    url: ${SCRAPPER_DATASOURCE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/linktracker}}
+    username: ${SCRAPPER_DATASOURCE_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${SCRAPPER_DATASOURCE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres}}
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     open-in-view: false
