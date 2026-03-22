@@ -207,8 +207,8 @@ ORM-конфигурация находится здесь. `scrapper/src/main/j
 
 ## Как работают миграции
 
-- SQL миграции лежат в `scrapper/src/main/resources/db/migration`.
-- Основная миграция схемы — `V1__create_scrapper_schema.sql`. `scrapper/src/main/resources/db/migration/V1__create_scrapper_schema.sql`.
+- SQL миграции лежат в корневом каталоге `migrations/`.
+- Основная миграция схемы — `V1__create_scrapper_schema.sql`. `migrations/V1__create_scrapper_schema.sql`.
 - Миграции запускаются программно автоконфигурацией Spring Boot + Flyway при старте приложения. Настройка включена в `scrapper/src/main/resources/application.yaml`.
 - Для ORM-режима `EntityManagerFactory` дополнительно зависит от `Flyway`, чтобы JPA стартовала только после применения миграций. `scrapper/src/main/java/backend/academy/linktracker/scrapper/configuration/OrmPersistenceConfiguration.java`.
 
@@ -315,7 +315,7 @@ mvn -pl scrapper test
 
 - что scrapper стартует именно с тем datasource, который вы ожидаете,
 - что PostgreSQL доступен,
-- что Flyway миграции лежат в `classpath:db/migration`,
+- что корневой каталог `migrations/` подключается в classpath приложения как `db/migration`,
 
 ## Замечания
 
