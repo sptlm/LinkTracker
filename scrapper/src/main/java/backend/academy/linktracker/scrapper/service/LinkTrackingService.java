@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +32,11 @@ public class LinkTrackingService {
     private final SubscriptionRepository subscriptionRepository;
     private final SupportedLinkParser supportedLinkParser;
 
+    @Transactional
     public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
         chatService.ensureExists(chatId);
 
-        if (request == null
-                || request.getLink() == null
-                || request.getLink().toString().isBlank()) {
+        if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
             throw new InvalidRequestException("Ссылка обязательна");
         }
 
@@ -54,12 +54,11 @@ public class LinkTrackingService {
         return toResponse(trackedLink, subscription);
     }
 
+    @Transactional
     public LinksPost200Response removeLink(long chatId, RemoveLinkRequest request) {
         chatService.ensureExists(chatId);
 
-        if (request == null
-                || request.getLink() == null
-                || request.getLink().toString().isBlank()) {
+        if (request == null || request.getLink() == null || request.getLink().toString().isBlank()) {
             throw new InvalidRequestException("Ссылка обязательна");
         }
 
@@ -93,24 +92,21 @@ public class LinkTrackingService {
                         (left, right) -> left,
                         LinkedHashMap::new));
 
-        List<LinksPost200Response> links =
-                linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
-                        .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
-                        .toList();
+        List<LinksPost200Response> links = linkRepository.findAllById(List.copyOf(subscriptionsByLinkId.keySet())).stream()
+                .map(link -> toResponse(link, subscriptionsByLinkId.get(link.id())))
+                .toList();
 
         return new ListLinksResponse().links(links).size(links.size());
     }
 
     private TrackedLink findOrCreateLink(ParsedLink parsedLink) {
-        return linkRepository
-                .findByUrl(parsedLink.normalizedUrl())
-                .orElseGet(() -> linkRepository.save(new TrackedLink(
-                        linkRepository.nextId(),
-                        parsedLink.normalizedUrl(),
-                        parsedLink.type(),
-                        Instant.now(),
-                        null,
-                        null)));
+        return linkRepository.findByUrl(parsedLink.normalizedUrl()).orElseGet(() -> linkRepository.save(new TrackedLink(
+                linkRepository.nextId(),
+                parsedLink.normalizedUrl(),
+                parsedLink.type(),
+                Instant.now(),
+                null,
+                null)));
     }
 
     private LinksPost200Response toResponse(TrackedLink link, LinkSubscription subscription) {
