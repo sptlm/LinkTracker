@@ -1,21 +1,25 @@
 package backend.academy.linktracker.scrapper.repository.orm.jpa;
 
 import backend.academy.linktracker.scrapper.repository.orm.entity.LinkSubscriptionEntity;
-import backend.academy.linktracker.scrapper.repository.orm.entity.LinkSubscriptionId;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-public interface LinkSubscriptionJpaRepository extends JpaRepository<LinkSubscriptionEntity, LinkSubscriptionId> {
+public interface LinkSubscriptionJpaRepository extends JpaRepository<LinkSubscriptionEntity, Long> {
 
-    List<LinkSubscriptionEntity> findAllByIdChatIdOrderByIdLinkIdAsc(long chatId);
+    List<LinkSubscriptionEntity> findAllByChatIdOrderByLinkIdAsc(long chatId);
 
-    List<LinkSubscriptionEntity> findAllByIdLinkIdOrderByIdChatIdAsc(long linkId);
+    List<LinkSubscriptionEntity> findAllByLinkIdOrderByChatIdAsc(long linkId);
 
-    boolean existsByIdChatIdAndIdLinkId(long chatId, long linkId);
+    boolean existsByChatIdAndLinkId(long chatId, long linkId);
 
-    @Query("select s.id.chatId from LinkSubscriptionEntity s where s.id.linkId = :linkId order by s.id.chatId")
+    Optional<LinkSubscriptionEntity> findByChatIdAndLinkId(long chatId, long linkId);
+
+    @Query("select s.chatId from LinkSubscriptionEntity s where s.linkId = :linkId order by s.chatId")
     List<Long> findChatIdsByLinkId(long linkId);
 
-    long countByIdLinkId(long linkId);
+    long countByLinkId(long linkId);
+
+    void deleteByChatIdAndLinkId(long chatId, long linkId);
 }

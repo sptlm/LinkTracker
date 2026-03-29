@@ -11,8 +11,12 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -22,9 +26,11 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
     private static final RowMapper<LinkSubscription> SUBSCRIPTION_ROW_MAPPER = SqlSubscriptionRepository::mapRow;
 
     private final JdbcClient jdbcClient;
+    private final JdbcTemplate jdbcTemplate;
 
-    public SqlSubscriptionRepository(JdbcClient jdbcClient) {
+    public SqlSubscriptionRepository(JdbcClient jdbcClient, JdbcTemplate jdbcTemplate) {
         this.jdbcClient = jdbcClient;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -40,32 +46,15 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
 
     @Override
     public LinkSubscription save(LinkSubscription subscription) {
-        jdbcClient
-                .sql(
-                        "insert into link_subscription (chat_id, link_id, created_at) values (:chatId, :linkId, :createdAt)")
-                .param("chatId", subscription.chatId())
-                .param("linkId", subscription.linkId())
-                .param("createdAt", toOffsetDateTime(subscription.createdAt()))
-                .update();
-
-        for (String tag : subscription.tags()) {
-            jdbcClient
-                    .sql("insert into subscription_tag (chat_id, link_id, tag) values (:chatId, :linkId, :tag)")
-                    .param("chatId", subscription.chatId())
-                    .param("linkId", subscription.linkId())
-                    .param("tag", tag)
-                    .update();
-        }
-
+        long subscriptionId = insertSubscription(subscription);
+        batchInsertTags(subscriptionId, subscription.tags());
         return subscription;
     }
 
     @Override
     public java.util.Optional<LinkSubscription> findByChatIdAndLinkId(long chatId, long linkId) {
         return jdbcClient
-                .sql(
-                        baseQuery()
-                                + " where s.chat_id = :chatId and s.link_id = :linkId group by s.chat_id, s.link_id, s.created_at")
+                .sql(baseQuery() + " where s.chat_id = :chatId and s.link_id = :linkId group by s.chat_id, s.link_id, s.created_at")
                 .param("chatId", chatId)
                 .param("linkId", linkId)
                 .query(SUBSCRIPTION_ROW_MAPPER)
@@ -75,8 +64,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
     @Override
     public List<LinkSubscription> findByChatId(long chatId) {
         return jdbcClient
-                .sql(baseQuery()
-                        + " where s.chat_id = :chatId group by s.chat_id, s.link_id, s.created_at order by s.link_id")
+                .sql(baseQuery() + " where s.chat_id = :chatId group by s.chat_id, s.link_id, s.created_at order by s.link_id")
                 .param("chatId", chatId)
                 .query(SUBSCRIPTION_ROW_MAPPER)
                 .list();
@@ -85,8 +73,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
     @Override
     public List<LinkSubscription> findByLinkId(long linkId) {
         return jdbcClient
-                .sql(baseQuery()
-                        + " where s.link_id = :linkId group by s.chat_id, s.link_id, s.created_at order by s.chat_id")
+                .sql(baseQuery() + " where s.link_id = :linkId group by s.chat_id, s.link_id, s.created_at order by s.chat_id")
                 .param("linkId", linkId)
                 .query(SUBSCRIPTION_ROW_MAPPER)
                 .list();
@@ -128,8 +115,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
                        coalesce(array_agg(st.tag order by st.tag) filter (where st.tag is not null), '{}') as tags
                 from link_subscription s
                 left join subscription_tag st
-                  on st.chat_id = s.chat_id
-                 and st.link_id = s.link_id
+                  on st.subscription_id = s.id
                 """;
     }
 
@@ -146,5 +132,47 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
 
     private static OffsetDateTime toOffsetDateTime(Instant instant) {
         return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
+    }
+
+    private long insertSubscription(LinkSubscription subscription) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(
+                connection -> {
+                    java.sql.PreparedStatement ps = connection.prepareStatement(
+                            "insert into link_subscription (chat_id, link_id, created_at) values (?, ?, ?)",
+                            new String[] {"id"});
+                    ps.setLong(1, subscription.chatId());
+                    ps.setLong(2, subscription.linkId());
+                    ps.setObject(3, toOffsetDateTime(subscription.createdAt()));
+                    return ps;
+                },
+                keyHolder);
+
+        Number key = keyHolder.getKey();
+        if (key == null) {
+            throw new IllegalStateException("Failed to insert link_subscription and retrieve generated id");
+        }
+        return key.longValue();
+    }
+
+    private void batchInsertTags(long subscriptionId, List<String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return;
+        }
+
+        jdbcTemplate.batchUpdate(
+                "insert into subscription_tag (subscription_id, tag) values (?, ?)",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(java.sql.PreparedStatement ps, int i) throws java.sql.SQLException {
+                        ps.setLong(1, subscriptionId);
+                        ps.setString(2, tags.get(i));
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return tags.size();
+                    }
+                });
     }
 }

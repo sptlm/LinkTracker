@@ -7,8 +7,6 @@ import java.util.Optional;
 
 public interface LinkRepository {
 
-    long nextId();
-
     TrackedLink save(TrackedLink link);
 
     Optional<TrackedLink> findById(long id);

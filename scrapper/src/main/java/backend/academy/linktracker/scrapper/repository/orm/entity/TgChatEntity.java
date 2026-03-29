@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "tg_chat")
@@ -30,5 +31,21 @@ public class TgChatEntity {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TgChatEntity that)) {
+            return false;
+        }
+        return Objects.equals(chatId, that.chatId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(chatId);
     }
 }
