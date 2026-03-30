@@ -3,6 +3,7 @@ package backend.academy.linktracker.scrapper.repository.sql;
 import backend.academy.linktracker.scrapper.model.LinkSubscription;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import java.sql.Array;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -53,7 +55,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
     }
 
     @Override
-    public java.util.Optional<LinkSubscription> findByChatIdAndLinkId(long chatId, long linkId) {
+    public Optional<LinkSubscription> findByChatIdAndLinkId(long chatId, long linkId) {
         return jdbcClient
                 .sql(
                         baseQuery()
@@ -165,7 +167,7 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
                 "insert into subscription_tag (subscription_id, tag) values (?, ?)",
                 new BatchPreparedStatementSetter() {
                     @Override
-                    public void setValues(java.sql.PreparedStatement ps, int i) throws java.sql.SQLException {
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
                         ps.setLong(1, subscriptionId);
                         ps.setString(2, tags.get(i));
                     }

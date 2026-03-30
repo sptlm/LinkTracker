@@ -1,6 +1,8 @@
 package backend.academy.linktracker.scrapper.repository.sql;
 
 import backend.academy.linktracker.scrapper.repository.TagRepository;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -116,7 +118,7 @@ public class SqlTagRepository implements TagRepository {
                 "insert into subscription_tag (subscription_id, tag) values (?, ?)",
                 new BatchPreparedStatementSetter() {
                     @Override
-                    public void setValues(java.sql.PreparedStatement ps, int i) throws java.sql.SQLException {
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
                         ps.setLong(1, subscriptionId);
                         ps.setString(2, tags.get(i));
                     }
