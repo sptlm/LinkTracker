@@ -108,7 +108,7 @@ public class LinkTrackingService {
         return linkRepository
                 .findByUrl(parsedLink.normalizedUrl())
                 .orElseGet(() -> linkRepository.save(new TrackedLink(
-                        linkRepository.nextId(),
+                        0L,
                         parsedLink.normalizedUrl(),
                         parsedLink.type(),
                         Instant.now(),

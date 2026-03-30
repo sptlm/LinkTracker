@@ -8,10 +8,12 @@ import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import java.net.URI;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class LinkTrackingService {
 
@@ -25,7 +27,7 @@ public class LinkTrackingService {
     public LinkResponse addLink(long chatId, String link, List<String> tags) {
         ensureChatRegistered(chatId);
         return scrapperClient.addLink(
-                chatId, new AddLinkRequest().link(URI.create(link)).tags(tags).filters(List.of()));
+            chatId, new AddLinkRequest().link(URI.create(link)).tags(tags).filters(List.of()));
     }
 
     public LinkResponse removeLink(long chatId, String link) {
@@ -37,7 +39,7 @@ public class LinkTrackingService {
         try {
             scrapperClient.registerChat(chatId);
         } catch (ChatAlreadyExistsException ignored) {
-            // chat already exists in scrapper, nothing to do
+            log.debug("Chat {} is already registered in scrapper", chatId);
         }
     }
 }

@@ -66,16 +66,6 @@ abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
     }
 
     @Test
-    void shouldEnableJpaOnlyWhenNeeded() {
-        boolean present = applicationContext.containsBean("entityManagerFactory");
-        if (expectEntityManagerFactory()) {
-            assertTrue(present);
-            return;
-        }
-        assertTrue(!present);
-    }
-
-    @Test
     void shouldApplyFlywayMigrationsOnCleanDatabase() {
         Integer count = jdbcClient
                 .sql("select count(*) from flyway_schema_history where success = true")

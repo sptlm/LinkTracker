@@ -17,7 +17,6 @@ public class ChatService {
     private final SubscriptionRepository subscriptionRepository;
     private final LinkRepository linkRepository;
 
-    @Transactional
     public void register(long chatId) {
         if (chatRepository.exists(chatId)) {
             throw new ChatAlreadyRegisteredException(chatId);
