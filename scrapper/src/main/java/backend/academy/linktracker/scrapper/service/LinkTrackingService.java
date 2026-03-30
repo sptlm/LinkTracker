@@ -107,13 +107,8 @@ public class LinkTrackingService {
     private TrackedLink findOrCreateLink(ParsedLink parsedLink) {
         return linkRepository
                 .findByUrl(parsedLink.normalizedUrl())
-                .orElseGet(() -> linkRepository.save(new TrackedLink(
-                        0L,
-                        parsedLink.normalizedUrl(),
-                        parsedLink.type(),
-                        Instant.now(),
-                        null,
-                        null)));
+                .orElseGet(() -> linkRepository.save(
+                        new TrackedLink(0L, parsedLink.normalizedUrl(), parsedLink.type(), Instant.now(), null, null)));
     }
 
     private LinksPost200Response toResponse(TrackedLink link, LinkSubscription subscription) {

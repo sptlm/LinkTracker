@@ -21,17 +21,17 @@ public class OrmTagRepository implements TagRepository {
     @Override
     public boolean exists(long chatId, long linkId, String tag) {
         return linkSubscriptionJpaRepository
-            .findByChatIdAndLinkId(chatId, linkId)
-            .map(subscription -> subscription.getTags().contains(tag))
-            .orElse(false);
+                .findByChatIdAndLinkId(chatId, linkId)
+                .map(subscription -> subscription.getTags().contains(tag))
+                .orElse(false);
     }
 
     @Override
     public List<String> findByChatIdAndLinkId(long chatId, long linkId) {
         return linkSubscriptionJpaRepository
-            .findByChatIdAndLinkId(chatId, linkId)
-            .map(subscription -> subscription.getTags().stream().sorted().toList())
-            .orElse(List.of());
+                .findByChatIdAndLinkId(chatId, linkId)
+                .map(subscription -> subscription.getTags().stream().sorted().toList())
+                .orElse(List.of());
     }
 
     @Override

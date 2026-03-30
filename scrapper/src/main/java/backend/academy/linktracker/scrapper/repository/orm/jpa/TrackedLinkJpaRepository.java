@@ -28,7 +28,7 @@ public interface TrackedLinkJpaRepository extends JpaRepository<TrackedLinkEntit
             where t.id = :linkId
             """)
     int updatePollingState(
-        @Param("linkId") long linkId,
-        @Param("lastCheckedAt") Instant lastCheckedAt,
-        @Param("lastUpdatedAt") Instant lastUpdatedAt);
+            @Param("linkId") long linkId,
+            @Param("lastCheckedAt") Instant lastCheckedAt,
+            @Param("lastUpdatedAt") Instant lastUpdatedAt);
 }

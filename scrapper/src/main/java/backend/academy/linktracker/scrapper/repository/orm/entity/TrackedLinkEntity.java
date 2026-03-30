@@ -37,7 +37,7 @@ public class TrackedLinkEntity {
     protected TrackedLinkEntity() {}
 
     public TrackedLinkEntity(
-        Long id, String url, String type, Instant createdAt, Instant lastCheckedAt, Instant lastUpdatedAt) {
+            Long id, String url, String type, Instant createdAt, Instant lastCheckedAt, Instant lastUpdatedAt) {
         this.id = id;
         this.url = url;
         this.type = type;

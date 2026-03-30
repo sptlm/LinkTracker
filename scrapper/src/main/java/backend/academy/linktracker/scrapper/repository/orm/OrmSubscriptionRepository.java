@@ -15,7 +15,7 @@ public class OrmSubscriptionRepository implements SubscriptionRepository {
     private final LinkSubscriptionOrmConverter converter;
 
     public OrmSubscriptionRepository(
-        LinkSubscriptionJpaRepository linkSubscriptionJpaRepository, LinkSubscriptionOrmConverter converter) {
+            LinkSubscriptionJpaRepository linkSubscriptionJpaRepository, LinkSubscriptionOrmConverter converter) {
         this.linkSubscriptionJpaRepository = linkSubscriptionJpaRepository;
         this.converter = converter;
     }
@@ -33,21 +33,23 @@ public class OrmSubscriptionRepository implements SubscriptionRepository {
 
     @Override
     public java.util.Optional<LinkSubscription> findByChatIdAndLinkId(long chatId, long linkId) {
-        return linkSubscriptionJpaRepository.findByChatIdAndLinkId(chatId, linkId).map(converter::toModel);
+        return linkSubscriptionJpaRepository
+                .findByChatIdAndLinkId(chatId, linkId)
+                .map(converter::toModel);
     }
 
     @Override
     public List<LinkSubscription> findByChatId(long chatId) {
         return linkSubscriptionJpaRepository.findAllByChatIdOrderByLinkIdAsc(chatId).stream()
-            .map(converter::toModel)
-            .toList();
+                .map(converter::toModel)
+                .toList();
     }
 
     @Override
     public List<LinkSubscription> findByLinkId(long linkId) {
         return linkSubscriptionJpaRepository.findAllByLinkIdOrderByChatIdAsc(linkId).stream()
-            .map(converter::toModel)
-            .toList();
+                .map(converter::toModel)
+                .toList();
     }
 
     @Override

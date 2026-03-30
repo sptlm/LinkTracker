@@ -37,8 +37,8 @@ public class OrmLinkRepository implements LinkRepository {
     @Override
     public List<TrackedLink> findAllById(List<Long> ids) {
         return trackedLinkJpaRepository.findAllByIdInOrderByIdAsc(ids).stream()
-            .map(converter::toModel)
-            .toList();
+                .map(converter::toModel)
+                .toList();
     }
 
     @Override
@@ -49,15 +49,15 @@ public class OrmLinkRepository implements LinkRepository {
     @Override
     public List<TrackedLink> findAll() {
         return trackedLinkJpaRepository.findAllByOrderByIdAsc().stream()
-            .map(converter::toModel)
-            .toList();
+                .map(converter::toModel)
+                .toList();
     }
 
     @Override
     public List<TrackedLink> findPage(long offset, int limit) {
         return trackedLinkJpaRepository.findPage(offset, limit).stream()
-            .map(converter::toModel)
-            .toList();
+                .map(converter::toModel)
+                .toList();
     }
 
     @Override
