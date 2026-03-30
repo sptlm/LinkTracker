@@ -11,6 +11,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -35,18 +36,17 @@ public class SqlLinkRepository implements LinkRepository {
     @Override
     public TrackedLink save(TrackedLink link) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
+        PreparedStatementCreatorFactory pscFactory = new PreparedStatementCreatorFactory(
+                "insert into tracked_link (url, type, created_at, last_checked_at, last_updated_at) values (?, ?, ?, ?, ?)");
+        pscFactory.setGeneratedKeysColumnNames("id");
+
         jdbcTemplate.update(
-                connection -> {
-                    java.sql.PreparedStatement ps = connection.prepareStatement(
-                            "insert into tracked_link (url, type, created_at, last_checked_at, last_updated_at) values (?, ?, ?, ?, ?)",
-                            new String[] {"id"});
-                    ps.setString(1, link.url());
-                    ps.setString(2, link.type().name());
-                    ps.setObject(3, toOffsetDateTime(link.createdAt()));
-                    ps.setObject(4, toOffsetDateTime(link.lastCheckedAt()));
-                    ps.setObject(5, toOffsetDateTime(link.lastUpdatedAt()));
-                    return ps;
-                },
+                pscFactory.newPreparedStatementCreator(List.of(
+                        link.url(),
+                        link.type().name(),
+                        toOffsetDateTime(link.createdAt()),
+                        toOffsetDateTime(link.lastCheckedAt()),
+                        toOffsetDateTime(link.lastUpdatedAt()))),
                 keyHolder);
 
         Number key = keyHolder.getKey();

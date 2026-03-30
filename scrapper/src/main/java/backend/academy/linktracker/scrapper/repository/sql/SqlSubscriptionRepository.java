@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.PreparedStatementCreatorFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -136,16 +137,12 @@ public class SqlSubscriptionRepository implements SubscriptionRepository {
 
     private long insertSubscription(LinkSubscription subscription) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
+        PreparedStatementCreatorFactory pscFactory = new PreparedStatementCreatorFactory(
+                "insert into link_subscription (chat_id, link_id, created_at) values (?, ?, ?)");
+        pscFactory.setGeneratedKeysColumnNames("id");
         jdbcTemplate.update(
-                connection -> {
-                    java.sql.PreparedStatement ps = connection.prepareStatement(
-                            "insert into link_subscription (chat_id, link_id, created_at) values (?, ?, ?)",
-                            new String[] {"id"});
-                    ps.setLong(1, subscription.chatId());
-                    ps.setLong(2, subscription.linkId());
-                    ps.setObject(3, toOffsetDateTime(subscription.createdAt()));
-                    return ps;
-                },
+                pscFactory.newPreparedStatementCreator(List.of(
+                        subscription.chatId(), subscription.linkId(), toOffsetDateTime(subscription.createdAt()))),
                 keyHolder);
 
         Number key = keyHolder.getKey();
