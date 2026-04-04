@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
+import backend.academy.linktracker.scrapper.properties.PersistenceProperties;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
@@ -40,14 +41,12 @@ class LinkPollingServiceTest {
 
     @BeforeEach
     void setUp() {
-        linkPollingService =
-                new LinkPollingService(linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher);
+        PersistenceProperties persistenceProperties = new PersistenceProperties();
+        persistenceProperties.setPollingBatchSize(100);
+        linkPollingService = new LinkPollingService(
+                linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher, persistenceProperties);
     }
 
-    /**
-     * Требование: Планировщик отправляет обновление только пользователям, которые следят за ссылкой.
-     * Другие пользователи не получают обновление.
-     */
     @Test
     void shouldPublishUpdateOnlyForSubscribedUsers() {
         TrackedLink link = new TrackedLink(
@@ -58,7 +57,8 @@ class LinkPollingServiceTest {
                 Instant.parse("2026-03-20T10:00:00Z"),
                 Instant.parse("2026-03-20T10:00:00Z"));
 
-        when(linkRepository.findAll()).thenReturn(List.of(link));
+        when(linkRepository.findPage(0, 100)).thenReturn(List.of(link));
+        when(linkRepository.findPage(1, 100)).thenReturn(List.of());
         when(linkUpdater.supports(link)).thenReturn(true);
         when(linkUpdater.check(link))
                 .thenReturn(LinkUpdateCheckResult.changed(
@@ -74,10 +74,6 @@ class LinkPollingServiceTest {
                 List.of(1L, 3L), captor.getValue().getTgChatIds());
     }
 
-    /**
-     * Требование: Планировщик отправляет обновление только пользователям, которые следят за ссылкой.
-     * Другие пользователи не получают обновление.
-     */
     @Test
     void shouldNotPublishUpdateWhenNoSubscribersExist() {
         TrackedLink link = new TrackedLink(
@@ -88,7 +84,8 @@ class LinkPollingServiceTest {
                 Instant.parse("2026-03-20T10:00:00Z"),
                 Instant.parse("2026-03-20T10:00:00Z"));
 
-        when(linkRepository.findAll()).thenReturn(List.of(link));
+        when(linkRepository.findPage(0, 100)).thenReturn(List.of(link));
+        when(linkRepository.findPage(1, 100)).thenReturn(List.of());
         when(linkUpdater.supports(link)).thenReturn(true);
         when(linkUpdater.check(link))
                 .thenReturn(LinkUpdateCheckResult.changed(

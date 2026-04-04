@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandRegistry;
+import backend.academy.linktracker.bot.telegram.TelegramBotService;
+import backend.academy.linktracker.bot.telegram.TelegramUpdateListener;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.response.BaseResponse;
 import java.util.List;

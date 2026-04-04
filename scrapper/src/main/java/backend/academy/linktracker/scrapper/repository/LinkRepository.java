@@ -7,8 +7,6 @@ import java.util.Optional;
 
 public interface LinkRepository {
 
-    long nextId();
-
     TrackedLink save(TrackedLink link);
 
     Optional<TrackedLink> findById(long id);
@@ -18,6 +16,8 @@ public interface LinkRepository {
     Optional<TrackedLink> findByUrl(String url);
 
     List<TrackedLink> findAll();
+
+    List<TrackedLink> findPage(long offset, int limit);
 
     void updatePollingState(long linkId, Instant lastCheckedAt, Instant lastUpdatedAt);
 

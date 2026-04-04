@@ -4,6 +4,22 @@ server:
 spring:
   application:
     name: scrapper
+  datasource:
+    url: ${SCRAPPER_DATASOURCE_URL:jdbc:postgresql://localhost:5433/linktracker}
+    username: ${SCRAPPER_DATASOURCE_USERNAME:postgres}
+    password: ${SCRAPPER_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 app:
   clients:
@@ -17,3 +33,6 @@ app:
     token: ${GITHUB_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE
   polling:
     interval: 60s
+  persistence:
+    access-type: ${SCRAPPER_ACCESS_TYPE:SQL}
+    polling-batch-size: 100

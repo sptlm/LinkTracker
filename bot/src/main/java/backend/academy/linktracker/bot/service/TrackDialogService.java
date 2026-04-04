@@ -37,8 +37,7 @@ public class TrackDialogService {
         this.messages = messages;
         this.handlers = Map.of(
                 TrackDialogStep.WAITING_LINK, this::handleWaitingLink,
-                TrackDialogStep.WAITING_TAGS, this::handleWaitingTags,
-                TrackDialogStep.WAITING_FILTERS, this::handleWaitingFilters);
+                TrackDialogStep.WAITING_TAGS, this::handleWaitingTags);
     }
 
     public void start(CommandContext context) {
@@ -76,15 +75,9 @@ public class TrackDialogService {
 
     private void handleWaitingTags(CommandContext context, TrackDialogState state) {
         List<String> tags = parseCommaSeparated(context.messageText());
-        stateRepository.save(sessionKey(context), TrackDialogState.waitingFilters(state.url(), tags));
-        context.reply(messages.trackAskFilters());
-    }
-
-    private void handleWaitingFilters(CommandContext context, TrackDialogState state) {
-        List<String> filters = parseCommaSeparated(context.messageText());
 
         try {
-            linkTrackingService.addLink(context.chatId(), state.url().toString(), state.tags(), filters);
+            linkTrackingService.addLink(context.chatId(), state.url().toString(), tags);
             stateRepository.delete(sessionKey(context));
             context.reply(messages.linkTracked());
         } catch (DuplicateLinkException e) {

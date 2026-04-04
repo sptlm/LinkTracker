@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
+import backend.academy.linktracker.scrapper.properties.PersistenceProperties;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
@@ -22,12 +23,23 @@ public class LinkPollingService {
     private final SubscriptionRepository subscriptionRepository;
     private final List<LinkUpdater> linkUpdaters;
     private final UpdatePublisher updatePublisher;
+    private final PersistenceProperties persistenceProperties;
 
     public void pollUpdates() {
-        List<TrackedLink> links = linkRepository.findAll();
+        long offset = 0;
+        int batchSize = persistenceProperties.getPollingBatchSize();
 
-        for (TrackedLink link : links) {
-            pollSingleLink(link);
+        while (true) {
+            List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
+            if (links.isEmpty()) {
+                return;
+            }
+
+            for (TrackedLink link : links) {
+                pollSingleLink(link);
+            }
+
+            offset += links.size();
         }
     }
 
@@ -38,9 +50,7 @@ public class LinkPollingService {
         LinkUpdateCheckResult result = updater.check(link);
 
         Instant updatedAt = result.changed()
-                ? (result.newUpdatedAt() != null
-                        ? result.newUpdatedAt()
-                        : checkedAt) // если времени обновления на сайте нет, то ставим время проверки
+                ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt)
                 : link.lastUpdatedAt();
 
         linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);

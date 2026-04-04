@@ -1,4 +1,4 @@
-package backend.academy.linktracker.bot.bot;
+package backend.academy.linktracker.bot.telegram;
 
 import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandRegistry;

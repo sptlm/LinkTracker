@@ -4,7 +4,6 @@ import backend.academy.linktracker.bot.command.Command;
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
-import backend.academy.linktracker.bot.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Component;
 public class TrackCommand implements Command {
 
     private final TrackDialogService trackDialogService;
-    private final UserService userService;
     private final BotMessagesService messages;
 
     @Override
@@ -28,11 +26,6 @@ public class TrackCommand implements Command {
 
     @Override
     public void handle(CommandContext context) {
-        if (!userService.isRegistered(context.userId())) {
-            context.reply(messages.chatNotRegistered());
-            return;
-        }
-
         trackDialogService.start(context);
         context.reply(messages.trackStarted());
     }

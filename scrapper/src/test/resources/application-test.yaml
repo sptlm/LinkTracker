@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    clean-disabled: false
+
+app:
+  clients:
+    bot-base-url: http://localhost:18080
+  stackoverflow:
+    base-url: https://api.stackexchange.com/2.3
+    key: test-key
+    access-token: test-token
+  github:
+    base-url: https://api.github.com
+    token: test-token
+  polling:
+    interval: 24h
