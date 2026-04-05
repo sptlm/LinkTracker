@@ -1,7 +1,10 @@
 package backend.academy.linktracker.scrapper.client.github;
 
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import backend.academy.linktracker.scrapper.client.github.dto.GithubIssueItem;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -51,6 +54,34 @@ public class RestGithubClient implements GithubClient {
                     .addKeyValue("repo", repo)
                     .log("GitHub request failed");
             throw new ExternalServiceException("GitHub request failed for repository %s/%s".formatted(owner, repo), e);
+        }
+    }
+
+    @Override
+    public List<GithubIssueItem> getLatestIssuesAndPullRequests(String owner, String repo, int limit) {
+        try {
+            GithubIssueItem[] items = restClient
+                    .get()
+                    .uri(
+                            uriBuilder -> uriBuilder
+                                    .path("/repos/{owner}/{repo}/issues")
+                                    .queryParam("state", "all")
+                                    .queryParam("sort", "created")
+                                    .queryParam("direction", "desc")
+                                    .queryParam("per_page", limit)
+                                    .build(owner, repo))
+                    .retrieve()
+                    .body(GithubIssueItem[].class);
+
+            return items == null ? List.of() : Arrays.asList(items);
+        } catch (RestClientResponseException e) {
+            throw new ExternalServiceException(
+                    "GitHub issues request failed for repository %s/%s, status=%d"
+                            .formatted(owner, repo, e.getStatusCode().value()),
+                    e);
+        } catch (Exception e) {
+            throw new ExternalServiceException(
+                    "GitHub issues request failed for repository %s/%s".formatted(owner, repo), e);
         }
     }
 }

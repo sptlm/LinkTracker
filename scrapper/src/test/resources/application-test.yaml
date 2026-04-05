@@ -17,3 +17,5 @@ app:
     token: test-token
   polling:
     interval: 24h
+    batch-size: 100
+    worker-threads: 2

@@ -33,6 +33,7 @@ app:
     token: ${GITHUB_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE
   polling:
     interval: 60s
+    batch-size: 100
+    worker-threads: 4
   persistence:
     access-type: ${SCRAPPER_ACCESS_TYPE:SQL}
-    polling-batch-size: 100

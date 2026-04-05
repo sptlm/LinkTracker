@@ -2,14 +2,18 @@ package backend.academy.linktracker.scrapper.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import backend.academy.linktracker.scrapper.properties.PersistenceProperties;
+import backend.academy.linktracker.scrapper.properties.ScrapperPollingProperties;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,23 +27,44 @@ public class LinkPollingService {
     private final SubscriptionRepository subscriptionRepository;
     private final List<LinkUpdater> linkUpdaters;
     private final UpdatePublisher updatePublisher;
-    private final PersistenceProperties persistenceProperties;
+    private final ScrapperPollingProperties pollingProperties;
 
     public void pollUpdates() {
         long offset = 0;
-        int batchSize = persistenceProperties.getPollingBatchSize();
+        int batchSize = pollingProperties.getBatchSize();
+        int workerThreads = pollingProperties.getWorkerThreads();
 
-        while (true) {
-            List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
-            if (links.isEmpty()) {
-                return;
+        try (ExecutorService executor = Executors.newFixedThreadPool(workerThreads)) {
+            while (true) {
+                List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
+                if (links.isEmpty()) {
+                    return;
+                }
+
+                processBatchInParallel(links, executor);
+                offset += links.size();
             }
+        }
+    }
 
-            for (TrackedLink link : links) {
-                pollSingleLink(link);
-            }
+    private void processBatchInParallel(List<TrackedLink> links, ExecutorService executor) {
+        List<CompletableFuture<Void>> tasks = new ArrayList<>(links.size());
+        for (TrackedLink link : links) {
+            tasks.add(CompletableFuture.runAsync(() -> pollSingleLinkSafe(link), executor));
+        }
+        CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).join();
+    }
 
-            offset += links.size();
+    private void pollSingleLinkSafe(TrackedLink link) {
+        try {
+            pollSingleLink(link);
+        } catch (Exception e) {
+            log.atError()
+                    .setCause(e)
+                    .addKeyValue("linkId", link.id())
+                    .addKeyValue("url", link.url())
+                    .log("Failed to poll link");
+            notifyAboutFailedProcessing(link);
         }
     }
 
@@ -81,6 +106,20 @@ public class LinkPollingService {
                 .addKeyValue("url", link.url())
                 .addKeyValue("chatIds", chatIds)
                 .log("Link update detected");
+    }
+
+    private void notifyAboutFailedProcessing(TrackedLink link) {
+        List<Long> chatIds = subscriptionRepository.findChatIdsByLinkId(link.id());
+        if (chatIds.isEmpty()) {
+            return;
+        }
+
+        LinkUpdate request = new LinkUpdate()
+                .id(link.id())
+                .url(URI.create(link.url()))
+                .description("Не удалось обработать ссылку в текущем цикле: %s".formatted(link.url()))
+                .tgChatIds(chatIds);
+        updatePublisher.publish(request);
     }
 
     private LinkUpdater findUpdater(TrackedLink link) {
