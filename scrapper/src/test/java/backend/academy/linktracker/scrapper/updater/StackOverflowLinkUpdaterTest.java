@@ -86,6 +86,7 @@ class StackOverflowLinkUpdaterTest {
 
         assertTrue(result.changed());
         org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Тема вопроса: How to write tests?"));
+        org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Время создания: 08.03.2026 12:00:00 UTC"));
         assertEquals(Instant.parse("2026-03-08T12:00:00Z"), result.newUpdatedAt());
     }
 

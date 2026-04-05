@@ -23,6 +23,8 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
 
     private static final int EVENTS_FETCH_LIMIT = 20;
     private static final int PREVIEW_LENGTH = 200;
+    private static final DateTimeFormatter MESSAGE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC);
 
     private final StackOverflowClient stackOverflowClient;
 
@@ -106,9 +108,7 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
     }
 
     private String formatDescription(String questionTitle, TrackedEvent event) {
-        String createdAt = event.createdAt() != null
-                ? DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(event.createdAt().atOffset(ZoneOffset.UTC))
-                : "unknown";
+        String createdAt = formatInstant(event.createdAt());
         return """
                 StackOverflow: новый %s
                 Тема вопроса: %s
@@ -130,6 +130,10 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
 
     private String safe(String value) {
         return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private String formatInstant(Instant value) {
+        return value == null ? "unknown" : MESSAGE_TIME_FORMATTER.format(value);
     }
 
     private record TrackedEvent(String type, Instant createdAt, String user, String preview) {}
