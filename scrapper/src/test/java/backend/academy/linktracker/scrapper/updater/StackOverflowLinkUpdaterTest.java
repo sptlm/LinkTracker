@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.scrapper.client.stackoverflow.StackOverflowClient;
+import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswerItem;
+import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentItem;
+import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowOwner;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
@@ -50,6 +53,8 @@ class StackOverflowLinkUpdaterTest {
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
+        when(stackOverflowClient.getLatestAnswers(123L, 20)).thenReturn(java.util.List.of());
+        when(stackOverflowClient.getLatestComments(123L, 20)).thenReturn(java.util.List.of());
         when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
 
         LinkUpdateCheckResult result = stackOverflowLinkUpdater.check(link);
@@ -70,13 +75,22 @@ class StackOverflowLinkUpdaterTest {
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
-        when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
+        when(stackOverflowClient.getLatestAnswers(123L, 20))
+                .thenReturn(java.util.List.of(new StackOverflowAnswerItem(
+                        1L,
+                        Instant.parse("2026-03-08T12:00:00Z").getEpochSecond(),
+                        "Body",
+                        new StackOverflowOwner("Bob"))));
+        when(stackOverflowClient.getLatestComments(123L, 20)).thenReturn(java.util.List.of());
+        when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-07T12:00:00Z"));
         when(question.title()).thenReturn("How to write tests?");
 
         LinkUpdateCheckResult result = stackOverflowLinkUpdater.check(link);
 
         assertTrue(result.changed());
-        assertEquals("Stack Overflow question updated: How to write tests?", result.description());
+        org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Тема вопроса: How to write tests?"));
+        org.junit.jupiter.api.Assertions.assertTrue(
+                result.description().contains("Время создания: 08.03.2026 12:00:00 UTC"));
         assertEquals(Instant.parse("2026-03-08T12:00:00Z"), result.newUpdatedAt());
     }
 
@@ -92,6 +106,13 @@ class StackOverflowLinkUpdaterTest {
         StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
 
         when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
+        when(stackOverflowClient.getLatestAnswers(123L, 20)).thenReturn(java.util.List.of());
+        when(stackOverflowClient.getLatestComments(123L, 20))
+                .thenReturn(java.util.List.of(new StackOverflowCommentItem(
+                        1L,
+                        Instant.parse("2026-03-08T12:00:00Z").getEpochSecond(),
+                        "Comment",
+                        new StackOverflowOwner("Bob"))));
         when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
 
         LinkUpdateCheckResult result = stackOverflowLinkUpdater.check(link);

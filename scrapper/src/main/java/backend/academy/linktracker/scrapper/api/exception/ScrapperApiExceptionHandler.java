@@ -1,7 +1,8 @@
 package backend.academy.linktracker.scrapper.api.exception;
 
 import backend.academy.linktracker.scrapper.generated.dto.ApiErrorResponse;
-import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -56,7 +57,9 @@ public class ScrapperApiExceptionHandler {
                 .code(status.name())
                 .exceptionName(e.getClass().getSimpleName())
                 .exceptionMessage(e.getMessage())
-                .stacktrace(List.of());
+                .stacktrace(Arrays.stream(e.getStackTrace())
+                        .map(StackTraceElement::toString)
+                        .collect(Collectors.toList()));
         return ResponseEntity.status(status).body(body);
     }
 }

@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -41,7 +42,7 @@ public class SqlLinkRepository implements LinkRepository {
         pscFactory.setGeneratedKeysColumnNames("id");
 
         jdbcTemplate.update(
-                pscFactory.newPreparedStatementCreator(List.of(
+                pscFactory.newPreparedStatementCreator(Arrays.asList(
                         link.url(),
                         link.type().name(),
                         toOffsetDateTime(link.createdAt()),
