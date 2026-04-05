@@ -129,4 +129,45 @@ class LinkPollingServiceTest {
 
         verify(updatePublisher, org.mockito.Mockito.times(2)).publish(any(LinkUpdate.class));
     }
+
+    @Test
+    void shouldPersistObservedUpdatedAtWhenNoChangesForGithubLink() {
+        TrackedLink link = new TrackedLink(
+                20L, "https://github.com/user/repo", LinkSourceType.GITHUB, Instant.parse("2026-03-20T10:00:00Z"), null, null);
+
+        when(linkRepository.findPage(0, 100)).thenReturn(List.of(link));
+        when(linkRepository.findPage(1, 100)).thenReturn(List.of());
+        when(linkUpdater.supports(link)).thenReturn(true);
+        when(linkUpdater.check(link))
+                .thenReturn(LinkUpdateCheckResult.unchanged(null, Instant.parse("2026-03-21T10:00:00Z")));
+
+        linkPollingService.pollUpdates();
+
+        verify(linkRepository)
+                .updatePollingState(any(Long.class), any(Instant.class), org.mockito.ArgumentMatchers.eq(Instant.parse("2026-03-21T10:00:00Z")));
+        verify(updatePublisher, never()).publish(any());
+    }
+
+    @Test
+    void shouldPersistObservedUpdatedAtWhenNoChangesForStackoverflowLink() {
+        TrackedLink link = new TrackedLink(
+                21L,
+                "https://stackoverflow.com/questions/123",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.parse("2026-03-20T10:00:00Z"),
+                null,
+                null);
+
+        when(linkRepository.findPage(0, 100)).thenReturn(List.of(link));
+        when(linkRepository.findPage(1, 100)).thenReturn(List.of());
+        when(linkUpdater.supports(link)).thenReturn(true);
+        when(linkUpdater.check(link))
+                .thenReturn(LinkUpdateCheckResult.unchanged(null, Instant.parse("2026-03-22T10:00:00Z")));
+
+        linkPollingService.pollUpdates();
+
+        verify(linkRepository)
+                .updatePollingState(any(Long.class), any(Instant.class), org.mockito.ArgumentMatchers.eq(Instant.parse("2026-03-22T10:00:00Z")));
+        verify(updatePublisher, never()).publish(any());
+    }
 }

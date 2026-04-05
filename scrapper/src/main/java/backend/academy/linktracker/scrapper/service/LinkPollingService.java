@@ -83,7 +83,7 @@ public class LinkPollingService {
 
         Instant updatedAt = result.changed()
                 ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt)
-                : link.lastUpdatedAt();
+                : (result.newUpdatedAt() != null ? result.newUpdatedAt() : link.lastUpdatedAt());
 
         linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
 
