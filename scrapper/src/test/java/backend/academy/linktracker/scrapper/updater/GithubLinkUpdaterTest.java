@@ -65,8 +65,7 @@ class GithubLinkUpdaterTest {
 
         assertTrue(result.changed());
         org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Название: New issue"));
-        org.junit.jupiter.api.Assertions.assertTrue(
-                result.description().contains("Время создания: 08.03.2026 12:00:00 UTC"));
+        org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Время создания: 08.03.2026 12:00:00 UTC"));
         assertEquals(Instant.parse("2026-03-08T12:00:00Z"), result.newUpdatedAt());
     }
 

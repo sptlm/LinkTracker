@@ -80,6 +80,7 @@ class StackOverflowLinkUpdaterTest {
                         1L,
                         Instant.parse("2026-03-08T12:00:00Z").getEpochSecond(),
                         "Body",
+                        "Body markdown",
                         new StackOverflowOwner("Bob"))));
         when(stackOverflowClient.getLatestComments(123L, 20)).thenReturn(java.util.List.of());
         when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-07T12:00:00Z"));
@@ -111,7 +112,8 @@ class StackOverflowLinkUpdaterTest {
                 .thenReturn(java.util.List.of(new StackOverflowCommentItem(
                         1L,
                         Instant.parse("2026-03-08T12:00:00Z").getEpochSecond(),
-                        "Comment",
+                        "Comment body",
+                        "Comment markdown",
                         new StackOverflowOwner("Bob"))));
         when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
 
@@ -132,5 +134,34 @@ class StackOverflowLinkUpdaterTest {
                 Instant.parse("2026-03-05T10:00:00Z"));
 
         assertThrows(IllegalArgumentException.class, () -> stackOverflowLinkUpdater.check(link));
+    }
+
+    @Test
+    void check_whenCommentMarkdownMissing_usesBodyAsPreview() {
+        TrackedLink link = new TrackedLink(
+                1L,
+                "https://stackoverflow.com/questions/123/title",
+                LinkSourceType.STACKOVERFLOW,
+                Instant.now(),
+                null,
+                Instant.parse("2026-03-05T10:00:00Z"));
+        StackOverflowQuestionItem question = org.mockito.Mockito.mock(StackOverflowQuestionItem.class);
+
+        when(stackOverflowClient.getQuestion(123L)).thenReturn(question);
+        when(stackOverflowClient.getLatestAnswers(123L, 20)).thenReturn(java.util.List.of());
+        when(stackOverflowClient.getLatestComments(123L, 20))
+                .thenReturn(java.util.List.of(new StackOverflowCommentItem(
+                        2L,
+                        Instant.parse("2026-03-08T12:00:00Z").getEpochSecond(),
+                        "Body fallback",
+                        null,
+                        new StackOverflowOwner("Bob"))));
+        when(question.lastActivityAt()).thenReturn(Instant.parse("2026-03-07T12:00:00Z"));
+        when(question.title()).thenReturn("How to write tests?");
+
+        LinkUpdateCheckResult result = stackOverflowLinkUpdater.check(link);
+
+        assertTrue(result.changed());
+        org.junit.jupiter.api.Assertions.assertTrue(result.description().contains("Превью: Body fallback"));
     }
 }
