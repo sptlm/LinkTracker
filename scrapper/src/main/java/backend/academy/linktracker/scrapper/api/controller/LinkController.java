@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.api.controller;
 
+import backend.academy.linktracker.scrapper.api.exception.InvalidRequestException;
 import backend.academy.linktracker.scrapper.generated.api.LinksApi;
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
@@ -25,18 +26,25 @@ public class LinkController implements LinksApi {
 
     @GetMapping
     public ResponseEntity<ListLinksResponse> linksGet(@RequestHeader("Tg-Chat-Id") Long chatId) {
-        return ResponseEntity.ok(linkTrackingService.getLinks(chatId));
+        return ResponseEntity.ok(linkTrackingService.getLinks(requireChatId(chatId)));
     }
 
     @PostMapping
     public ResponseEntity<LinksPost200Response> linksPost(
             @RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody AddLinkRequest request) {
-        return ResponseEntity.ok(linkTrackingService.addLink(chatId, request));
+        return ResponseEntity.ok(linkTrackingService.addLink(requireChatId(chatId), request));
     }
 
     @DeleteMapping
     public ResponseEntity<LinksPost200Response> linksDelete(
             @RequestHeader("Tg-Chat-Id") Long chatId, @RequestBody RemoveLinkRequest request) {
-        return ResponseEntity.ok(linkTrackingService.removeLink(chatId, request));
+        return ResponseEntity.ok(linkTrackingService.removeLink(requireChatId(chatId), request));
+    }
+
+    private long requireChatId(Long chatId) {
+        if (chatId == null) {
+            throw new InvalidRequestException("Tg-Chat-Id обязателен");
+        }
+        return chatId;
     }
 }

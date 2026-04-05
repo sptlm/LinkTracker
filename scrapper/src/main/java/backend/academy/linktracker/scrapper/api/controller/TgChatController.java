@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.api.controller;
 
+import backend.academy.linktracker.scrapper.api.exception.InvalidRequestException;
 import backend.academy.linktracker.scrapper.generated.api.TgChatApi;
 import backend.academy.linktracker.scrapper.service.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,20 @@ public class TgChatController implements TgChatApi {
 
     @PostMapping("/{id}")
     public ResponseEntity<Void> tgChatIdPost(@PathVariable("id") Long chatId) {
-        chatService.register(chatId);
+        chatService.register(requireChatId(chatId));
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> tgChatIdDelete(@PathVariable("id") Long chatId) {
-        chatService.delete(chatId);
+        chatService.delete(requireChatId(chatId));
         return ResponseEntity.ok().build();
+    }
+
+    private long requireChatId(Long chatId) {
+        if (chatId == null) {
+            throw new InvalidRequestException("chat id обязателен");
+        }
+        return chatId;
     }
 }
