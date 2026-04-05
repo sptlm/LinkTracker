@@ -109,13 +109,7 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
 
     private String formatDescription(String questionTitle, TrackedEvent event) {
         String createdAt = formatInstant(event.createdAt());
-        return """
-                StackOverflow: новый %s
-                Тема вопроса: %s
-                Пользователь: %s
-                Время создания: %s
-                Превью: %s
-                """
+        return "StackOverflow: новый %s%nТема вопроса: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
                 .formatted(
                         event.type(),
                         safe(questionTitle),

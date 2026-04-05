@@ -93,13 +93,7 @@ public class GithubLinkUpdater implements LinkUpdater {
         String author = item.user() != null ? safe(item.user().login()) : "unknown";
         String createdAt = formatInstant(item.createdAt());
         String preview = truncate(safe(item.body()));
-        return """
-                GitHub %s обновление
-                Название: %s
-                Пользователь: %s
-                Время создания: %s
-                Превью: %s
-                """
+        return "GitHub %s обновление%nНазвание: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
                 .formatted(type, title, author, createdAt, preview);
     }
 
