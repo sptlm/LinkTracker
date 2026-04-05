@@ -85,7 +85,7 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
                 .filter(item -> item.createdAt() != null && item.createdAt().isAfter(lastUpdatedAt))
                 .max(Comparator.comparing(StackOverflowAnswerItem::createdAt))
                 .map(answer -> new TrackedEvent(
-                        "ответ", answer.createdAt(), answer.owner() != null ? answer.owner().displayName() : null, answer.bodyMarkdown()))
+                        "ответ", answer.createdAt(), answer.owner() != null ? answer.owner().displayName() : null, answer.preview()))
                 .orElse(null);
 
         TrackedEvent commentEvent = comments.stream()
@@ -95,7 +95,7 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
                         "комментарий",
                         comment.createdAt(),
                         comment.owner() != null ? comment.owner().displayName() : null,
-                        comment.bodyMarkdown()))
+                        comment.preview()))
                 .orElse(null);
 
         if (answerEvent == null) {
