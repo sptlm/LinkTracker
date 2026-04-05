@@ -58,6 +58,13 @@ public class LinkPollingService {
     private void pollSingleLinkSafe(TrackedLink link) {
         try {
             pollSingleLink(link);
+        } catch (ExternalServiceException e) {
+            log.atWarn()
+                    .addKeyValue("linkId", link.id())
+                    .addKeyValue("url", link.url())
+                    .addKeyValue("reason", e.getMessage())
+                    .log("Failed to poll link due to temporary external API issue");
+            notifyAboutFailedProcessing(link);
         } catch (Exception e) {
             log.atError()
                     .setCause(e)
@@ -129,3 +136,4 @@ public class LinkPollingService {
                 .orElseThrow(() -> new IllegalStateException("No updater for link type: " + link.type()));
     }
 }
+import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;

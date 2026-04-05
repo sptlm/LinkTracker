@@ -8,13 +8,12 @@ import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverfl
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionsResponse;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
-@Slf4j
 @Component
 public class RestStackOverflowClient implements StackOverflowClient {
 
@@ -44,17 +43,13 @@ public class RestStackOverflowClient implements StackOverflowClient {
 
             return items.getFirst();
         } catch (RestClientResponseException e) {
-            log.atError()
-                    .setCause(e)
-                    .addKeyValue("questionId", questionId)
-                    .addKeyValue("status", e.getStatusCode().value())
-                    .log("StackOverflow request failed");
             throw new ExternalServiceException(
                     "StackOverflow request failed for question %d, status=%d"
                             .formatted(questionId, e.getStatusCode().value()),
                     e);
+        } catch (ResourceAccessException e) {
+            throw new ExternalServiceException("StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
-            log.atError().setCause(e).addKeyValue("questionId", questionId).log("StackOverflow request failed");
             throw new ExternalServiceException("StackOverflow request failed for question " + questionId, e);
         }
     }
@@ -76,6 +71,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowAnswersResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (ResourceAccessException e) {
+            throw new ExternalServiceException("StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow answers request failed for question " + questionId, e);
         }
@@ -98,6 +95,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowCommentsResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (ResourceAccessException e) {
+            throw new ExternalServiceException("StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow comments request failed for question " + questionId, e);
         }
