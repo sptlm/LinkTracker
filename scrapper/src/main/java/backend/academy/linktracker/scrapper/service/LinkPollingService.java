@@ -89,7 +89,7 @@ public class LinkPollingService {
                 : result.newUpdatedAt() != null ? result.newUpdatedAt() : link.lastUpdatedAt();
 
         if (!result.changed()) {
-            if (shouldUpdatePollingState(link, updatedAt)) {
+            if (shouldPersistObservedUpdatedAt(link, result)) {
                 linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
             }
             log.atDebug()
@@ -142,7 +142,12 @@ public class LinkPollingService {
                 .orElseThrow(() -> new IllegalStateException("No updater for link type: " + link.type()));
     }
 
-    private boolean shouldUpdatePollingState(TrackedLink link, Instant updatedAt) {
-        return updatedAt != null && !updatedAt.equals(link.lastUpdatedAt());
+    /**
+     * Для unchanged-сценария состояние обновляем только когда есть новый observed updatedAt:
+     * это инициализирует/двигает watermark, чтобы не делать лишний update в БД каждый цикл.
+     */
+    private boolean shouldPersistObservedUpdatedAt(TrackedLink link, LinkUpdateCheckResult result) {
+        Instant observedUpdatedAt = result.newUpdatedAt();
+        return observedUpdatedAt != null && !observedUpdatedAt.equals(link.lastUpdatedAt());
     }
 }
