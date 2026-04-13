@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,29 +28,32 @@ public class LinkPollingService {
     private final List<LinkUpdater> linkUpdaters;
     private final UpdatePublisher updatePublisher;
     private final ScrapperPollingProperties pollingProperties;
+    private final ExecutorService pollingExecutorService;
 
     public void pollUpdates() {
         long offset = 0;
         int batchSize = pollingProperties.getBatchSize();
-        int workerThreads = pollingProperties.getWorkerThreads();
 
-        try (ExecutorService executor = Executors.newFixedThreadPool(workerThreads)) {
-            while (true) {
-                List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
-                if (links.isEmpty()) {
-                    return;
-                }
-
-                processBatchInParallel(links, executor);
-                offset += links.size();
+        while (true) {
+            List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
+            if (links.isEmpty()) {
+                return;
             }
+
+            processBatchInParallel(links);
+            offset += links.size();
         }
     }
 
-    private void processBatchInParallel(List<TrackedLink> links, ExecutorService executor) {
-        List<CompletableFuture<Void>> tasks = new ArrayList<>(links.size());
-        for (TrackedLink link : links) {
-            tasks.add(CompletableFuture.runAsync(() -> pollSingleLinkSafe(link), executor));
+    private void processBatchInParallel(List<TrackedLink> links) {
+        int workerThreads = pollingProperties.getWorkerThreads();
+        int chunkSize = Math.max(1, (int) Math.ceil((double) links.size() / workerThreads));
+
+        List<CompletableFuture<Void>> tasks = new ArrayList<>();
+        for (int start = 0; start < links.size(); start += chunkSize) {
+            int end = Math.min(start + chunkSize, links.size());
+            List<TrackedLink> chunk = links.subList(start, end);
+            tasks.add(CompletableFuture.runAsync(() -> chunk.forEach(this::pollSingleLinkSafe), pollingExecutorService));
         }
         CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).join();
     }
@@ -86,9 +88,10 @@ public class LinkPollingService {
                 ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt)
                 : result.newUpdatedAt() != null ? result.newUpdatedAt() : link.lastUpdatedAt();
 
-        linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
-
         if (!result.changed()) {
+            if (shouldUpdatePollingState(link, updatedAt)) {
+                linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
+            }
             log.atDebug()
                     .addKeyValue("linkId", link.id())
                     .addKeyValue("url", link.url())
@@ -100,6 +103,8 @@ public class LinkPollingService {
         if (chatIds.isEmpty()) {
             return;
         }
+
+        linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
 
         LinkUpdate request = new LinkUpdate()
                 .id(link.id())
@@ -135,5 +140,9 @@ public class LinkPollingService {
                 .filter(updater -> updater.supports(link))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No updater for link type: " + link.type()));
+    }
+
+    private boolean shouldUpdatePollingState(TrackedLink link, Instant updatedAt) {
+        return updatedAt != null && !updatedAt.equals(link.lastUpdatedAt());
     }
 }

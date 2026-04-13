@@ -1,14 +1,14 @@
 package backend.academy.linktracker.scrapper.client.github;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 class RestGithubClientTest {
@@ -21,14 +21,15 @@ class RestGithubClientTest {
      */
     @Test
     void shouldWrapGithubHttpErrorIntoExternalServiceException() {
-        RestClient.Builder builder = RestClient.builder().baseUrl("https://example.com");
-        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        RestGithubClient client = new RestGithubClient(builder.build());
+        try (WireMockServer server = new WireMockServer(0)) {
+            server.start();
+            RestGithubClient client = new RestGithubClient(
+                    RestClient.builder().baseUrl(server.baseUrl()).build());
 
-        server.expect(requestTo("https://example.com/repos/user/repo")).andRespond(withBadRequest());
+            server.stubFor(get(urlEqualTo("/repos/user/repo")).willReturn(aResponse().withStatus(400)));
 
-        assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
-        server.verify();
+            assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
+        }
     }
 
     /**
@@ -39,14 +40,18 @@ class RestGithubClientTest {
      */
     @Test
     void shouldWrapGithubInvalidBodyIntoExternalServiceException() {
-        RestClient.Builder builder = RestClient.builder().baseUrl("https://example.com");
-        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        RestGithubClient client = new RestGithubClient(builder.build());
+        try (WireMockServer server = new WireMockServer(0)) {
+            server.start();
+            RestGithubClient client = new RestGithubClient(
+                    RestClient.builder().baseUrl(server.baseUrl()).build());
 
-        server.expect(requestTo("https://example.com/repos/user/repo"))
-                .andRespond(withSuccess("{\"pushed_at\":\"not-an-instant\"}", MediaType.APPLICATION_JSON));
+            server.stubFor(get(urlEqualTo("/repos/user/repo"))
+                    .willReturn(aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                            .withBody("{\"pushed_at\":\"not-an-instant\"}")));
 
-        assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
-        server.verify();
+            assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
+        }
     }
 }

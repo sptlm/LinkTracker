@@ -8,7 +8,7 @@ public record GithubIssueItem(
         @JsonProperty("body") String body,
         @JsonProperty("created_at") Instant createdAt,
         @JsonProperty("user") GithubUser user,
-        @JsonProperty("pull_request") Object pullRequest) {
+        @JsonProperty("pull_request") GithubPullRequestInfo pullRequest) {
 
     public boolean isPullRequest() {
         return pullRequest != null;

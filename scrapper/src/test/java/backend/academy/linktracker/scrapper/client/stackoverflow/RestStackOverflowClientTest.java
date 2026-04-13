@@ -1,14 +1,14 @@
 package backend.academy.linktracker.scrapper.client.stackoverflow;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 class RestStackOverflowClientTest {
@@ -21,15 +21,16 @@ class RestStackOverflowClientTest {
      */
     @Test
     void shouldWrapStackOverflowHttpErrorIntoExternalServiceException() {
-        RestClient.Builder builder = RestClient.builder().baseUrl("https://example.com");
-        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        RestStackOverflowClient client = new RestStackOverflowClient(builder.build());
+        try (WireMockServer server = new WireMockServer(0)) {
+            server.start();
+            RestStackOverflowClient client = new RestStackOverflowClient(
+                    RestClient.builder().baseUrl(server.baseUrl()).build());
 
-        server.expect(requestTo("https://example.com/questions/123?site=stackoverflow"))
-                .andRespond(withServerError());
+            server.stubFor(get(urlEqualTo("/questions/123?site=stackoverflow"))
+                    .willReturn(aResponse().withStatus(500)));
 
-        assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
-        server.verify();
+            assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
+        }
     }
 
     /**
@@ -40,16 +41,18 @@ class RestStackOverflowClientTest {
      */
     @Test
     void shouldWrapStackOverflowInvalidBodyIntoExternalServiceException() {
-        RestClient.Builder builder = RestClient.builder().baseUrl("https://example.com");
-        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        RestStackOverflowClient client = new RestStackOverflowClient(builder.build());
+        try (WireMockServer server = new WireMockServer(0)) {
+            server.start();
+            RestStackOverflowClient client = new RestStackOverflowClient(
+                    RestClient.builder().baseUrl(server.baseUrl()).build());
 
-        server.expect(requestTo("https://example.com/questions/123?site=stackoverflow"))
-                .andRespond(withSuccess(
-                        "{\"items\":[{\"question_id\":123,\"last_activity_date\":\"bad\"}]}",
-                        MediaType.APPLICATION_JSON));
+            server.stubFor(get(urlEqualTo("/questions/123?site=stackoverflow"))
+                    .willReturn(aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                            .withBody("{\"items\":[{\"question_id\":123,\"last_activity_date\":\"bad\"}]}")));
 
-        assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
-        server.verify();
+            assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
+        }
     }
 }

@@ -15,6 +15,9 @@ import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,14 +41,26 @@ class LinkPollingServiceTest {
     private UpdatePublisher updatePublisher;
 
     private LinkPollingService linkPollingService;
+    private ExecutorService executorService;
 
     @BeforeEach
     void setUp() {
         ScrapperPollingProperties pollingProperties = new ScrapperPollingProperties();
         pollingProperties.setBatchSize(100);
         pollingProperties.setWorkerThreads(2);
+        executorService = Executors.newFixedThreadPool(2);
         linkPollingService = new LinkPollingService(
-                linkRepository, subscriptionRepository, List.of(linkUpdater), updatePublisher, pollingProperties);
+                linkRepository,
+                subscriptionRepository,
+                List.of(linkUpdater),
+                updatePublisher,
+                pollingProperties,
+                executorService);
+    }
+
+    @AfterEach
+    void tearDown() {
+        executorService.shutdownNow();
     }
 
     @Test
