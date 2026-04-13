@@ -7,12 +7,12 @@ import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import backend.academy.linktracker.scrapper.updater.MessageFormattingUtils;
 import java.net.URI;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +22,6 @@ public class GithubLinkUpdater implements LinkUpdater {
 
     private static final int PREVIEW_LENGTH = 200;
     private static final int EVENTS_FETCH_LIMIT = 20;
-    private static final DateTimeFormatter MESSAGE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC);
 
     private final GithubClient githubClient;
 
@@ -35,15 +33,18 @@ public class GithubLinkUpdater implements LinkUpdater {
     @Override
     public LinkUpdateCheckResult check(TrackedLink link) {
         RepoCoordinates coordinates = extractCoordinates(link.url());
-        GithubRepositoryResponse response = githubClient.getRepository(coordinates.owner(), coordinates.repo());
         List<GithubIssueItem> latestEvents = githubClient.getLatestIssuesAndPullRequests(
                 coordinates.owner(), coordinates.repo(), EVENTS_FETCH_LIMIT);
 
         Instant observedUpdatedAt = latestEvents.stream()
                 .map(GithubIssueItem::createdAt)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .max(Comparator.naturalOrder())
-                .orElse(response.pushedAt() != null ? response.pushedAt() : response.updatedAt());
+                .orElseGet(() -> {
+                    GithubRepositoryResponse response =
+                            githubClient.getRepository(coordinates.owner(), coordinates.repo());
+                    return response.pushedAt() != null ? response.pushedAt() : response.updatedAt();
+                });
 
         if (observedUpdatedAt == null) {
             return LinkUpdateCheckResult.unchanged(null, link.lastUpdatedAt());
@@ -89,23 +90,13 @@ public class GithubLinkUpdater implements LinkUpdater {
 
     private String formatDescription(GithubIssueItem item) {
         String type = item.isPullRequest() ? "PR" : "Issue";
-        String title = safe(item.title());
-        String author = item.user() != null ? safe(item.user().login()) : "unknown";
-        String createdAt = formatInstant(item.createdAt());
-        String preview = truncate(safe(item.body()));
+        String title = MessageFormattingUtils.safe(item.title());
+        String author =
+                item.user() != null ? MessageFormattingUtils.safe(item.user().login()) : "unknown";
+        String createdAt = MessageFormattingUtils.formatInstant(item.createdAt());
+        String preview =
+                MessageFormattingUtils.truncateWithEllipsis(MessageFormattingUtils.safe(item.body()), PREVIEW_LENGTH);
         return "GitHub %s обновление%nНазвание: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
                 .formatted(type, title, author, createdAt, preview);
-    }
-
-    private String truncate(String value) {
-        return value.length() <= PREVIEW_LENGTH ? value : value.substring(0, PREVIEW_LENGTH);
-    }
-
-    private String safe(String value) {
-        return value == null || value.isBlank() ? "-" : value;
-    }
-
-    private String formatInstant(Instant value) {
-        return value == null ? "unknown" : MESSAGE_TIME_FORMATTER.format(value);
     }
 }

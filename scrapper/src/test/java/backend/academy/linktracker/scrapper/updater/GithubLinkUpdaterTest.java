@@ -51,7 +51,7 @@ class GithubLinkUpdaterTest {
                 Instant.parse("2026-03-05T10:00:00Z"));
         GithubRepositoryResponse response = org.mockito.Mockito.mock(GithubRepositoryResponse.class);
 
-        when(githubClient.getRepository("user", "repo")).thenReturn(response);
+        // when(githubClient.getRepository("user", "repo")).thenReturn(response);
         when(githubClient.getLatestIssuesAndPullRequests("user", "repo", 20))
                 .thenReturn(java.util.List.of(new GithubIssueItem(
                         "New issue",
@@ -59,7 +59,7 @@ class GithubLinkUpdaterTest {
                         Instant.parse("2026-03-08T12:00:00Z"),
                         new GithubUser("alice"),
                         null)));
-        when(response.pushedAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
+        // when(response.pushedAt()).thenReturn(Instant.parse("2026-03-08T12:00:00Z"));
 
         LinkUpdateCheckResult result = githubLinkUpdater.check(link);
 

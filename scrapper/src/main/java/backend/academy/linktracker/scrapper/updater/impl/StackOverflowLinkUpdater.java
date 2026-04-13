@@ -8,10 +8,9 @@ import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import backend.academy.linktracker.scrapper.updater.MessageFormattingUtils;
 import java.net.URI;
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +22,6 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
 
     private static final int EVENTS_FETCH_LIMIT = 20;
     private static final int PREVIEW_LENGTH = 200;
-    private static final DateTimeFormatter MESSAGE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss 'UTC'").withZone(ZoneOffset.UTC);
 
     private final StackOverflowClient stackOverflowClient;
 
@@ -111,26 +108,15 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
     }
 
     private String formatDescription(String questionTitle, TrackedEvent event) {
-        String createdAt = formatInstant(event.createdAt());
+        String createdAt = MessageFormattingUtils.formatInstant(event.createdAt());
         return "StackOverflow: новый %s%nТема вопроса: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
                 .formatted(
                         event.type(),
-                        safe(questionTitle),
-                        safe(event.user()),
+                        MessageFormattingUtils.safe(questionTitle),
+                        MessageFormattingUtils.safe(event.user()),
                         createdAt,
-                        truncate(safe(event.preview())));
-    }
-
-    private String truncate(String value) {
-        return value.length() <= PREVIEW_LENGTH ? value : value.substring(0, PREVIEW_LENGTH);
-    }
-
-    private String safe(String value) {
-        return value == null || value.isBlank() ? "-" : value;
-    }
-
-    private String formatInstant(Instant value) {
-        return value == null ? "unknown" : MESSAGE_TIME_FORMATTER.format(value);
+                        MessageFormattingUtils.truncateWithEllipsis(
+                                MessageFormattingUtils.safe(event.preview()), PREVIEW_LENGTH));
     }
 
     private record TrackedEvent(String type, Instant createdAt, String user, String preview) {}
