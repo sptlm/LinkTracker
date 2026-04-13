@@ -21,7 +21,8 @@ class RestStackOverflowClientTest {
      */
     @Test
     void shouldWrapStackOverflowHttpErrorIntoExternalServiceException() {
-        try (WireMockServer server = new WireMockServer(0)) {
+        WireMockServer server = new WireMockServer(0);
+        try {
             server.start();
             RestStackOverflowClient client = new RestStackOverflowClient(
                     RestClient.builder().baseUrl(server.baseUrl()).build());
@@ -30,6 +31,8 @@ class RestStackOverflowClientTest {
                     .willReturn(aResponse().withStatus(500)));
 
             assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
+        } finally {
+            server.stop();
         }
     }
 
@@ -41,7 +44,8 @@ class RestStackOverflowClientTest {
      */
     @Test
     void shouldWrapStackOverflowInvalidBodyIntoExternalServiceException() {
-        try (WireMockServer server = new WireMockServer(0)) {
+        WireMockServer server = new WireMockServer(0);
+        try {
             server.start();
             RestStackOverflowClient client = new RestStackOverflowClient(
                     RestClient.builder().baseUrl(server.baseUrl()).build());
@@ -53,6 +57,8 @@ class RestStackOverflowClientTest {
                             .withBody("{\"items\":[{\"question_id\":123,\"last_activity_date\":\"bad\"}]}")));
 
             assertThrows(ExternalServiceException.class, () -> client.getQuestion(123L));
+        } finally {
+            server.stop();
         }
     }
 }

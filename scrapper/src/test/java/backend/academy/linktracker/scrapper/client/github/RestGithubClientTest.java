@@ -21,7 +21,8 @@ class RestGithubClientTest {
      */
     @Test
     void shouldWrapGithubHttpErrorIntoExternalServiceException() {
-        try (WireMockServer server = new WireMockServer(0)) {
+        WireMockServer server = new WireMockServer(0);
+        try {
             server.start();
             RestGithubClient client = new RestGithubClient(
                     RestClient.builder().baseUrl(server.baseUrl()).build());
@@ -29,6 +30,8 @@ class RestGithubClientTest {
             server.stubFor(get(urlEqualTo("/repos/user/repo")).willReturn(aResponse().withStatus(400)));
 
             assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
+        } finally {
+            server.stop();
         }
     }
 
@@ -40,7 +43,8 @@ class RestGithubClientTest {
      */
     @Test
     void shouldWrapGithubInvalidBodyIntoExternalServiceException() {
-        try (WireMockServer server = new WireMockServer(0)) {
+        WireMockServer server = new WireMockServer(0);
+        try {
             server.start();
             RestGithubClient client = new RestGithubClient(
                     RestClient.builder().baseUrl(server.baseUrl()).build());
@@ -52,6 +56,8 @@ class RestGithubClientTest {
                             .withBody("{\"pushed_at\":\"not-an-instant\"}")));
 
             assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
+        } finally {
+            server.stop();
         }
     }
 }
