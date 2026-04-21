@@ -1,19 +1,23 @@
 package backend.academy.linktracker.scrapper.integration;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
-import backend.academy.linktracker.bot.BotApplication;
+import backend.academy.linktracker.bot.configuration.JacksonConfiguration;
+import backend.academy.linktracker.bot.configuration.KafkaNotificationsConfiguration;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
+import backend.academy.linktracker.bot.service.BotUpdateService;
+import backend.academy.linktracker.bot.service.KafkaUpdateConsumer;
 import backend.academy.linktracker.scrapper.ScrapperApplication;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
-import com.pengrad.telegrambot.TelegramBot;
-import com.pengrad.telegrambot.request.SendMessage;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -24,7 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
-        classes = {ScrapperApplication.class, BotApplication.class},
+        classes = {ScrapperApplication.class, ScrapperKafkaToBotIT.BotKafkaConsumerTestConfiguration.class},
         properties = {
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=scrapper-to-bot-it",
@@ -46,7 +50,7 @@ class ScrapperKafkaToBotIT {
     private UpdatePublisher updatePublisher;
 
     @MockitoBean
-    private TelegramBot telegramBot;
+    private BotUpdateService botUpdateService;
 
     @Test
     void shouldDeliverUpdateFromScrapperPublisherToBotConsumer() {
@@ -58,6 +62,15 @@ class ScrapperKafkaToBotIT {
 
         updatePublisher.publish(update);
 
-        verify(telegramBot, timeout(10_000)).execute(any(SendMessage.class));
+        verify(botUpdateService, timeout(10_000))
+                .processUpdate(argThat(received -> received != null
+                        && received.getId().equals(update.getId())
+                        && received.getUrl().equals(update.getUrl())
+                        && received.getDescription().equals(update.getDescription())
+                        && received.getTgChatIds().equals(update.getTgChatIds())));
     }
+
+    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class, JacksonConfiguration.class})
+    @EnableConfigurationProperties(KafkaNotificationsProperties.class)
+    static class BotKafkaConsumerTestConfiguration {}
 }
