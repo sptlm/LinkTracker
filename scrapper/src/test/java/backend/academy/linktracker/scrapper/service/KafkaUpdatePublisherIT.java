@@ -40,6 +40,10 @@ class KafkaUpdatePublisherIT {
 
     @DynamicPropertySource
     static void kafkaProps(DynamicPropertyRegistry registry) {
+        if (!kafkaContainer.isRunning()) {
+            kafkaContainer.start();
+        }
+
         registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
     }
 
