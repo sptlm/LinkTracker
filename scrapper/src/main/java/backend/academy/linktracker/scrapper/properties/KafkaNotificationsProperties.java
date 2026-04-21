@@ -31,4 +31,7 @@ public class KafkaNotificationsProperties {
     @NotNull
     @Min(1)
     private Short updatesTopicReplicationFactor = 3;
+
+    @NotNull
+    private KafkaPayloadFormat payloadFormat = KafkaPayloadFormat.JSON;
 }

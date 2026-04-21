@@ -2,6 +2,7 @@ package backend.academy.linktracker.bot.properties;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,9 @@ public class KafkaNotificationsProperties {
 
     @NotBlank
     private String groupId = "bot-updates-consumer";
+
+    @NotNull
+    private KafkaPayloadFormat payloadFormat = KafkaPayloadFormat.JSON;
 
     @NotBlank
     private String dlqTopic = "link-updates-dlq";

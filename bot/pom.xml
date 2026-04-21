@@ -127,6 +127,11 @@
             <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+        </dependency>
+
         <!-- Opentelemetry support: -->
         <!-- <dependency> -->
         <!--     <groupId>org.springframework.boot</groupId> -->

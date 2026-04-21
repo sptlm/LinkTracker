@@ -81,6 +81,7 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_NOTIFICATION_TRANSPORT` — транспорт нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
 - `SCRAPPER_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
 - `SCRAPPER_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
+- `SCRAPPER_KAFKA_PAYLOAD_FORMAT` — формат сообщения в Kafka (`JSON` или `AVRO`, по умолчанию `JSON`).
 - `SCRAPPER_KAFKA_OUTBOX_ENABLED` — включает Transactional Outbox для Kafka-публикации (`false` по умолчанию).
 - `SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL` — период отправки событий из outbox в Kafka (по умолчанию `1s`).
 
@@ -333,6 +334,7 @@ mvn -pl scrapper test
 - `BOT_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
 - `BOT_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
 - `BOT_KAFKA_GROUP_ID` — consumer group ID.
+- `BOT_KAFKA_PAYLOAD_FORMAT` — формат сообщений (`JSON` или `AVRO`, по умолчанию `JSON`).
 - `BOT_KAFKA_DLQ_TOPIC` — DLQ топик для неуспешно обработанных сообщений (по умолчанию `link-updates-dlq`).
 - `BOT_KAFKA_MAX_ATTEMPTS` — количество попыток обработки бизнес-ошибок перед отправкой в DLQ (по умолчанию `3`).
 
@@ -349,4 +351,10 @@ mvn -pl scrapper test
 - Ошибка десериализации (`UpdateDeserializationException`) -> без retry, сразу в DLQ.
 - Ошибка валидации (`UpdateValidationException`) -> без retry, сразу в DLQ.
 - Ошибка бизнес-обработки (`RuntimeException` из `BotUpdateService`) -> retry до `BOT_KAFKA_MAX_ATTEMPTS`, затем в DLQ.
+
+
+### Avro схема LinkUpdateEvent
+
+- Схема хранится в `avro/LinkUpdateEvent.avsc` в обоих модулях (`bot` и `scrapper`).
+- При `*_KAFKA_PAYLOAD_FORMAT=AVRO` payload кодируется/декодируется по этой схеме.
 
