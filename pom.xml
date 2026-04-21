@@ -46,6 +46,7 @@
         <maven.version>3.9.12</maven.version>
 
         <awaitility.version>4.3.0</awaitility.version>
+        <avro.version>1.12.1</avro.version>
         <commons-codec.version>1.21.0</commons-codec.version>
         <commons-collections.version>4.5.0</commons-collections.version>
         <commons-compress.version>1.28.0</commons-compress.version>
@@ -188,6 +189,11 @@
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>${awaitility.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
