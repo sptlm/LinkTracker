@@ -13,6 +13,7 @@ app:
     updates-topic: ${BOT_KAFKA_UPDATES_TOPIC:link-updates}
     group-id: ${BOT_KAFKA_GROUP_ID:bot-updates-consumer}
     payload-format: ${BOT_KAFKA_PAYLOAD_FORMAT:JSON}
+    schema-registry-url: ${BOT_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
     dlq-topic: ${BOT_KAFKA_DLQ_TOPIC:link-updates-dlq}
     max-attempts: ${BOT_KAFKA_MAX_ATTEMPTS:3}
   telegram:

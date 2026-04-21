@@ -34,4 +34,5 @@ public class KafkaNotificationsProperties {
 
     @NotNull
     private KafkaPayloadFormat payloadFormat = KafkaPayloadFormat.JSON;
+    private String schemaRegistryUrl;
 }

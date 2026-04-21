@@ -30,6 +30,7 @@ app:
     updates-topic-partitions: ${SCRAPPER_KAFKA_UPDATES_TOPIC_PARTITIONS:3}
     updates-topic-replication-factor: ${SCRAPPER_KAFKA_UPDATES_TOPIC_REPLICATION_FACTOR:3}
     payload-format: ${SCRAPPER_KAFKA_PAYLOAD_FORMAT:JSON}
+    schema-registry-url: ${SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
     outbox-enabled: ${SCRAPPER_KAFKA_OUTBOX_ENABLED:false}
     outbox-dispatch-interval: ${SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL:1s}
   clients:
