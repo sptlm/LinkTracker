@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.configuration;
 
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,11 @@ public class KafkaNotificationsConfiguration {
     @Bean
     public KafkaAdmin kafkaAdmin(KafkaNotificationsProperties properties) {
         return new KafkaAdmin(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers()));
+    }
+
+    @Bean
+    public LinkUpdateAvroCodec linkUpdateAvroCodec(KafkaNotificationsProperties properties) {
+        return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
     }
 
     @Bean

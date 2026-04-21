@@ -3,6 +3,7 @@ package backend.academy.linktracker.bot.configuration;
 import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.bot.service.exception.UpdateDeserializationException;
 import backend.academy.linktracker.bot.service.exception.UpdateValidationException;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -20,8 +21,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration("botKafkaNotificationsConfiguration")
@@ -76,6 +77,11 @@ public class KafkaNotificationsConfiguration {
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
+    }
+
+    @Bean
+    public LinkUpdateAvroCodec linkUpdateAvroCodec(KafkaNotificationsProperties properties) {
+        return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
     }
 
     @Bean

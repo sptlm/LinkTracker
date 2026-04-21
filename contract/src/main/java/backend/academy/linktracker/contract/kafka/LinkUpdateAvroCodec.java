@@ -1,7 +1,6 @@
-package backend.academy.linktracker.bot.service.codec;
+package backend.academy.linktracker.contract.kafka;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
-import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -28,24 +27,24 @@ import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
-import org.springframework.stereotype.Component;
 
-@Component
 public class LinkUpdateAvroCodec {
 
     private static final String SCHEMA_PATH = "avro/LinkUpdateEvent.avsc";
     private static final byte MAGIC_BYTE = 0;
 
     private final Schema schema;
-    private final KafkaNotificationsProperties properties;
+    private final String schemaRegistryUrl;
+    private final String topicName;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final Map<Integer, Schema> schemaCacheById;
 
     private volatile Integer cachedSchemaId;
 
-    public LinkUpdateAvroCodec(KafkaNotificationsProperties properties) {
-        this.properties = properties;
+    public LinkUpdateAvroCodec(String schemaRegistryUrl, String topicName) {
+        this.schemaRegistryUrl = schemaRegistryUrl;
+        this.topicName = topicName;
         this.schema = loadSchema();
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         this.objectMapper = JsonMapper.builder().findAndAddModules().build();
@@ -103,11 +102,11 @@ public class LinkUpdateAvroCodec {
             }
 
             try {
-                String subject = properties.getUpdatesTopic() + "-value";
+                String subject = topicName + "-value";
                 String schemaJson = objectMapper.writeValueAsString(Map.of("schema", schema.toString()));
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(properties.getSchemaRegistryUrl() + "/subjects/" + subject + "/versions"))
+                        .uri(URI.create(schemaRegistryUrl + "/subjects/" + subject + "/versions"))
                         .header("Content-Type", "application/vnd.schemaregistry.v1+json")
                         .POST(HttpRequest.BodyPublishers.ofString(schemaJson))
                         .build();
@@ -121,8 +120,10 @@ public class LinkUpdateAvroCodec {
                 cachedSchemaId = json.get("id").asInt();
                 schemaCacheById.put(cachedSchemaId, schema);
                 return cachedSchemaId;
-            } catch (IOException | InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new IllegalStateException("Failed to register Avro schema in Schema Registry", e);
+            } catch (IOException e) {
                 throw new IllegalStateException("Failed to register Avro schema in Schema Registry", e);
             }
         }
@@ -131,7 +132,7 @@ public class LinkUpdateAvroCodec {
     private Schema fetchSchemaById(int id) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(properties.getSchemaRegistryUrl() + "/schemas/ids/" + id))
+                    .uri(URI.create(schemaRegistryUrl + "/schemas/ids/" + id))
                     .GET()
                     .build();
 
@@ -142,8 +143,10 @@ public class LinkUpdateAvroCodec {
 
             JsonNode json = objectMapper.readTree(response.body());
             return new Schema.Parser().parse(json.get("schema").asText());
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new IllegalStateException("Failed to fetch schema by id from Schema Registry", e);
+        } catch (IOException e) {
             throw new IllegalStateException("Failed to fetch schema by id from Schema Registry", e);
         }
     }

@@ -33,6 +33,7 @@ app:
     schema-registry-url: ${SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
     outbox-enabled: ${SCRAPPER_KAFKA_OUTBOX_ENABLED:true}
     outbox-dispatch-interval: ${SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL:1s}
+    outbox-max-attempts: ${SCRAPPER_KAFKA_OUTBOX_MAX_ATTEMPTS:5}
   clients:
     bot-base-url: http://localhost:8080
   stackoverflow:

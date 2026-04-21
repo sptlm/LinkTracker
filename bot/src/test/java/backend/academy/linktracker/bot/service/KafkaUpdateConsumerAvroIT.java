@@ -5,7 +5,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
-import backend.academy.linktracker.bot.service.codec.LinkUpdateAvroCodec;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.Test;

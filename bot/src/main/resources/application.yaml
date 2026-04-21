@@ -16,6 +16,7 @@ app:
     schema-registry-url: ${BOT_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
     dlq-topic: ${BOT_KAFKA_DLQ_TOPIC:link-updates-dlq}
     max-attempts: ${BOT_KAFKA_MAX_ATTEMPTS:3}
+    idempotency-cache-size: ${BOT_KAFKA_IDEMPOTENCY_CACHE_SIZE:10000}
   telegram:
     url: https://api.telegram.org/bot
     token: ${TELEGRAM_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE
