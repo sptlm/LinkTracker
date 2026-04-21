@@ -81,6 +81,8 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_NOTIFICATION_TRANSPORT` — транспорт нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
 - `SCRAPPER_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
 - `SCRAPPER_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
+- `SCRAPPER_KAFKA_OUTBOX_ENABLED` — включает Transactional Outbox для Kafka-публикации (`false` по умолчанию).
+- `SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL` — период отправки событий из outbox в Kafka (по умолчанию `1s`).
 
 Значения и дефолты указаны здесь. `scrapper/src/main/resources/application.yaml`.
 

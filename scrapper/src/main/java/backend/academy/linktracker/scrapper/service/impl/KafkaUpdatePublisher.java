@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "app.kafka", name = "outbox-enabled", havingValue = "false", matchIfMissing = true)
 public class KafkaUpdatePublisher implements UpdatePublisher {
 
     private final KafkaTemplate<String, String> kafkaTemplate;

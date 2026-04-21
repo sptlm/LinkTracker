@@ -38,7 +38,7 @@ public abstract class AbstractPostgresIntegrationTest {
     void cleanDatabase() {
         jdbcClient
                 .sql(
-                        "truncate table subscription_tag, link_subscription, tracked_link, tg_chat restart identity cascade")
+                        "truncate table notification_outbox, subscription_tag, link_subscription, tracked_link, tg_chat restart identity cascade")
                 .update();
     }
 }
