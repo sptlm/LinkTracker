@@ -9,11 +9,9 @@ import backend.academy.linktracker.bot.service.idempotency.KafkaUpdateIdempotenc
 import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -31,13 +29,14 @@ public class KafkaUpdateConsumer {
     private final KafkaUpdateIdempotencyService idempotencyService;
 
     @KafkaListener(topics = "${app.kafka.updates-topic}", containerFactory = "kafkaListenerContainerFactory")
-    public void consume(String payload) {
-        String fingerprint = fingerprint(payload);
-        if (idempotencyService.isProcessed(fingerprint)) {
-            log.atInfo().addKeyValue("fingerprint", fingerprint).log("Duplicate Kafka update payload skipped");
+    public void consume(ConsumerRecord<String, String> record) {
+        String messageId = messageId(record);
+        if (idempotencyService.isProcessed(messageId)) {
+            log.atInfo().addKeyValue("messageId", messageId).log("Duplicate Kafka message skipped");
             return;
         }
 
+        String payload = record.value();
         LinkUpdate update;
         try {
             update = kafkaProperties.getPayloadFormat() == KafkaPayloadFormat.AVRO
@@ -49,21 +48,11 @@ public class KafkaUpdateConsumer {
 
         validate(update);
         botUpdateService.processUpdate(update);
-        idempotencyService.markProcessed(fingerprint);
+        idempotencyService.markProcessed(messageId);
     }
 
-    private String fingerprint(String payload) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(payload.getBytes(StandardCharsets.UTF_8));
-            StringBuilder builder = new StringBuilder(hash.length * 2);
-            for (byte b : hash) {
-                builder.append(String.format("%02x", b));
-            }
-            return builder.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm is not available", e);
-        }
+    private String messageId(ConsumerRecord<String, String> record) {
+        return record.topic() + ":" + record.partition() + ":" + record.offset();
     }
 
     private void validate(LinkUpdate update) {

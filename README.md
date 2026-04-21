@@ -86,7 +86,7 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_KAFKA_OUTBOX_ENABLED` — включает Transactional Outbox для Kafka-публикации (`false` по умолчанию).
 - `SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL` — период отправки событий из outbox в Kafka (по умолчанию `1s`).
 - `SCRAPPER_KAFKA_OUTBOX_MAX_ATTEMPTS` — максимальное число попыток отправки outbox-события перед переводом в `FAILED` (по умолчанию `5`).
-- `BOT_KAFKA_IDEMPOTENCY_CACHE_SIZE` — размер in-memory кэша отпечатков сообщений для идемпотентной Kafka-обработки в Bot (по умолчанию `10000`).
+- `BOT_KAFKA_IDEMPOTENCY_CACHE_SIZE` — размер in-memory кэша идентификаторов Kafka-сообщений для идемпотентной Kafka-обработки в Bot (по умолчанию `10000`).
 
 Значения и дефолты указаны здесь. `scrapper/src/main/resources/application.yaml`.
 

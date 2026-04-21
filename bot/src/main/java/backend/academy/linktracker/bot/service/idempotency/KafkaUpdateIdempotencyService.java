@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class KafkaUpdateIdempotencyService {
 
-    private final Set<String> processedPayloads = ConcurrentHashMap.newKeySet();
+    private final Set<String> processedMessageIds = ConcurrentHashMap.newKeySet();
     private final AtomicInteger size = new AtomicInteger();
     private final int maxSize;
 
@@ -17,16 +17,16 @@ public class KafkaUpdateIdempotencyService {
         this.maxSize = kafkaProperties.getIdempotencyCacheSize();
     }
 
-    public boolean isProcessed(String payloadFingerprint) {
-        return processedPayloads.contains(payloadFingerprint);
+    public boolean isProcessed(String messageId) {
+        return processedMessageIds.contains(messageId);
     }
 
-    public void markProcessed(String payloadFingerprint) {
-        if (processedPayloads.add(payloadFingerprint)) {
+    public void markProcessed(String messageId) {
+        if (processedMessageIds.add(messageId)) {
             int current = size.incrementAndGet();
             if (current > maxSize) {
-                processedPayloads.clear();
-                processedPayloads.add(payloadFingerprint);
+                processedMessageIds.clear();
+                processedMessageIds.add(messageId);
                 size.set(1);
             }
         }

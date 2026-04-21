@@ -138,7 +138,7 @@ class KafkaUpdateConsumerIT {
 
 
     @Test
-    void shouldSkipDuplicatePayloadByIdempotencyGuard() throws Exception {
+    void shouldProcessDifferentKafkaMessagesEvenWithSamePayload() throws Exception {
         LinkUpdate update = new LinkUpdate()
                 .id(888L)
                 .url(URI.create("https://example.com/dup"))
@@ -149,7 +149,7 @@ class KafkaUpdateConsumerIT {
         kafkaTemplate.send("link-updates-bot-it", "888", payload);
         kafkaTemplate.send("link-updates-bot-it", "888", payload);
 
-        verify(botUpdateService, timeout(10_000).times(1)).processUpdate(any());
+        verify(botUpdateService, timeout(10_000).times(2)).processUpdate(any());
     }
 
     private ConsumerRecord<String, String> pollSingleRecord(String topic, Duration timeout) {
