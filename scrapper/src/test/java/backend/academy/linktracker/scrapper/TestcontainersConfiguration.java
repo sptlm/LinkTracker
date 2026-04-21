@@ -38,6 +38,7 @@ public class TestcontainersConfiguration {
                 .withNetwork(NETWORK)
                 .withNetworkAliases("scrapper")
                 .withExposedPorts(8081)
+                .withAccessToHost(true)
                 .withEnv("SCRAPPER_NOTIFICATION_TRANSPORT", "HTTP")
                 .withEnv("SCRAPPER_DATASOURCE_URL", "jdbc:postgresql://host.testcontainers.internal:5433/linktracker")
                 .withEnv("SCRAPPER_DATASOURCE_USERNAME", "postgres")

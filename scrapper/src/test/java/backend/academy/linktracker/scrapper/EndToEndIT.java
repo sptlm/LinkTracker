@@ -1,6 +1,7 @@
 package backend.academy.linktracker.scrapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.awaitility.Awaitility.await;
 
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
@@ -33,9 +34,11 @@ public class EndToEndIT {
         String scrapperUrl = "http://" + scrapperContainer.getHost() + ":" + scrapperContainer.getMappedPort(8081);
         RestClient scrapperClient = createDirectRestClient(scrapperUrl);
 
-        var scrapperResponse =
-                scrapperClient.post().uri("/tg-chat/42").retrieve().toBodilessEntity();
-        assertEquals(200, scrapperResponse.getStatusCode().value(), "Scrapper should return 200 OK");
+        await().atMost(Duration.ofSeconds(45)).untilAsserted(() -> {
+            var scrapperResponse =
+                    scrapperClient.post().uri("/tg-chat/42").retrieve().toBodilessEntity();
+            assertEquals(200, scrapperResponse.getStatusCode().value(), "Scrapper should return 200 OK");
+        });
 
         String botUrl = "http://" + botContainer.getHost() + ":" + botContainer.getMappedPort(8080);
         RestClient botClient = createDirectRestClient(botUrl);
@@ -49,15 +52,17 @@ public class EndToEndIT {
                 }
                 """;
 
-        var botResponse = botClient
-                .post()
-                .uri("/updates")
-                .header("Content-Type", "application/json")
-                .body(updateJson)
-                .retrieve()
-                .toBodilessEntity();
+        await().atMost(Duration.ofSeconds(45)).untilAsserted(() -> {
+            var botResponse = botClient
+                    .post()
+                    .uri("/updates")
+                    .header("Content-Type", "application/json")
+                    .body(updateJson)
+                    .retrieve()
+                    .toBodilessEntity();
 
-        assertEquals(200, botResponse.getStatusCode().value(), "Bot should accept update and return 200 OK");
+            assertEquals(200, botResponse.getStatusCode().value(), "Bot should accept update and return 200 OK");
+        });
     }
 
     private RestClient createDirectRestClient(String baseUrl) {
