@@ -6,6 +6,16 @@ spring:
     name: bot
 
 app:
+  notifications:
+    transport: ${BOT_NOTIFICATION_TRANSPORT:KAFKA}
+  kafka:
+    bootstrap-servers: ${BOT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    updates-topic: ${BOT_KAFKA_UPDATES_TOPIC:link-updates}
+    group-id: ${BOT_KAFKA_GROUP_ID:bot-updates-consumer}
+    payload-format: ${BOT_KAFKA_PAYLOAD_FORMAT:AVRO}
+    schema-registry-url: ${BOT_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
+    dlq-topic: ${BOT_KAFKA_DLQ_TOPIC:link-updates-dlq}
+    max-attempts: ${BOT_KAFKA_MAX_ATTEMPTS:3}
   telegram:
     url: https://api.telegram.org/bot
     token: ${TELEGRAM_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE

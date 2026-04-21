@@ -6,7 +6,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
@@ -28,16 +30,31 @@ public class TestcontainersConfiguration {
     }
 
     @Bean
-    public GenericContainer<?> scrapperContainer() {
+    public PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"))
+                .withDatabaseName("linktracker")
+                .withUsername("postgres")
+                .withPassword("postgres")
+                .withNetwork(NETWORK)
+                .withNetworkAliases("postgres");
+    }
+
+    @Bean
+    public GenericContainer<?> scrapperContainer(PostgreSQLContainer<?> postgresContainer) {
         return new GenericContainer<>(new ImageFromDockerfile()
                         .withFileFromPath("app.jar", findJar("scrapper"))
                         .withDockerfileFromBuilder(builder -> builder.from("openjdk:25-ea-slim")
                                 .copy("app.jar", "/app.jar")
                                 .entryPoint("java", "--enable-preview", "-jar", "/app.jar")
                                 .build()))
+                .dependsOn(postgresContainer)
                 .withNetwork(NETWORK)
                 .withNetworkAliases("scrapper")
                 .withExposedPorts(8081)
+                .withEnv("SCRAPPER_NOTIFICATION_TRANSPORT", "HTTP")
+                .withEnv("SCRAPPER_DATASOURCE_URL", "jdbc:postgresql://postgres:5432/linktracker")
+                .withEnv("SCRAPPER_DATASOURCE_USERNAME", "postgres")
+                .withEnv("SCRAPPER_DATASOURCE_PASSWORD", "postgres")
                 .withEnv("GITHUB_TOKEN", "mock")
                 .withEnv("STACKOVERFLOW_KEY", "mock")
                 .withEnv("STACKOVERFLOW_ACCESS_KEY", "mock");
@@ -54,7 +71,8 @@ public class TestcontainersConfiguration {
                 .withNetwork(NETWORK)
                 .withNetworkAliases("bot")
                 .withExposedPorts(8080)
+                .withEnv("BOT_NOTIFICATION_TRANSPORT", "HTTP")
                 .withEnv("APP_SCRAPPER_BASE_URL", "http://scrapper:8081")
-                .withEnv("TELEGRAM_BOT_TOKEN", "mock_token");
+                .withEnv("TELEGRAM_TOKEN", "mock_token");
     }
 }

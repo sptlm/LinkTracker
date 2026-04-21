@@ -6,6 +6,8 @@ spring:
     clean-disabled: false
 
 app:
+  notifications:
+    transport: HTTP
   clients:
     bot-base-url: http://localhost:18080
   stackoverflow:

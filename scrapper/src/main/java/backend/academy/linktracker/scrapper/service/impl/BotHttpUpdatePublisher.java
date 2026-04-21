@@ -4,12 +4,12 @@ import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.client.bot.BotClient;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
-@Primary
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "HTTP")
 public class BotHttpUpdatePublisher implements UpdatePublisher {
 
     private final BotClient botClient;

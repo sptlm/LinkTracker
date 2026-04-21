@@ -22,6 +22,17 @@ spring:
     locations: classpath:db/migration
 
 app:
+  notifications:
+    transport: ${SCRAPPER_NOTIFICATION_TRANSPORT:KAFKA}
+  kafka:
+    bootstrap-servers: ${SCRAPPER_KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    updates-topic: ${SCRAPPER_KAFKA_UPDATES_TOPIC:link-updates}
+    updates-topic-partitions: ${SCRAPPER_KAFKA_UPDATES_TOPIC_PARTITIONS:3}
+    updates-topic-replication-factor: ${SCRAPPER_KAFKA_UPDATES_TOPIC_REPLICATION_FACTOR:3}
+    payload-format: ${SCRAPPER_KAFKA_PAYLOAD_FORMAT:AVRO}
+    schema-registry-url: ${SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
+    outbox-enabled: ${SCRAPPER_KAFKA_OUTBOX_ENABLED:true}
+    outbox-dispatch-interval: ${SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL:1s}
   clients:
     bot-base-url: http://localhost:8080
   stackoverflow:
@@ -34,5 +45,5 @@ app:
   polling:
     interval: 60s
   persistence:
-    access-type: ${SCRAPPER_ACCESS_TYPE:SQL}
+    access-type: ${SCRAPPER_ACCESS_TYPE:ORM}
     polling-batch-size: 100

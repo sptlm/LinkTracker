@@ -12,7 +12,7 @@ LinkTracker — это проект для отслеживания обновл
   - применяет миграции Flyway,
   - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
 - `contract` — общие DTO и API-контракты.
-- `compose.yaml` — локальный PostgreSQL для разработки.
+- `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера, KRaft без ZooKeeper) для разработки.
 
 ## Основные возможности
 
@@ -49,7 +49,8 @@ LinkTracker — это проект для отслеживания обновл
 Связи между сервисами:
 
 - `bot` отправляет запросы в `scrapper` по адресу `http://localhost:8081`. `bot/src/main/resources/application.yaml`.
-- `scrapper` отправляет уведомления в `bot` по адресу `http://localhost:8080/updates`. `scrapper/src/main/resources/application.yaml`. `bot/src/main/java/backend/academy/linktracker/bot/api/BotUpdatesController.java`.
+- по умолчанию `scrapper` отправляет уведомления в Kafka-топик `link-updates`, а `bot` читает его асинхронно. `scrapper/src/main/resources/application.yaml`. `bot/src/main/resources/application.yaml`.
+- при `transport=HTTP` `scrapper` отправляет уведомления в `bot` по адресу `http://localhost:8080/updates`. `scrapper/src/main/resources/application.yaml`. `bot/src/main/java/backend/academy/linktracker/bot/api/BotUpdatesController.java`.
 
 ## Переменные окружения
 
@@ -77,6 +78,13 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `GITHUB_TOKEN` — GitHub token для более комфортной работы с GitHub API.
 - `STACKOVERFLOW_KEY` — StackOverflow API key.
 - `STACKOVERFLOW_ACCESS_KEY` — StackOverflow access token.
+- `SCRAPPER_NOTIFICATION_TRANSPORT` — транспорт нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
+- `SCRAPPER_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
+- `SCRAPPER_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
+- `SCRAPPER_KAFKA_PAYLOAD_FORMAT` — формат сообщения в Kafka (`JSON` или `AVRO`, по умолчанию `JSON`).
+- `SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL` — URL Schema Registry (обязателен при `AVRO`).
+- `SCRAPPER_KAFKA_OUTBOX_ENABLED` — включает Transactional Outbox для Kafka-публикации (`false` по умолчанию).
+- `SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL` — период отправки событий из outbox в Kafka (по умолчанию `1s`).
 
 Значения и дефолты указаны здесь. `scrapper/src/main/resources/application.yaml`.
 
@@ -84,10 +92,10 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 
 ### Вариант 1. Локально через Docker Compose + запуск приложений из IDE / Maven
 
-#### 1. Поднимите PostgreSQL
+#### 1. Поднимите инфраструктуру (PostgreSQL + Kafka)
 
 ```bash
-docker compose up -d postgres
+docker compose up -d
 ```
 
 Конфигурация базы описана в `compose.yaml`. `compose.yaml`.
@@ -321,4 +329,38 @@ mvn -pl scrapper test
 
 - По умолчанию scrapper poll'ит ссылки раз в `60s`. `scrapper/src/main/resources/application.yaml`.
 - Размер batch polling'а задаётся через `app.persistence.polling-batch-size`. `scrapper/src/main/resources/application.yaml`.
+#### Для `bot`
 
+- `BOT_NOTIFICATION_TRANSPORT` — транспорт приёма нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
+- `BOT_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
+- `BOT_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
+- `BOT_KAFKA_GROUP_ID` — consumer group ID.
+- `BOT_KAFKA_PAYLOAD_FORMAT` — формат сообщений (`JSON` или `AVRO`, по умолчанию `JSON`).
+- `BOT_KAFKA_SCHEMA_REGISTRY_URL` — URL Schema Registry (обязателен при `AVRO`).
+- `BOT_KAFKA_DLQ_TOPIC` — DLQ топик для неуспешно обработанных сообщений (по умолчанию `link-updates-dlq`).
+- `BOT_KAFKA_MAX_ATTEMPTS` — количество попыток обработки бизнес-ошибок перед отправкой в DLQ (по умолчанию `3`).
+
+### Почему выбраны такие параметры Kafka-топика
+
+- `partitions=3` — чтобы параллелить обработку и распределять нагрузку между инстансами консьюмера.
+- `replication-factor=3` — каждая партиция хранится на всех трёх брокерах, что повышает отказоустойчивость.
+- `min.insync.replicas=2` + `acks=all` — запись подтверждается только если минимум 2 реплики в ISR приняли сообщение; это уменьшает риск потери данных при падении брокера.
+
+
+
+### Политика обработки ошибок в Kafka-консьюмере Bot
+
+- Ошибка десериализации (`UpdateDeserializationException`) -> без retry, сразу в DLQ.
+- Ошибка валидации (`UpdateValidationException`) -> без retry, сразу в DLQ.
+- Ошибка бизнес-обработки (`RuntimeException` из `BotUpdateService`) -> retry до `BOT_KAFKA_MAX_ATTEMPTS`, затем в DLQ.
+
+
+### Avro схема LinkUpdateEvent
+
+- Схема хранится в `avro/LinkUpdateEvent.avsc` в обоих модулях (`bot` и `scrapper`).
+- При `*_KAFKA_PAYLOAD_FORMAT=AVRO` payload кодируется/декодируется по этой схеме.
+
+
+- Schema Registry поднимается в `compose.yaml` на `http://localhost:8085` для Avro-режима.
+
+- В AVRO-режиме payload сериализуется в Confluent wire-format (magic-byte + schema-id + Avro binary), затем передаётся как Base64 строка.
