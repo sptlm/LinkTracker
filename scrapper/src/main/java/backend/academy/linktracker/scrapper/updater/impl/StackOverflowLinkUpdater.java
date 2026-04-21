@@ -1,19 +1,27 @@
 package backend.academy.linktracker.scrapper.updater.impl;
 
 import backend.academy.linktracker.scrapper.client.stackoverflow.StackOverflowClient;
+import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswerItem;
+import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import backend.academy.linktracker.scrapper.updater.MessageFormattingUtils;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class StackOverflowLinkUpdater implements LinkUpdater {
+
+    private static final int EVENTS_FETCH_LIMIT = 20;
+    private static final int PREVIEW_LENGTH = 200;
 
     private final StackOverflowClient stackOverflowClient;
 
@@ -26,15 +34,23 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
     public LinkUpdateCheckResult check(TrackedLink link) {
         long questionId = extractQuestionId(link.url());
         StackOverflowQuestionItem question = stackOverflowClient.getQuestion(questionId);
+        List<StackOverflowAnswerItem> answers = stackOverflowClient.getLatestAnswers(questionId, EVENTS_FETCH_LIMIT);
+        List<StackOverflowCommentItem> comments = stackOverflowClient.getLatestComments(questionId, EVENTS_FETCH_LIMIT);
 
-        Instant observedUpdatedAt = question.lastActivityAt();
+        Instant observedUpdatedAt = java.util.stream.Stream.concat(
+                        answers.stream().map(StackOverflowAnswerItem::createdAt),
+                        comments.stream().map(StackOverflowCommentItem::createdAt))
+                .filter(java.util.Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(question.lastActivityAt());
 
         if (link.lastUpdatedAt() == null) {
             return LinkUpdateCheckResult.unchanged(null, observedUpdatedAt);
         }
 
-        if (observedUpdatedAt.isAfter(link.lastUpdatedAt())) {
-            String description = "Stack Overflow question updated: %s".formatted(question.title());
+        TrackedEvent newEvent = findNewEvent(link.lastUpdatedAt(), answers, comments);
+        if (newEvent != null) {
+            String description = formatDescription(question.title(), newEvent);
             return LinkUpdateCheckResult.changed(description, observedUpdatedAt);
         }
 
@@ -59,4 +75,49 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
 
         return Long.parseLong(parts[1]);
     }
+
+    private TrackedEvent findNewEvent(
+            Instant lastUpdatedAt, List<StackOverflowAnswerItem> answers, List<StackOverflowCommentItem> comments) {
+        TrackedEvent answerEvent = answers.stream()
+                .filter(item -> item.createdAt() != null && item.createdAt().isAfter(lastUpdatedAt))
+                .max(Comparator.comparing(StackOverflowAnswerItem::createdAt))
+                .map(answer -> new TrackedEvent(
+                        "ответ",
+                        answer.createdAt(),
+                        answer.owner() != null ? answer.owner().displayName() : null,
+                        answer.preview()))
+                .orElse(null);
+
+        TrackedEvent commentEvent = comments.stream()
+                .filter(item -> item.createdAt() != null && item.createdAt().isAfter(lastUpdatedAt))
+                .max(Comparator.comparing(StackOverflowCommentItem::createdAt))
+                .map(comment -> new TrackedEvent(
+                        "комментарий",
+                        comment.createdAt(),
+                        comment.owner() != null ? comment.owner().displayName() : null,
+                        comment.preview()))
+                .orElse(null);
+
+        if (answerEvent == null) {
+            return commentEvent;
+        }
+        if (commentEvent == null) {
+            return answerEvent;
+        }
+        return answerEvent.createdAt().isAfter(commentEvent.createdAt()) ? answerEvent : commentEvent;
+    }
+
+    private String formatDescription(String questionTitle, TrackedEvent event) {
+        String createdAt = MessageFormattingUtils.formatInstant(event.createdAt());
+        return "StackOverflow: новый %s%nТема вопроса: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
+                .formatted(
+                        event.type(),
+                        MessageFormattingUtils.safe(questionTitle),
+                        MessageFormattingUtils.safe(event.user()),
+                        createdAt,
+                        MessageFormattingUtils.truncateWithEllipsis(
+                                MessageFormattingUtils.safe(event.preview()), PREVIEW_LENGTH));
+    }
+
+    private record TrackedEvent(String type, Instant createdAt, String user, String preview) {}
 }

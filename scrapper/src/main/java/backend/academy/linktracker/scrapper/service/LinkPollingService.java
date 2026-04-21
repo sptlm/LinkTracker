@@ -1,15 +1,19 @@
 package backend.academy.linktracker.scrapper.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
-import backend.academy.linktracker.scrapper.properties.PersistenceProperties;
+import backend.academy.linktracker.scrapper.properties.ScrapperPollingProperties;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
 import java.net.URI;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,11 +27,12 @@ public class LinkPollingService {
     private final SubscriptionRepository subscriptionRepository;
     private final List<LinkUpdater> linkUpdaters;
     private final UpdatePublisher updatePublisher;
-    private final PersistenceProperties persistenceProperties;
+    private final ScrapperPollingProperties pollingProperties;
+    private final ExecutorService pollingExecutorService;
 
     public void pollUpdates() {
         long offset = 0;
-        int batchSize = persistenceProperties.getPollingBatchSize();
+        int batchSize = pollingProperties.getBatchSize();
 
         while (true) {
             List<TrackedLink> links = linkRepository.findPage(offset, batchSize);
@@ -35,11 +40,42 @@ public class LinkPollingService {
                 return;
             }
 
-            for (TrackedLink link : links) {
-                pollSingleLink(link);
-            }
-
+            processBatchInParallel(links);
             offset += links.size();
+        }
+    }
+
+    private void processBatchInParallel(List<TrackedLink> links) {
+        int workerThreads = pollingProperties.getWorkerThreads();
+        int chunkSize = Math.max(1, (int) Math.ceil((double) links.size() / workerThreads));
+
+        List<CompletableFuture<Void>> tasks = new ArrayList<>();
+        for (int start = 0; start < links.size(); start += chunkSize) {
+            int end = Math.min(start + chunkSize, links.size());
+            List<TrackedLink> chunk = links.subList(start, end);
+            tasks.add(
+                    CompletableFuture.runAsync(() -> chunk.forEach(this::pollSingleLinkSafe), pollingExecutorService));
+        }
+        CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).join();
+    }
+
+    private void pollSingleLinkSafe(TrackedLink link) {
+        try {
+            pollSingleLink(link);
+        } catch (ExternalServiceException e) {
+            log.atWarn()
+                    .addKeyValue("linkId", link.id())
+                    .addKeyValue("url", link.url())
+                    .addKeyValue("reason", e.getMessage())
+                    .log("Failed to poll link due to temporary external API issue");
+            notifyAboutFailedProcessing(link);
+        } catch (Exception e) {
+            log.atError()
+                    .setCause(e)
+                    .addKeyValue("linkId", link.id())
+                    .addKeyValue("url", link.url())
+                    .log("Failed to poll link");
+            notifyAboutFailedProcessing(link);
         }
     }
 
@@ -51,11 +87,12 @@ public class LinkPollingService {
 
         Instant updatedAt = result.changed()
                 ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt)
-                : link.lastUpdatedAt();
-
-        linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
+                : result.newUpdatedAt() != null ? result.newUpdatedAt() : link.lastUpdatedAt();
 
         if (!result.changed()) {
+            if (shouldUpdatePollingState(link, updatedAt)) {
+                linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
+            }
             log.atDebug()
                     .addKeyValue("linkId", link.id())
                     .addKeyValue("url", link.url())
@@ -67,6 +104,8 @@ public class LinkPollingService {
         if (chatIds.isEmpty()) {
             return;
         }
+
+        linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
 
         LinkUpdate request = new LinkUpdate()
                 .id(link.id())
@@ -83,10 +122,28 @@ public class LinkPollingService {
                 .log("Link update detected");
     }
 
+    private void notifyAboutFailedProcessing(TrackedLink link) {
+        List<Long> chatIds = subscriptionRepository.findChatIdsByLinkId(link.id());
+        if (chatIds.isEmpty()) {
+            return;
+        }
+
+        LinkUpdate request = new LinkUpdate()
+                .id(link.id())
+                .url(URI.create(link.url()))
+                .description("Не удалось обработать ссылку в текущем цикле: %s".formatted(link.url()))
+                .tgChatIds(chatIds);
+        updatePublisher.publish(request);
+    }
+
     private LinkUpdater findUpdater(TrackedLink link) {
         return linkUpdaters.stream()
                 .filter(updater -> updater.supports(link))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No updater for link type: " + link.type()));
+    }
+
+    private boolean shouldUpdatePollingState(TrackedLink link, Instant updatedAt) {
+        return updatedAt != null && !updatedAt.equals(link.lastUpdatedAt());
     }
 }

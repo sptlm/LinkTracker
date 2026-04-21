@@ -1,19 +1,27 @@
 package backend.academy.linktracker.scrapper.updater.impl;
 
 import backend.academy.linktracker.scrapper.client.github.GithubClient;
+import backend.academy.linktracker.scrapper.client.github.dto.GithubIssueItem;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.updater.LinkUpdateCheckResult;
 import backend.academy.linktracker.scrapper.updater.LinkUpdater;
+import backend.academy.linktracker.scrapper.updater.MessageFormattingUtils;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class GithubLinkUpdater implements LinkUpdater {
+
+    private static final int PREVIEW_LENGTH = 200;
+    private static final int EVENTS_FETCH_LIMIT = 20;
 
     private final GithubClient githubClient;
 
@@ -25,9 +33,18 @@ public class GithubLinkUpdater implements LinkUpdater {
     @Override
     public LinkUpdateCheckResult check(TrackedLink link) {
         RepoCoordinates coordinates = extractCoordinates(link.url());
-        GithubRepositoryResponse response = githubClient.getRepository(coordinates.owner(), coordinates.repo());
+        List<GithubIssueItem> latestEvents = githubClient.getLatestIssuesAndPullRequests(
+                coordinates.owner(), coordinates.repo(), EVENTS_FETCH_LIMIT);
 
-        Instant observedUpdatedAt = response.pushedAt() != null ? response.pushedAt() : response.updatedAt();
+        Instant observedUpdatedAt = latestEvents.stream()
+                .map(GithubIssueItem::createdAt)
+                .filter(Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElseGet(() -> {
+                    GithubRepositoryResponse response =
+                            githubClient.getRepository(coordinates.owner(), coordinates.repo());
+                    return response.pushedAt() != null ? response.pushedAt() : response.updatedAt();
+                });
 
         if (observedUpdatedAt == null) {
             return LinkUpdateCheckResult.unchanged(null, link.lastUpdatedAt());
@@ -37,9 +54,14 @@ public class GithubLinkUpdater implements LinkUpdater {
             return LinkUpdateCheckResult.unchanged(null, observedUpdatedAt);
         }
 
-        if (observedUpdatedAt.isAfter(link.lastUpdatedAt())) {
-            String description = "GitHub repository updated: %s".formatted(response.fullName());
-            return LinkUpdateCheckResult.changed(description, observedUpdatedAt);
+        GithubIssueItem newEvent = latestEvents.stream()
+                .filter(item -> item.createdAt() != null)
+                .filter(item -> item.createdAt().isAfter(link.lastUpdatedAt()))
+                .max(Comparator.comparing(GithubIssueItem::createdAt))
+                .orElse(null);
+
+        if (newEvent != null) {
+            return LinkUpdateCheckResult.changed(formatDescription(newEvent), observedUpdatedAt);
         }
 
         return LinkUpdateCheckResult.unchanged(null, observedUpdatedAt);
@@ -65,4 +87,16 @@ public class GithubLinkUpdater implements LinkUpdater {
     }
 
     private record RepoCoordinates(String owner, String repo) {}
+
+    private String formatDescription(GithubIssueItem item) {
+        String type = item.isPullRequest() ? "PR" : "Issue";
+        String title = MessageFormattingUtils.safe(item.title());
+        String author =
+                item.user() != null ? MessageFormattingUtils.safe(item.user().login()) : "unknown";
+        String createdAt = MessageFormattingUtils.formatInstant(item.createdAt());
+        String preview =
+                MessageFormattingUtils.truncateWithEllipsis(MessageFormattingUtils.safe(item.body()), PREVIEW_LENGTH);
+        return "GitHub %s обновление%nНазвание: %s%nПользователь: %s%nВремя создания: %s%nПревью: %s"
+                .formatted(type, title, author, createdAt, preview);
+    }
 }
