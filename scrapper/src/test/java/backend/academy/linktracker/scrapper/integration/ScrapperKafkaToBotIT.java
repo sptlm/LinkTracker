@@ -4,7 +4,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
-import backend.academy.linktracker.bot.configuration.JacksonConfiguration;
 import backend.academy.linktracker.bot.configuration.KafkaNotificationsConfiguration;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
@@ -70,7 +69,7 @@ class ScrapperKafkaToBotIT {
                         && received.getTgChatIds().equals(update.getTgChatIds())));
     }
 
-    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class, JacksonConfiguration.class})
+    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class})
     @EnableConfigurationProperties(KafkaNotificationsProperties.class)
     static class BotKafkaConsumerTestConfiguration {}
 }
