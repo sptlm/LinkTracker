@@ -9,6 +9,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +43,8 @@ public class KafkaNotificationsConfiguration {
     }
 
     @Bean
-    public LinkUpdateAvroCodec linkUpdateAvroCodec(KafkaNotificationsProperties properties) {
+    @ConditionalOnMissingBean(LinkUpdateAvroCodec.class)
+    public LinkUpdateAvroCodec scrapperLinkUpdateAvroCodec(KafkaNotificationsProperties properties) {
         return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
     }
 
