@@ -362,3 +362,5 @@ mvn -pl scrapper test
 
 
 - Schema Registry поднимается в `compose.yaml` на `http://localhost:8085` для Avro-режима.
+
+- В AVRO-режиме payload сериализуется в Confluent wire-format (magic-byte + schema-id + Avro binary), затем передаётся как Base64 строка.
