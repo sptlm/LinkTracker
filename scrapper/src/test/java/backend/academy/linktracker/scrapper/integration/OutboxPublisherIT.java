@@ -6,6 +6,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.outbox.KafkaOutboxSender;
@@ -13,6 +15,7 @@ import backend.academy.linktracker.scrapper.outbox.OutboxDispatcher;
 import backend.academy.linktracker.scrapper.outbox.OutboxEvent;
 import backend.academy.linktracker.scrapper.outbox.OutboxRepository;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
+import java.net.ConnectException;
 import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,5 +96,18 @@ class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
                 .query(Integer.class)
                 .single();
         assertEquals(1, attempts);
+    }
+
+    @Test
+    void shouldApplyBackoffForTransientDispatchFailures() {
+        outboxRepository.enqueue("{\"id\":789}");
+        doThrow(new IllegalStateException("Failed to register Avro schema in Schema Registry", new ConnectException("refused")))
+                .when(kafkaOutboxSender)
+                .send(anyLong(), anyString());
+
+        outboxDispatcher.dispatchPending();
+        outboxDispatcher.dispatchPending();
+
+        verify(kafkaOutboxSender, times(1)).send(anyLong(), anyString());
     }
 }
