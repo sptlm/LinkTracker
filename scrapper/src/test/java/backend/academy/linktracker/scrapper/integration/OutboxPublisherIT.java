@@ -25,6 +25,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @TestPropertySource(properties = {
     "app.notifications.transport=KAFKA",
     "app.kafka.bootstrap-servers=localhost:9092",
+    "app.kafka.payload-format=AVRO",
     "app.kafka.outbox-enabled=true",
     "app.kafka.outbox-dispatch-interval=10m"
 })
