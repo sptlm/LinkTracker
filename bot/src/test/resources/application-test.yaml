@@ -1,4 +1,6 @@
 app:
+  notifications:
+    transport: HTTP
   telegram:
     url: ${wiremock.server.baseUrl}/bot
     token: test-token

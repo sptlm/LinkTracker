@@ -6,6 +6,12 @@ spring:
     name: bot
 
 app:
+  notifications:
+    transport: ${BOT_NOTIFICATION_TRANSPORT:KAFKA}
+  kafka:
+    bootstrap-servers: ${BOT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    updates-topic: ${BOT_KAFKA_UPDATES_TOPIC:link-updates}
+    group-id: ${BOT_KAFKA_GROUP_ID:bot-updates-consumer}
   telegram:
     url: https://api.telegram.org/bot
     token: ${TELEGRAM_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE

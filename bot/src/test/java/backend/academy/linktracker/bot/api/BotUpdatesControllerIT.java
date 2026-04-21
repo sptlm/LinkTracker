@@ -12,7 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(BotUpdatesController.class)
+@WebMvcTest(value = BotUpdatesController.class, properties = "app.notifications.transport=HTTP")
 @Import(BotApiExceptionHandler.class)
 class BotUpdatesControllerIT {
 

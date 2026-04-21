@@ -12,7 +12,7 @@ LinkTracker — это проект для отслеживания обновл
   - применяет миграции Flyway,
   - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
 - `contract` — общие DTO и API-контракты.
-- `compose.yaml` — локальный PostgreSQL для разработки.
+- `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера + ZooKeeper) для разработки.
 
 ## Основные возможности
 
@@ -49,7 +49,8 @@ LinkTracker — это проект для отслеживания обновл
 Связи между сервисами:
 
 - `bot` отправляет запросы в `scrapper` по адресу `http://localhost:8081`. `bot/src/main/resources/application.yaml`.
-- `scrapper` отправляет уведомления в `bot` по адресу `http://localhost:8080/updates`. `scrapper/src/main/resources/application.yaml`. `bot/src/main/java/backend/academy/linktracker/bot/api/BotUpdatesController.java`.
+- по умолчанию `scrapper` отправляет уведомления в Kafka-топик `link-updates`, а `bot` читает его асинхронно. `scrapper/src/main/resources/application.yaml`. `bot/src/main/resources/application.yaml`.
+- при `transport=HTTP` `scrapper` отправляет уведомления в `bot` по адресу `http://localhost:8080/updates`. `scrapper/src/main/resources/application.yaml`. `bot/src/main/java/backend/academy/linktracker/bot/api/BotUpdatesController.java`.
 
 ## Переменные окружения
 
@@ -77,6 +78,9 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `GITHUB_TOKEN` — GitHub token для более комфортной работы с GitHub API.
 - `STACKOVERFLOW_KEY` — StackOverflow API key.
 - `STACKOVERFLOW_ACCESS_KEY` — StackOverflow access token.
+- `SCRAPPER_NOTIFICATION_TRANSPORT` — транспорт нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
+- `SCRAPPER_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
+- `SCRAPPER_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
 
 Значения и дефолты указаны здесь. `scrapper/src/main/resources/application.yaml`.
 
@@ -84,10 +88,10 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 
 ### Вариант 1. Локально через Docker Compose + запуск приложений из IDE / Maven
 
-#### 1. Поднимите PostgreSQL
+#### 1. Поднимите инфраструктуру (PostgreSQL + Kafka)
 
 ```bash
-docker compose up -d postgres
+docker compose up -d
 ```
 
 Конфигурация базы описана в `compose.yaml`. `compose.yaml`.
@@ -321,4 +325,10 @@ mvn -pl scrapper test
 
 - По умолчанию scrapper poll'ит ссылки раз в `60s`. `scrapper/src/main/resources/application.yaml`.
 - Размер batch polling'а задаётся через `app.persistence.polling-batch-size`. `scrapper/src/main/resources/application.yaml`.
+#### Для `bot`
+
+- `BOT_NOTIFICATION_TRANSPORT` — транспорт приёма нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
+- `BOT_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
+- `BOT_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
+- `BOT_KAFKA_GROUP_ID` — consumer group ID.
 
