@@ -96,6 +96,19 @@ class KafkaUpdateConsumerIT {
         assertTrue(dlqRecord.value().contains("{not-json}"));
     }
 
+
+    @Test
+    void shouldSendValidationErrorPayloadToDlqWithoutRetries() {
+        kafkaTemplate.send(
+                "link-updates-bot-it",
+                "bad-validation",
+                "{\"id\": 15, \"url\": \"https://example.com\", \"description\": \"\", \"tgChatIds\": [1]}");
+
+        ConsumerRecord<String, String> dlqRecord = pollSingleRecord("link-updates-bot-it-dlq", Duration.ofSeconds(10));
+        assertNotNull(dlqRecord);
+        assertTrue(dlqRecord.value().contains("\"id\": 15"));
+    }
+
     @Test
     void shouldRetryBusinessErrorAndThenSendToDlq() throws Exception {
         AtomicInteger attempts = new AtomicInteger();

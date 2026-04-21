@@ -342,3 +342,11 @@ mvn -pl scrapper test
 - `replication-factor=3` — каждая партиция хранится на всех трёх брокерах, что повышает отказоустойчивость.
 - `min.insync.replicas=2` + `acks=all` — запись подтверждается только если минимум 2 реплики в ISR приняли сообщение; это уменьшает риск потери данных при падении брокера.
 
+
+
+### Политика обработки ошибок в Kafka-консьюмере Bot
+
+- Ошибка десериализации (`UpdateDeserializationException`) -> без retry, сразу в DLQ.
+- Ошибка валидации (`UpdateValidationException`) -> без retry, сразу в DLQ.
+- Ошибка бизнес-обработки (`RuntimeException` из `BotUpdateService`) -> retry до `BOT_KAFKA_MAX_ATTEMPTS`, затем в DLQ.
+
