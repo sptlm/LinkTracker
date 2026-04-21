@@ -121,8 +121,10 @@ public class LinkUpdateAvroCodec {
                 cachedSchemaId = json.get("id").asInt();
                 schemaCacheById.put(cachedSchemaId, schema);
                 return cachedSchemaId;
-            } catch (IOException | InterruptedException e) {
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new IllegalStateException("Failed to register Avro schema in Schema Registry", e);
+            } catch (IOException e) {
                 throw new IllegalStateException("Failed to register Avro schema in Schema Registry", e);
             }
         }
@@ -142,8 +144,10 @@ public class LinkUpdateAvroCodec {
 
             JsonNode json = objectMapper.readTree(response.body());
             return new Schema.Parser().parse(json.get("schema").asText());
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new IllegalStateException("Failed to fetch schema by id from Schema Registry", e);
+        } catch (IOException e) {
             throw new IllegalStateException("Failed to fetch schema by id from Schema Registry", e);
         }
     }

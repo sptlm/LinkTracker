@@ -1,6 +1,8 @@
 package backend.academy.linktracker.scrapper.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -195,5 +197,41 @@ class LinkPollingServiceTest {
                         any(Instant.class),
                         org.mockito.ArgumentMatchers.eq(Instant.parse("2026-03-22T10:00:00Z")));
         verify(updatePublisher, never()).publish(any());
+    }
+
+    @Test
+    void shouldContinuePollingWhenPublishingNotificationFails() {
+        TrackedLink failedLink = new TrackedLink(
+                30L,
+                "https://github.com/user/failed",
+                LinkSourceType.GITHUB,
+                Instant.parse("2026-03-20T10:00:00Z"),
+                Instant.parse("2026-03-20T10:00:00Z"),
+                Instant.parse("2026-03-20T10:00:00Z"));
+        TrackedLink successfulLink = new TrackedLink(
+                31L,
+                "https://github.com/user/successful",
+                LinkSourceType.GITHUB,
+                Instant.parse("2026-03-20T10:00:00Z"),
+                Instant.parse("2026-03-20T10:00:00Z"),
+                Instant.parse("2026-03-20T10:00:00Z"));
+
+        when(linkRepository.findPage(0, 100)).thenReturn(List.of(failedLink, successfulLink));
+        when(linkRepository.findPage(2, 100)).thenReturn(List.of());
+        when(linkUpdater.supports(any())).thenReturn(true);
+        when(linkUpdater.check(any())).thenReturn(LinkUpdateCheckResult.changed(
+                "Link has updates", Instant.parse("2026-03-21T10:00:00Z")));
+        when(subscriptionRepository.findChatIdsByLinkId(30L)).thenReturn(List.of(1L));
+        when(subscriptionRepository.findChatIdsByLinkId(31L)).thenReturn(List.of(2L));
+        doThrow(new IllegalStateException("Schema registry unavailable"))
+                .doNothing()
+                .when(updatePublisher)
+                .publish(any());
+
+        linkPollingService.pollUpdates();
+
+        verify(updatePublisher, org.mockito.Mockito.times(2)).publish(any(LinkUpdate.class));
+        verify(linkRepository, org.mockito.Mockito.times(2))
+                .updatePollingState(any(Long.class), any(Instant.class), any(Instant.class));
     }
 }

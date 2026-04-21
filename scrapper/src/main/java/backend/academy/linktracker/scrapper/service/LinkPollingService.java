@@ -113,7 +113,7 @@ public class LinkPollingService {
                 .description(result.description())
                 .tgChatIds(chatIds);
 
-        updatePublisher.publish(request);
+        publishUpdateSafely(request, link.id(), link.url());
 
         log.atInfo()
                 .addKeyValue("linkId", link.id())
@@ -133,7 +133,19 @@ public class LinkPollingService {
                 .url(URI.create(link.url()))
                 .description("Не удалось обработать ссылку в текущем цикле: %s".formatted(link.url()))
                 .tgChatIds(chatIds);
-        updatePublisher.publish(request);
+        publishUpdateSafely(request, link.id(), link.url());
+    }
+
+    private void publishUpdateSafely(LinkUpdate request, long linkId, String url) {
+        try {
+            updatePublisher.publish(request);
+        } catch (Exception e) {
+            log.atError()
+                    .setCause(e)
+                    .addKeyValue("linkId", linkId)
+                    .addKeyValue("url", url)
+                    .log("Failed to publish link update notification");
+        }
     }
 
     private LinkUpdater findUpdater(TrackedLink link) {
