@@ -38,6 +38,10 @@ public class TestcontainersConfiguration {
                 .withNetwork(NETWORK)
                 .withNetworkAliases("scrapper")
                 .withExposedPorts(8081)
+                .withEnv("SCRAPPER_NOTIFICATION_TRANSPORT", "HTTP")
+                .withEnv("SCRAPPER_DATASOURCE_URL", "jdbc:postgresql://host.testcontainers.internal:5433/linktracker")
+                .withEnv("SCRAPPER_DATASOURCE_USERNAME", "postgres")
+                .withEnv("SCRAPPER_DATASOURCE_PASSWORD", "postgres")
                 .withEnv("GITHUB_TOKEN", "mock")
                 .withEnv("STACKOVERFLOW_KEY", "mock")
                 .withEnv("STACKOVERFLOW_ACCESS_KEY", "mock");
@@ -54,7 +58,8 @@ public class TestcontainersConfiguration {
                 .withNetwork(NETWORK)
                 .withNetworkAliases("bot")
                 .withExposedPorts(8080)
+                .withEnv("BOT_NOTIFICATION_TRANSPORT", "HTTP")
                 .withEnv("APP_SCRAPPER_BASE_URL", "http://scrapper:8081")
-                .withEnv("TELEGRAM_BOT_TOKEN", "mock_token");
+                .withEnv("TELEGRAM_TOKEN", "mock_token");
     }
 }
