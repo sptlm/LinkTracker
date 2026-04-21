@@ -12,7 +12,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
-@Configuration
+@Configuration("botKafkaNotificationsConfiguration")
 @ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
 public class KafkaNotificationsConfiguration {
 

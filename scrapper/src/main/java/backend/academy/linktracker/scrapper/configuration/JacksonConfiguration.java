@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@Configuration("scrapperJacksonConfiguration")
 public class JacksonConfiguration {
 
     @Bean

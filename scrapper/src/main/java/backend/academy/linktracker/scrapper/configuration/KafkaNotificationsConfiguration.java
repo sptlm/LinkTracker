@@ -16,7 +16,7 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
-@Configuration
+@Configuration("scrapperKafkaNotificationsConfiguration")
 @ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
 public class KafkaNotificationsConfiguration {
 
