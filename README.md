@@ -12,7 +12,7 @@ LinkTracker — это проект для отслеживания обновл
   - применяет миграции Flyway,
   - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
 - `contract` — общие DTO и API-контракты.
-- `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера + ZooKeeper) для разработки.
+- `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера, KRaft без ZooKeeper) для разработки.
 
 ## Основные возможности
 
@@ -331,4 +331,3 @@ mvn -pl scrapper test
 - `BOT_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
 - `BOT_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
 - `BOT_KAFKA_GROUP_ID` — consumer group ID.
-
