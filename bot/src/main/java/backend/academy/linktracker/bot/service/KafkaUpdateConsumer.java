@@ -1,6 +1,8 @@
 package backend.academy.linktracker.bot.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.bot.service.exception.UpdateDeserializationException;
+import backend.academy.linktracker.bot.service.exception.UpdateValidationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +20,24 @@ public class KafkaUpdateConsumer {
 
     @KafkaListener(topics = "${app.kafka.updates-topic}", containerFactory = "kafkaListenerContainerFactory")
     public void consume(String payload) {
+        LinkUpdate update;
         try {
-            LinkUpdate update = objectMapper.readValue(payload, LinkUpdate.class);
-            botUpdateService.processUpdate(update);
+            update = objectMapper.readValue(payload, LinkUpdate.class);
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Invalid update payload", e);
+            throw new UpdateDeserializationException("Invalid update payload", e);
+        }
+
+        validate(update);
+        botUpdateService.processUpdate(update);
+    }
+
+    private void validate(LinkUpdate update) {
+        if (update == null
+                || update.getId() == null
+                || update.getUrl() == null
+                || update.getDescription() == null
+                || update.getDescription().isBlank()) {
+            throw new UpdateValidationException("Update payload validation failed");
         }
     }
 }

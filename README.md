@@ -331,3 +331,12 @@ mvn -pl scrapper test
 - `BOT_KAFKA_BOOTSTRAP_SERVERS` — bootstrap servers Kafka.
 - `BOT_KAFKA_UPDATES_TOPIC` — топик обновлений (по умолчанию `link-updates`).
 - `BOT_KAFKA_GROUP_ID` — consumer group ID.
+- `BOT_KAFKA_DLQ_TOPIC` — DLQ топик для неуспешно обработанных сообщений (по умолчанию `link-updates-dlq`).
+- `BOT_KAFKA_MAX_ATTEMPTS` — количество попыток обработки бизнес-ошибок перед отправкой в DLQ (по умолчанию `3`).
+
+### Почему выбраны такие параметры Kafka-топика
+
+- `partitions=3` — чтобы параллелить обработку и распределять нагрузку между инстансами консьюмера.
+- `replication-factor=3` — каждая партиция хранится на всех трёх брокерах, что повышает отказоустойчивость.
+- `min.insync.replicas=2` + `acks=all` — запись подтверждается только если минимум 2 реплики в ISR приняли сообщение; это уменьшает риск потери данных при падении брокера.
+
