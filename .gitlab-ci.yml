@@ -23,7 +23,7 @@ cache:
 build:
   stage: build
   script:
-    - ./mvnw install Dmaven.test.skip=true -Djacoco.skip=true
+    - ./mvnw install -Dmaven.test.skip=true -Djacoco.skip=true
 
 lint:
   stage: lint
