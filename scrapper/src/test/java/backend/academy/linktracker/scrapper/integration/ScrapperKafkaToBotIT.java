@@ -4,26 +4,31 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
-import backend.academy.linktracker.bot.configuration.KafkaNotificationsConfiguration;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
-import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
-import backend.academy.linktracker.bot.service.BotUpdateService;
-import backend.academy.linktracker.bot.service.KafkaUpdateConsumer;
-import backend.academy.linktracker.bot.service.idempotency.KafkaUpdateIdempotencyService;
 import backend.academy.linktracker.scrapper.ScrapperApplication;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
+import backend.academy.linktracker.scrapper.support.KafkaTestContainerHolder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import backend.academy.linktracker.scrapper.support.KafkaTestContainerHolder;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
@@ -32,8 +37,7 @@ import backend.academy.linktracker.scrapper.support.KafkaTestContainerHolder;
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=scrapper-to-bot-it",
             "app.kafka.group-id=scrapper-to-bot-group",
-            "spring.flyway.enabled=false",
-            "app.telegram.token=test-token"
+            "spring.flyway.enabled=false"
         })
 class ScrapperKafkaToBotIT {
 
@@ -46,7 +50,7 @@ class ScrapperKafkaToBotIT {
     private UpdatePublisher updatePublisher;
 
     @MockitoBean
-    private BotUpdateService botUpdateService;
+    private UpdateSink updateSink;
 
     @Test
     void shouldDeliverUpdateFromScrapperPublisherToBotConsumer() {
@@ -58,15 +62,61 @@ class ScrapperKafkaToBotIT {
 
         updatePublisher.publish(update);
 
-        verify(botUpdateService, timeout(10_000))
-                .processUpdate(argThat(received -> received != null
+        verify(updateSink, timeout(10_000))
+                .process(argThat(received -> received != null
                         && received.getId().equals(update.getId())
                         && received.getUrl().equals(update.getUrl())
                         && received.getDescription().equals(update.getDescription())
                         && received.getTgChatIds().equals(update.getTgChatIds())));
     }
 
-    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class, KafkaUpdateIdempotencyService.class})
-    @EnableConfigurationProperties(KafkaNotificationsProperties.class)
-    static class BotKafkaConsumerTestConfiguration {}
+    interface UpdateSink {
+        void process(LinkUpdate update);
+    }
+
+    @EnableKafka
+    @Import(TestKafkaListener.class)
+    static class BotKafkaConsumerTestConfiguration {
+
+        @Bean
+        ConsumerFactory<String, String> consumerFactory() {
+            Map<String, Object> config = new HashMap<>();
+            config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaTestContainerHolder.kafka().getBootstrapServers());
+            config.put(ConsumerConfig.GROUP_ID_CONFIG, "scrapper-to-bot-group");
+            config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            return new DefaultKafkaConsumerFactory<>(config);
+        }
+
+        @Bean
+        ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+                ConsumerFactory<String, String> consumerFactory) {
+            ConcurrentKafkaListenerContainerFactory<String, String> factory =
+                    new ConcurrentKafkaListenerContainerFactory<>();
+            factory.setConsumerFactory(consumerFactory);
+            return factory;
+        }
+
+        @Bean
+        TestKafkaListener testKafkaListener(ObjectMapper objectMapper, UpdateSink updateSink) {
+            return new TestKafkaListener(objectMapper, updateSink);
+        }
+    }
+
+    static class TestKafkaListener {
+
+        private final ObjectMapper objectMapper;
+        private final UpdateSink updateSink;
+
+        TestKafkaListener(ObjectMapper objectMapper, UpdateSink updateSink) {
+            this.objectMapper = objectMapper;
+            this.updateSink = updateSink;
+        }
+
+        @KafkaListener(topics = "scrapper-to-bot-it", containerFactory = "kafkaListenerContainerFactory")
+        void consume(String payload) throws Exception {
+            updateSink.process(objectMapper.readValue(payload, LinkUpdate.class));
+        }
+    }
 }
