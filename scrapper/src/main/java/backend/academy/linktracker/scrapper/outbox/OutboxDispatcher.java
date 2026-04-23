@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.outbox;
 
+import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,22 +17,29 @@ public class OutboxDispatcher {
 
     private final OutboxRepository outboxRepository;
     private final KafkaOutboxSender kafkaOutboxSender;
+    private final KafkaNotificationsProperties kafkaProperties;
 
     @Scheduled(fixedDelayString = "${app.kafka.outbox-dispatch-interval:1s}")
     public void dispatchPending() {
         int batchSize = 100;
-        List<OutboxEvent> events = outboxRepository.findPendingBatch(batchSize);
+        int maxAttempts = kafkaProperties.getOutboxMaxAttempts();
+        List<OutboxEvent> events = outboxRepository.findPendingBatch(batchSize, maxAttempts);
 
         for (OutboxEvent event : events) {
             try {
                 kafkaOutboxSender.send(event.id(), event.payload());
                 outboxRepository.markSent(event.id());
             } catch (Exception e) {
+                int nextAttempts = event.attempts() + 1;
                 outboxRepository.incrementAttempts(event.id());
+                if (nextAttempts >= maxAttempts) {
+                    outboxRepository.markFailed(event.id());
+                }
                 log.atWarn()
                         .setCause(e)
                         .addKeyValue("outboxId", event.id())
-                        .addKeyValue("attempts", event.attempts() + 1)
+                        .addKeyValue("attempts", nextAttempts)
+                        .addKeyValue("maxAttempts", maxAttempts)
                         .log("Failed to dispatch outbox event");
             }
         }

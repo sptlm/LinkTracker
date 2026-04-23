@@ -9,6 +9,7 @@ import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.bot.service.BotUpdateService;
 import backend.academy.linktracker.bot.service.KafkaUpdateConsumer;
+import backend.academy.linktracker.bot.service.idempotency.KafkaUpdateIdempotencyService;
 import backend.academy.linktracker.scrapper.ScrapperApplication;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import java.net.URI;
@@ -74,7 +75,7 @@ class ScrapperKafkaToBotIT {
                         && received.getTgChatIds().equals(update.getTgChatIds())));
     }
 
-    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class})
+    @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class, KafkaUpdateIdempotencyService.class})
     @EnableConfigurationProperties(KafkaNotificationsProperties.class)
     static class BotKafkaConsumerTestConfiguration {}
 }

@@ -27,22 +27,26 @@ public class OutboxRepository {
     private final JdbcTemplate jdbcTemplate;
 
     public void enqueue(String payload) {
-        jdbcTemplate.update("""
+        jdbcTemplate.update(
+                """
                 INSERT INTO notification_outbox(payload, status, attempts)
                 VALUES (?, 'PENDING', 0)
-                """, payload);
+                """,
+                payload);
     }
 
-    public List<OutboxEvent> findPendingBatch(int limit) {
+    public List<OutboxEvent> findPendingBatch(int limit, int maxAttempts) {
         return jdbcTemplate.query(
                 """
                 SELECT id, payload, attempts, created_at
                 FROM notification_outbox
                 WHERE status = 'PENDING'
+                  AND attempts < ?
                 ORDER BY created_at ASC
                 LIMIT ?
                 """,
                 ROW_MAPPER,
+                maxAttempts,
                 limit);
     }
 
@@ -61,6 +65,16 @@ public class OutboxRepository {
                 """
                 UPDATE notification_outbox
                 SET attempts = attempts + 1
+                WHERE id = ?
+                """,
+                id);
+    }
+
+    public void markFailed(long id) {
+        jdbcTemplate.update(
+                """
+                UPDATE notification_outbox
+                SET status = 'FAILED'
                 WHERE id = ?
                 """,
                 id);

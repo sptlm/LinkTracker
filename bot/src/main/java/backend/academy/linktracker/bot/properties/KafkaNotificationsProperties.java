@@ -36,4 +36,7 @@ public class KafkaNotificationsProperties {
 
     @Min(1)
     private int maxAttempts = 3;
+
+    @Min(1)
+    private int idempotencyCacheSize = 10000;
 }

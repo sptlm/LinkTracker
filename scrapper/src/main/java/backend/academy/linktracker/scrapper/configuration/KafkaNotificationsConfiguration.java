@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.configuration;
 
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +9,7 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +40,12 @@ public class KafkaNotificationsConfiguration {
     @Bean
     public KafkaAdmin kafkaAdmin(KafkaNotificationsProperties properties) {
         return new KafkaAdmin(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers()));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LinkUpdateAvroCodec.class)
+    public LinkUpdateAvroCodec scrapperLinkUpdateAvroCodec(KafkaNotificationsProperties properties) {
+        return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
     }
 
     @Bean

@@ -7,27 +7,27 @@ LinkTracker — это проект для отслеживания обновл
 
 - `bot` — Telegram-бот на Spring Boot. Принимает команды пользователя и отправляет их в scrapper.
 - `scrapper` — HTTP-сервис, который:
-  - хранит зарегистрированные чаты и подписки,
-  - умеет работать в режимах `SQL` и `ORM`,
-  - применяет миграции Flyway,
-  - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
+    - хранит зарегистрированные чаты и подписки,
+    - умеет работать в режимах `SQL` и `ORM`,
+    - применяет миграции Flyway,
+    - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
 - `contract` — общие DTO и API-контракты.
 - `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера, KRaft без ZooKeeper) для разработки.
 
 ## Основные возможности
 
 - Команды бота:
-  - `/start`
-  - `/help`
-  - `/track`
-  - `/list`
-  - `/untrack <ссылка>`
+    - `/start`
+    - `/help`
+    - `/track`
+    - `/list`
+    - `/untrack <ссылка>`
 - Регистрация Telegram-чата в scrapper.
 - Хранение чатов, ссылок, подписок и тегов в PostgreSQL.
 - Отдельный CRUD тегов через `/tags`.
 - Два режима доступа к БД в scrapper:
-  - `SQL` — через `JdbcClient`
-  - `ORM` — через JPA / Hibernate
+    - `SQL` — через `JdbcClient`
+    - `ORM` — через JPA / Hibernate
 - Миграции Flyway.
 - Периодический polling обновлений ссылок.
 
@@ -73,8 +73,8 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_DATASOURCE_USERNAME` — пользователь БД.
 - `SCRAPPER_DATASOURCE_PASSWORD` — пароль БД.
 - `SCRAPPER_ACCESS_TYPE` — режим доступа к БД:
-  - `SQL` — по умолчанию,
-  - `ORM` — JPA / Hibernate.
+    - `SQL` — по умолчанию,
+    - `ORM` — JPA / Hibernate.
 - `GITHUB_TOKEN` — GitHub token для более комфортной работы с GitHub API.
 - `STACKOVERFLOW_KEY` — StackOverflow API key.
 - `STACKOVERFLOW_ACCESS_KEY` — StackOverflow access token.
@@ -85,6 +85,8 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL` — URL Schema Registry (обязателен при `AVRO`).
 - `SCRAPPER_KAFKA_OUTBOX_ENABLED` — включает Transactional Outbox для Kafka-публикации (`false` по умолчанию).
 - `SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL` — период отправки событий из outbox в Kafka (по умолчанию `1s`).
+- `SCRAPPER_KAFKA_OUTBOX_MAX_ATTEMPTS` — максимальное число попыток отправки outbox-события перед переводом в `FAILED` (по умолчанию `5`).
+- `BOT_KAFKA_IDEMPOTENCY_CACHE_SIZE` — размер in-memory кэша идентификаторов Kafka-сообщений для идемпотентной Kafka-обработки в Bot (по умолчанию `10000`).
 
 Значения и дефолты указаны здесь. `scrapper/src/main/resources/application.yaml`.
 
@@ -176,8 +178,8 @@ docker compose up -d postgres
 ```
 
 2. Создайте две Run Configuration:
-   - `ScrapperApplication`
-   - `BotApplication`
+    - `ScrapperApplication`
+    - `BotApplication`
 3. В `Environment variables` добавьте хотя бы:
 
 ```text

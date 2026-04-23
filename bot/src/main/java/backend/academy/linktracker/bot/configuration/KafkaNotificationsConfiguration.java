@@ -3,6 +3,7 @@ package backend.academy.linktracker.bot.configuration;
 import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.bot.service.exception.UpdateDeserializationException;
 import backend.academy.linktracker.bot.service.exception.UpdateValidationException;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -10,6 +11,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +22,8 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration("botKafkaNotificationsConfiguration")
@@ -76,6 +78,12 @@ public class KafkaNotificationsConfiguration {
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
         return factory;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(LinkUpdateAvroCodec.class)
+    public LinkUpdateAvroCodec botLinkUpdateAvroCodec(KafkaNotificationsProperties properties) {
+        return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
     }
 
     @Bean

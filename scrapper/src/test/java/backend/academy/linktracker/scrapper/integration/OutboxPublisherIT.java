@@ -26,7 +26,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
     "app.notifications.transport=KAFKA",
     "app.kafka.bootstrap-servers=localhost:9092",
     "app.kafka.outbox-enabled=true",
-    "app.kafka.outbox-dispatch-interval=10m"
+    "app.kafka.outbox-dispatch-interval=10m",
+    "app.kafka.outbox-max-attempts=2"
 })
 class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
 
@@ -61,7 +62,7 @@ class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
 
         updatePublisher.publish(update);
 
-        List<OutboxEvent> pending = outboxRepository.findPendingBatch(10);
+        List<OutboxEvent> pending = outboxRepository.findPendingBatch(10, 2);
         assertFalse(pending.isEmpty());
         assertEquals(1, pending.size());
         assertEquals(0, pending.getFirst().attempts());
@@ -93,4 +94,21 @@ class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
                 .single();
         assertEquals(1, attempts);
     }
+
+
+    @Test
+    void shouldMarkAsFailedWhenOutboxAttemptsExceeded() {
+        outboxRepository.enqueue("{\"id\":789}");
+        doThrow(new RuntimeException("kafka down")).when(kafkaOutboxSender).send(anyLong(), anyString());
+
+        outboxDispatcher.dispatchPending();
+        outboxDispatcher.dispatchPending();
+
+        String status = jdbcClient
+                .sql("select status from notification_outbox where id=1")
+                .query(String.class)
+                .single();
+        assertEquals("FAILED", status);
+    }
+
 }

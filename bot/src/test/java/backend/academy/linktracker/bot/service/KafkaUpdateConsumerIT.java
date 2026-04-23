@@ -136,6 +136,22 @@ class KafkaUpdateConsumerIT {
         assertTrue(attempts.get() >= 3);
     }
 
+
+    @Test
+    void shouldProcessDifferentKafkaMessagesEvenWithSamePayload() throws Exception {
+        LinkUpdate update = new LinkUpdate()
+                .id(888L)
+                .url(URI.create("https://example.com/dup"))
+                .description("same payload")
+                .tgChatIds(List.of(42L));
+
+        String payload = objectMapper.writeValueAsString(update);
+        kafkaTemplate.send("link-updates-bot-it", "888", payload);
+        kafkaTemplate.send("link-updates-bot-it", "888", payload);
+
+        verify(botUpdateService, timeout(10_000).times(2)).processUpdate(any());
+    }
+
     private ConsumerRecord<String, String> pollSingleRecord(String topic, Duration timeout) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
