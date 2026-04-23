@@ -22,7 +22,7 @@
             <groupId>backend.academy.link-tracker</groupId>
             <artifactId>bot</artifactId>
             <version>${revision}</version>
-            <scope>compile</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
