@@ -30,10 +30,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
+import backend.academy.linktracker.bot.support.KafkaTestContainerHolder;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(properties = {
@@ -46,16 +44,9 @@ import org.testcontainers.utility.DockerImageName;
 @ActiveProfiles("test")
 class KafkaUpdateConsumerIT {
 
-    @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
     @DynamicPropertySource
     static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
-
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+        registry.add("app.kafka.bootstrap-servers", () -> KafkaTestContainerHolder.kafka().getBootstrapServers());
     }
 
     @Autowired
@@ -154,7 +145,7 @@ class KafkaUpdateConsumerIT {
 
     private ConsumerRecord<String, String> pollSingleRecord(String topic, Duration timeout) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaTestContainerHolder.kafka().getBootstrapServers(),
                 ConsumerConfig.GROUP_ID_CONFIG, "bot-it-dlq-consumer-" + System.nanoTime(),
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,

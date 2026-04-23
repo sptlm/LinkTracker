@@ -5,6 +5,7 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.bot.support.KafkaTestContainerHolder;
 import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import java.net.URI;
 import java.util.List;
@@ -19,7 +20,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers(disabledWithoutDocker = true)
@@ -35,28 +35,21 @@ import org.testcontainers.utility.DockerImageName;
 class KafkaUpdateConsumerAvroIT {
 
     @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
-    @Container
     static GenericContainer<?> schemaRegistry = new GenericContainer<>(DockerImageName.parse("confluentinc/cp-schema-registry:7.7.1"))
             .withExposedPorts(8081)
             .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-            .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-            ;
+            .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081");
 
     @DynamicPropertySource
     static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
         if (!schemaRegistry.isRunning()) {
             schemaRegistry.withEnv(
                     "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS",
-                    "PLAINTEXT://host.testcontainers.internal:" + kafkaContainer.getMappedPort(9092));
+                    "PLAINTEXT://host.testcontainers.internal:" + KafkaTestContainerHolder.kafka().getMappedPort(9092));
             schemaRegistry.start();
         }
 
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+        registry.add("app.kafka.bootstrap-servers", () -> KafkaTestContainerHolder.kafka().getBootstrapServers());
         registry.add("app.kafka.schema-registry-url", () -> "http://localhost:" + schemaRegistry.getMappedPort(8081));
     }
 
