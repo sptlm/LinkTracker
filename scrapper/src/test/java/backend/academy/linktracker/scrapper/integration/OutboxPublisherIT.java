@@ -30,7 +30,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
             "app.kafka.outbox-dispatch-interval=10m",
             "app.kafka.outbox-max-attempts=2"
         })
-class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
+class OutboxPublisherIT extends AbstractPostgresIT {
 
     @Autowired
     private UpdatePublisher updatePublisher;

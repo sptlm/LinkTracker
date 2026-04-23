@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import backend.academy.linktracker.scrapper.integration.AbstractPostgresIntegrationTest;
+import backend.academy.linktracker.scrapper.integration.AbstractPostgresIT;
 import backend.academy.linktracker.scrapper.repository.ChatRepository;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 
 @AutoConfigureMockMvc
-abstract class AbstractScrapperApiIT extends AbstractPostgresIntegrationTest {
+abstract class AbstractScrapperApiIT extends AbstractPostgresIT {
 
     @Autowired
     protected MockMvc mockMvc;

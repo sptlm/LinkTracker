@@ -15,7 +15,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(classes = ScrapperApplication.class)
 @ActiveProfiles("test")
-public abstract class AbstractPostgresIntegrationTest {
+public abstract class AbstractPostgresIT {
 
     @Container
     @SuppressWarnings("resource")
