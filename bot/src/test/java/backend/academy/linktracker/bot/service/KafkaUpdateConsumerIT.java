@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,13 +36,14 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers(disabledWithoutDocker = true)
-@SpringBootTest(properties = {
-    "app.notifications.transport=KAFKA",
-    "app.kafka.updates-topic=link-updates-bot-it",
-    "app.kafka.group-id=bot-it-group",
-    "app.kafka.dlq-topic=link-updates-bot-it-dlq",
-    "app.kafka.max-attempts=3"
-})
+@SpringBootTest(
+        properties = {
+            "app.notifications.transport=KAFKA",
+            "app.kafka.updates-topic=link-updates-bot-it",
+            "app.kafka.group-id=bot-it-group",
+            "app.kafka.dlq-topic=link-updates-bot-it-dlq",
+            "app.kafka.max-attempts=3"
+        })
 @ActiveProfiles("test")
 class KafkaUpdateConsumerIT {
 
@@ -97,7 +98,6 @@ class KafkaUpdateConsumerIT {
         assertTrue(dlqRecord.value().contains("{not-json}"));
     }
 
-
     @Test
     void shouldSendValidationErrorPayloadToDlqWithoutRetries() {
         kafkaTemplate.send(
@@ -136,7 +136,6 @@ class KafkaUpdateConsumerIT {
         assertTrue(attempts.get() >= 3);
     }
 
-
     @Test
     void shouldProcessDifferentKafkaMessagesEvenWithSamePayload() throws Exception {
         LinkUpdate update = new LinkUpdate()
@@ -154,11 +153,16 @@ class KafkaUpdateConsumerIT {
 
     private ConsumerRecord<String, String> pollSingleRecord(String topic, Duration timeout) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, "bot-it-dlq-consumer-" + System.nanoTime(),
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class))) {
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                kafkaContainer.getBootstrapServers(),
+                ConsumerConfig.GROUP_ID_CONFIG,
+                "bot-it-dlq-consumer-" + System.nanoTime(),
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+                "earliest",
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class))) {
             consumer.subscribe(List.of(topic));
 
             long deadline = System.currentTimeMillis() + timeout.toMillis();

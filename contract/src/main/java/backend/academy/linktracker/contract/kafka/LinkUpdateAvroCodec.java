@@ -46,7 +46,8 @@ public class LinkUpdateAvroCodec {
         this.schemaRegistryUrl = schemaRegistryUrl;
         this.topicName = topicName;
         this.schema = loadSchema();
-        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        this.httpClient =
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
         this.objectMapper = JsonMapper.builder().findAndAddModules().build();
         this.schemaCacheById = new ConcurrentHashMap<>();
     }

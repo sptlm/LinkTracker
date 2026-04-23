@@ -23,14 +23,15 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers(disabledWithoutDocker = true)
-@SpringBootTest(properties = {
-    "app.notifications.transport=KAFKA",
-    "app.kafka.updates-topic=link-updates-bot-avro-it",
-    "app.kafka.group-id=bot-avro-it-group",
-    "app.kafka.payload-format=AVRO",
-    "app.kafka.dlq-topic=link-updates-bot-avro-it-dlq",
-    "app.kafka.max-attempts=3"
-})
+@SpringBootTest(
+        properties = {
+            "app.notifications.transport=KAFKA",
+            "app.kafka.updates-topic=link-updates-bot-avro-it",
+            "app.kafka.group-id=bot-avro-it-group",
+            "app.kafka.payload-format=AVRO",
+            "app.kafka.dlq-topic=link-updates-bot-avro-it-dlq",
+            "app.kafka.max-attempts=3"
+        })
 @ActiveProfiles("test")
 class KafkaUpdateConsumerAvroIT {
 
@@ -38,11 +39,11 @@ class KafkaUpdateConsumerAvroIT {
     static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
 
     @Container
-    static GenericContainer<?> schemaRegistry = new GenericContainer<>(DockerImageName.parse("confluentinc/cp-schema-registry:7.7.1"))
+    static GenericContainer<?> schemaRegistry = new GenericContainer<>(
+                    DockerImageName.parse("confluentinc/cp-schema-registry:7.7.1"))
             .withExposedPorts(8081)
             .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-            .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-            ;
+            .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081");
 
     @DynamicPropertySource
     static void kafkaProps(DynamicPropertyRegistry registry) {

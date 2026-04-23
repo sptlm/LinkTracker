@@ -7,27 +7,27 @@ LinkTracker — это проект для отслеживания обновл
 
 - `bot` — Telegram-бот на Spring Boot. Принимает команды пользователя и отправляет их в scrapper.
 - `scrapper` — HTTP-сервис, который:
-    - хранит зарегистрированные чаты и подписки,
-    - умеет работать в режимах `SQL` и `ORM`,
-    - применяет миграции Flyway,
-    - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
+  - хранит зарегистрированные чаты и подписки,
+  - умеет работать в режимах `SQL` и `ORM`,
+  - применяет миграции Flyway,
+  - периодически опрашивает отслеживаемые ссылки и отправляет обновления в `bot`.
 - `contract` — общие DTO и API-контракты.
 - `compose.yaml` — PostgreSQL и отказоустойчивый Kafka-кластер (3 брокера, KRaft без ZooKeeper) для разработки.
 
 ## Основные возможности
 
 - Команды бота:
-    - `/start`
-    - `/help`
-    - `/track`
-    - `/list`
-    - `/untrack <ссылка>`
+  - `/start`
+  - `/help`
+  - `/track`
+  - `/list`
+  - `/untrack <ссылка>`
 - Регистрация Telegram-чата в scrapper.
 - Хранение чатов, ссылок, подписок и тегов в PostgreSQL.
 - Отдельный CRUD тегов через `/tags`.
 - Два режима доступа к БД в scrapper:
-    - `SQL` — через `JdbcClient`
-    - `ORM` — через JPA / Hibernate
+  - `SQL` — через `JdbcClient`
+  - `ORM` — через JPA / Hibernate
 - Миграции Flyway.
 - Периодический polling обновлений ссылок.
 
@@ -73,8 +73,8 @@ GitHub / StackOverflow API с авторизацией. Но БД должна �
 - `SCRAPPER_DATASOURCE_USERNAME` — пользователь БД.
 - `SCRAPPER_DATASOURCE_PASSWORD` — пароль БД.
 - `SCRAPPER_ACCESS_TYPE` — режим доступа к БД:
-    - `SQL` — по умолчанию,
-    - `ORM` — JPA / Hibernate.
+  - `SQL` — по умолчанию,
+  - `ORM` — JPA / Hibernate.
 - `GITHUB_TOKEN` — GitHub token для более комфортной работы с GitHub API.
 - `STACKOVERFLOW_KEY` — StackOverflow API key.
 - `STACKOVERFLOW_ACCESS_KEY` — StackOverflow access token.
@@ -178,8 +178,8 @@ docker compose up -d postgres
 ```
 
 2. Создайте две Run Configuration:
-    - `ScrapperApplication`
-    - `BotApplication`
+   - `ScrapperApplication`
+   - `BotApplication`
 3. В `Environment variables` добавьте хотя бы:
 
 ```text
@@ -331,6 +331,7 @@ mvn -pl scrapper test
 
 - По умолчанию scrapper poll'ит ссылки раз в `60s`. `scrapper/src/main/resources/application.yaml`.
 - Размер batch polling'а задаётся через `app.persistence.polling-batch-size`. `scrapper/src/main/resources/application.yaml`.
+
 #### Для `bot`
 
 - `BOT_NOTIFICATION_TRANSPORT` — транспорт приёма нотификаций (`KAFKA` по умолчанию, либо `HTTP`).
@@ -348,21 +349,16 @@ mvn -pl scrapper test
 - `replication-factor=3` — каждая партиция хранится на всех трёх брокерах, что повышает отказоустойчивость.
 - `min.insync.replicas=2` + `acks=all` — запись подтверждается только если минимум 2 реплики в ISR приняли сообщение; это уменьшает риск потери данных при падении брокера.
 
-
-
 ### Политика обработки ошибок в Kafka-консьюмере Bot
 
 - Ошибка десериализации (`UpdateDeserializationException`) -> без retry, сразу в DLQ.
 - Ошибка валидации (`UpdateValidationException`) -> без retry, сразу в DLQ.
 - Ошибка бизнес-обработки (`RuntimeException` из `BotUpdateService`) -> retry до `BOT_KAFKA_MAX_ATTEMPTS`, затем в DLQ.
 
-
 ### Avro схема LinkUpdateEvent
 
 - Схема хранится в `avro/LinkUpdateEvent.avsc` в обоих модулях (`bot` и `scrapper`).
 - При `*_KAFKA_PAYLOAD_FORMAT=AVRO` payload кодируется/декодируется по этой схеме.
-
-
 - Schema Registry поднимается в `compose.yaml` на `http://localhost:8085` для Avro-режима.
-
 - В AVRO-режиме payload сериализуется в Confluent wire-format (magic-byte + schema-id + Avro binary), затем передаётся как Base64 строка.
+

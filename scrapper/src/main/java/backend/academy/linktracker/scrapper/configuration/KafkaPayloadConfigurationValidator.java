@@ -16,8 +16,10 @@ public class KafkaPayloadConfigurationValidator {
     @jakarta.annotation.PostConstruct
     void validate() {
         if (properties.getPayloadFormat() == KafkaPayloadFormat.AVRO
-                && (properties.getSchemaRegistryUrl() == null || properties.getSchemaRegistryUrl().isBlank())) {
-            throw new IllegalStateException("app.kafka.schema-registry-url must be set when app.kafka.payload-format=AVRO");
+                && (properties.getSchemaRegistryUrl() == null
+                        || properties.getSchemaRegistryUrl().isBlank())) {
+            throw new IllegalStateException(
+                    "app.kafka.schema-registry-url must be set when app.kafka.payload-format=AVRO");
         }
     }
 }

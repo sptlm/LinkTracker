@@ -1,10 +1,10 @@
 package backend.academy.linktracker.scrapper.service.impl;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.scrapper.properties.KafkaPayloadFormat;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
-import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

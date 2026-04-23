@@ -18,17 +18,18 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@TestPropertySource(properties = {
-    "app.notifications.transport=KAFKA",
-    "app.kafka.bootstrap-servers=localhost:9092",
-    "app.kafka.outbox-enabled=true",
-    "app.kafka.outbox-dispatch-interval=10m",
-    "app.kafka.outbox-max-attempts=2"
-})
+@TestPropertySource(
+        properties = {
+            "app.notifications.transport=KAFKA",
+            "app.kafka.bootstrap-servers=localhost:9092",
+            "app.kafka.outbox-enabled=true",
+            "app.kafka.outbox-dispatch-interval=10m",
+            "app.kafka.outbox-max-attempts=2"
+        })
 class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
 
     @Autowired
@@ -95,7 +96,6 @@ class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
         assertEquals(1, attempts);
     }
 
-
     @Test
     void shouldMarkAsFailedWhenOutboxAttemptsExceeded() {
         outboxRepository.enqueue("{\"id\":789}");
@@ -110,5 +110,4 @@ class OutboxPublisherIT extends AbstractPostgresIntegrationTest {
                 .single();
         assertEquals("FAILED", status);
     }
-
 }

@@ -61,7 +61,8 @@ public class KafkaNotificationsConfiguration {
             KafkaTemplate<String, String> dlqKafkaTemplate, KafkaNotificationsProperties properties) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 dlqKafkaTemplate,
-                (record, ex) -> new org.apache.kafka.common.TopicPartition(properties.getDlqTopic(), record.partition()));
+                (record, ex) ->
+                        new org.apache.kafka.common.TopicPartition(properties.getDlqTopic(), record.partition()));
 
         DefaultErrorHandler errorHandler =
                 new DefaultErrorHandler(recoverer, new FixedBackOff(0L, properties.getMaxAttempts() - 1L));

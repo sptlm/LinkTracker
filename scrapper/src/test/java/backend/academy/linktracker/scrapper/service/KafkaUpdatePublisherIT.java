@@ -68,11 +68,16 @@ class KafkaUpdatePublisherIT {
         updatePublisher.publish(update);
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, "scrapper-it-consumer",
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class))) {
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                kafkaContainer.getBootstrapServers(),
+                ConsumerConfig.GROUP_ID_CONFIG,
+                "scrapper-it-consumer",
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
+                "earliest",
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                StringDeserializer.class))) {
             consumer.subscribe(List.of("link-updates-it"));
 
             LinkUpdate parsed = null;

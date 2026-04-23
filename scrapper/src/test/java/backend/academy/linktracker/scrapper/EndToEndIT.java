@@ -1,7 +1,7 @@
 package backend.academy.linktracker.scrapper;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
