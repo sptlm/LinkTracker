@@ -28,7 +28,7 @@ import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.io.EncoderFactory;
 
-public class LinkUpdateAvroCodec {
+public final class LinkUpdateAvroCodec {
 
     private static final String SCHEMA_PATH = "avro/LinkUpdateEvent.avsc";
     private static final byte MAGIC_BYTE = 0;
