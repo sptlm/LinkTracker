@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
+import backend.academy.linktracker.bot.AbstractKafkaIntegrationTest;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -21,57 +21,33 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
         properties = {
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=link-updates-bot-it",
             "app.kafka.group-id=bot-it-group",
             "app.kafka.dlq-topic=link-updates-bot-it-dlq",
+            "app.kafka.dlq-topic-replication-factor=1",
             "app.kafka.max-attempts=3"
         })
 @ActiveProfiles("test")
-class KafkaUpdateConsumerIT {
-
-    @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
-    @DynamicPropertySource
-    static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
-
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
-    }
+class KafkaUpdateConsumerIT extends AbstractKafkaIntegrationTest {
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
     private ObjectMapper objectMapper;
 
     @MockitoBean
     private BotUpdateService botUpdateService;
-
-    @BeforeEach
-    void resetDefaultBehavior() {
-        doNothing().when(botUpdateService).processUpdate(any());
-    }
 
     @Test
     void shouldConsumeMessageFromKafkaAndForwardToUpdateService() throws Exception {
@@ -84,9 +60,11 @@ class KafkaUpdateConsumerIT {
         kafkaTemplate.send("link-updates-bot-it", "99", objectMapper.writeValueAsString(update));
 
         verify(botUpdateService, timeout(10_000))
-                .processUpdate(argThat(it -> it.getId() == 99L
-                        && "new answer".equals(it.getDescription())
-                        && it.getTgChatIds().equals(List.of(7L))));
+                .processUpdateForChat(
+                        argThat(it -> it.getId() == 99L
+                                && "new answer".equals(it.getDescription())
+                                && it.getTgChatIds().equals(List.of(7L))),
+                        argThat(chatId -> chatId.equals(7L)));
     }
 
     @Test
@@ -118,7 +96,7 @@ class KafkaUpdateConsumerIT {
                     throw new RuntimeException("temporary error");
                 })
                 .when(botUpdateService)
-                .processUpdate(any());
+                .processUpdateForChat(any(), any());
 
         LinkUpdate update = new LinkUpdate()
                 .id(777L)
@@ -128,7 +106,7 @@ class KafkaUpdateConsumerIT {
 
         kafkaTemplate.send("link-updates-bot-it", "777", objectMapper.writeValueAsString(update));
 
-        verify(botUpdateService, timeout(10_000).atLeast(3)).processUpdate(any());
+        verify(botUpdateService, timeout(10_000).atLeast(3)).processUpdateForChat(any(), any());
 
         ConsumerRecord<String, String> dlqRecord = pollSingleRecord("link-updates-bot-it-dlq", Duration.ofSeconds(10));
         assertNotNull(dlqRecord);
@@ -148,13 +126,13 @@ class KafkaUpdateConsumerIT {
         kafkaTemplate.send("link-updates-bot-it", "888", payload);
         kafkaTemplate.send("link-updates-bot-it", "888", payload);
 
-        verify(botUpdateService, timeout(10_000).times(2)).processUpdate(any());
+        verify(botUpdateService, timeout(10_000).times(2)).processUpdateForChat(any(), any());
     }
 
     private ConsumerRecord<String, String> pollSingleRecord(String topic, Duration timeout) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                kafkaContainer.getBootstrapServers(),
+                kafkaBootstrapServers(),
                 ConsumerConfig.GROUP_ID_CONFIG,
                 "bot-it-dlq-consumer-" + System.nanoTime(),
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,

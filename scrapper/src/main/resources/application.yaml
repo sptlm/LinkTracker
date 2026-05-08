@@ -29,11 +29,14 @@ app:
     updates-topic: ${SCRAPPER_KAFKA_UPDATES_TOPIC:link-updates}
     updates-topic-partitions: ${SCRAPPER_KAFKA_UPDATES_TOPIC_PARTITIONS:3}
     updates-topic-replication-factor: ${SCRAPPER_KAFKA_UPDATES_TOPIC_REPLICATION_FACTOR:3}
-    payload-format: ${SCRAPPER_KAFKA_PAYLOAD_FORMAT:JSON}
+    updates-topic-min-in-sync-replicas: ${SCRAPPER_KAFKA_UPDATES_TOPIC_MIN_IN_SYNC_REPLICAS:2}
+    key-serializer: ${SCRAPPER_KAFKA_KEY_SERIALIZER:org.apache.kafka.common.serialization.StringSerializer}
+    value-serializer: ${SCRAPPER_KAFKA_VALUE_SERIALIZER:org.apache.kafka.common.serialization.StringSerializer}
     schema-registry-url: ${SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
-    outbox-enabled: ${SCRAPPER_KAFKA_OUTBOX_ENABLED:true}
+    direct-publisher-enabled: ${SCRAPPER_KAFKA_DIRECT_PUBLISHER_ENABLED:false}
     outbox-dispatch-interval: ${SCRAPPER_KAFKA_OUTBOX_DISPATCH_INTERVAL:1s}
     outbox-max-attempts: ${SCRAPPER_KAFKA_OUTBOX_MAX_ATTEMPTS:5}
+    outbox-batch-size: ${SCRAPPER_KAFKA_OUTBOX_BATCH_SIZE:100}
   clients:
     bot-base-url: http://localhost:8080
   stackoverflow:

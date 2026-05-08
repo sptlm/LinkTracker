@@ -4,8 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.outbox.KafkaOutboxSender;
@@ -15,22 +14,24 @@ import backend.academy.linktracker.scrapper.outbox.OutboxRepository;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @TestPropertySource(
         properties = {
             "app.notifications.transport=KAFKA",
-            "app.kafka.bootstrap-servers=localhost:9092",
-            "app.kafka.outbox-enabled=true",
+            "app.kafka.updates-topic-replication-factor=1",
+            "app.kafka.updates-topic-min-in-sync-replicas=1",
             "app.kafka.outbox-dispatch-interval=10m",
             "app.kafka.outbox-max-attempts=2"
         })
-class OutboxPublisherIT extends AbstractPostgresIT {
+class OutboxPublisherIT extends AbstractPostgresKafkaIT {
 
     @Autowired
     private UpdatePublisher updatePublisher;
@@ -50,7 +51,8 @@ class OutboxPublisherIT extends AbstractPostgresIT {
     @BeforeEach
     void cleanOutbox() {
         jdbcClient.sql("truncate table notification_outbox restart identity").update();
-        doNothing().when(kafkaOutboxSender).send(anyLong(), anyString());
+        when(kafkaOutboxSender.send(anyLong(), anyString()))
+                .thenReturn(CompletableFuture.<SendResult<String, Object>>completedFuture(null));
     }
 
     @Test
@@ -85,7 +87,9 @@ class OutboxPublisherIT extends AbstractPostgresIT {
     @Test
     void shouldIncreaseAttemptsWhenDispatchFails() {
         outboxRepository.enqueue("{\"id\":456}");
-        doThrow(new RuntimeException("kafka down")).when(kafkaOutboxSender).send(anyLong(), anyString());
+        when(kafkaOutboxSender.send(anyLong(), anyString()))
+                .thenReturn(
+                        CompletableFuture.<SendResult<String, Object>>failedFuture(new RuntimeException("kafka down")));
 
         outboxDispatcher.dispatchPending();
 
@@ -99,7 +103,9 @@ class OutboxPublisherIT extends AbstractPostgresIT {
     @Test
     void shouldMarkAsFailedWhenOutboxAttemptsExceeded() {
         outboxRepository.enqueue("{\"id\":789}");
-        doThrow(new RuntimeException("kafka down")).when(kafkaOutboxSender).send(anyLong(), anyString());
+        when(kafkaOutboxSender.send(anyLong(), anyString()))
+                .thenReturn(
+                        CompletableFuture.<SendResult<String, Object>>failedFuture(new RuntimeException("kafka down")));
 
         outboxDispatcher.dispatchPending();
         outboxDispatcher.dispatchPending();

@@ -10,6 +10,7 @@ import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.bot.service.BotUpdateService;
 import backend.academy.linktracker.bot.service.KafkaUpdateConsumer;
 import backend.academy.linktracker.bot.service.idempotency.KafkaUpdateIdempotencyService;
+import backend.academy.linktracker.scrapper.AbstractKafkaIntegrationTest;
 import backend.academy.linktracker.scrapper.ScrapperApplication;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import java.net.URI;
@@ -19,37 +20,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
         classes = {ScrapperApplication.class, ScrapperKafkaToBotIT.BotKafkaConsumerTestConfiguration.class},
         properties = {
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=scrapper-to-bot-it",
             "app.kafka.group-id=scrapper-to-bot-group",
+            "app.kafka.direct-publisher-enabled=true",
+            "app.kafka.updates-topic-replication-factor=1",
+            "app.kafka.updates-topic-min-in-sync-replicas=1",
+            "app.kafka.dlq-topic-replication-factor=1",
             "spring.flyway.enabled=false",
             "app.telegram.token=test-token"
         })
-class ScrapperKafkaToBotIT {
-
-    @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
-    @DynamicPropertySource
-    static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
-
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
-    }
+class ScrapperKafkaToBotIT extends AbstractKafkaIntegrationTest {
 
     @Autowired
     private UpdatePublisher updatePublisher;
@@ -68,11 +54,13 @@ class ScrapperKafkaToBotIT {
         updatePublisher.publish(update);
 
         verify(botUpdateService, timeout(10_000))
-                .processUpdate(argThat(received -> received != null
-                        && received.getId().equals(update.getId())
-                        && received.getUrl().equals(update.getUrl())
-                        && received.getDescription().equals(update.getDescription())
-                        && received.getTgChatIds().equals(update.getTgChatIds())));
+                .processUpdateForChat(
+                        argThat(received -> received != null
+                                && received.getId().equals(update.getId())
+                                && received.getUrl().equals(update.getUrl())
+                                && received.getDescription().equals(update.getDescription())
+                                && received.getTgChatIds().equals(update.getTgChatIds())),
+                        argThat(chatId -> chatId.equals(12345L)));
     }
 
     @Import({KafkaUpdateConsumer.class, KafkaNotificationsConfiguration.class, KafkaUpdateIdempotencyService.class})

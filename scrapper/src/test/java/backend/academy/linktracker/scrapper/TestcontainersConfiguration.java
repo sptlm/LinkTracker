@@ -8,12 +8,17 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
     private static final Network NETWORK = Network.newNetwork();
+    public static final KafkaContainer KAFKA_CONTAINER = new KafkaContainer(
+                    DockerImageName.parse("apache/kafka-native:4.1.1"))
+            .withNetwork(NETWORK)
+            .withNetworkAliases("kafka");
 
     private static Path findJar(String moduleName) {
         String basePath = new File(moduleName).exists() ? "./" : "../";
@@ -37,6 +42,18 @@ public class TestcontainersConfiguration {
                 .withPassword("postgres")
                 .withNetwork(NETWORK)
                 .withNetworkAliases("postgres");
+    }
+
+    @Bean
+    public KafkaContainer kafkaContainer() {
+        return KAFKA_CONTAINER;
+    }
+
+    public static String kafkaBootstrapServers() {
+        if (!KAFKA_CONTAINER.isRunning()) {
+            KAFKA_CONTAINER.start();
+        }
+        return KAFKA_CONTAINER.getBootstrapServers();
     }
 
     @Bean

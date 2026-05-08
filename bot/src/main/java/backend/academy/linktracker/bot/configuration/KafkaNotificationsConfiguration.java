@@ -3,14 +3,12 @@ package backend.academy.linktracker.bot.configuration;
 import backend.academy.linktracker.bot.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.bot.service.exception.UpdateDeserializationException;
 import backend.academy.linktracker.bot.service.exception.UpdateValidationException;
-import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -31,34 +29,36 @@ import org.springframework.util.backoff.FixedBackOff;
 public class KafkaNotificationsConfiguration {
 
     @Bean
-    public ConsumerFactory<String, String> consumerFactory(KafkaNotificationsProperties properties) {
+    public ConsumerFactory<String, Object> consumerFactory(KafkaNotificationsProperties properties) {
         Map<String, Object> config = new HashMap<>();
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers());
         config.put(ConsumerConfig.GROUP_ID_CONFIG, properties.getGroupId());
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, properties.getKeyDeserializer());
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, properties.getValueDeserializer());
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        putSchemaRegistryConfig(config, properties);
         return new DefaultKafkaConsumerFactory<>(config);
     }
 
     @Bean
-    public ProducerFactory<String, String> dlqProducerFactory(KafkaNotificationsProperties properties) {
+    public ProducerFactory<String, Object> dlqProducerFactory(KafkaNotificationsProperties properties) {
         Map<String, Object> config = new HashMap<>();
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers());
-        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, properties.getDlqKeySerializer());
+        config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, properties.getDlqValueSerializer());
         config.put(ProducerConfig.ACKS_CONFIG, "all");
+        putSchemaRegistryConfig(config, properties);
         return new DefaultKafkaProducerFactory<>(config);
     }
 
     @Bean
-    public KafkaTemplate<String, String> dlqKafkaTemplate(ProducerFactory<String, String> dlqProducerFactory) {
+    public KafkaTemplate<String, Object> dlqKafkaTemplate(ProducerFactory<String, Object> dlqProducerFactory) {
         return new KafkaTemplate<>(dlqProducerFactory);
     }
 
     @Bean
     public CommonErrorHandler kafkaErrorHandler(
-            KafkaTemplate<String, String> dlqKafkaTemplate, KafkaNotificationsProperties properties) {
+            KafkaTemplate<String, Object> dlqKafkaTemplate, KafkaNotificationsProperties properties) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
                 dlqKafkaTemplate,
                 (record, ex) ->
@@ -72,9 +72,9 @@ public class KafkaNotificationsConfiguration {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
-            ConsumerFactory<String, String> consumerFactory, CommonErrorHandler kafkaErrorHandler) {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory(
+            ConsumerFactory<String, Object> consumerFactory, CommonErrorHandler kafkaErrorHandler) {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.setCommonErrorHandler(kafkaErrorHandler);
@@ -82,13 +82,27 @@ public class KafkaNotificationsConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(LinkUpdateAvroCodec.class)
-    public LinkUpdateAvroCodec botLinkUpdateAvroCodec(KafkaNotificationsProperties properties) {
-        return new LinkUpdateAvroCodec(properties.getSchemaRegistryUrl(), properties.getUpdatesTopic());
+    @ConditionalOnMissingBean(LinkUpdateAvroMapper.class)
+    public LinkUpdateAvroMapper botLinkUpdateAvroMapper() {
+        return new LinkUpdateAvroMapper();
     }
 
     @Bean
     public NewTopic updatesDlqTopic(KafkaNotificationsProperties properties) {
-        return new NewTopic(properties.getDlqTopic(), 3, (short) 1);
+        return new NewTopic(
+                properties.getDlqTopic(),
+                properties.getDlqTopicPartitions(),
+                properties.getDlqTopicReplicationFactor());
+    }
+
+    private static void putSchemaRegistryConfig(Map<String, Object> config, KafkaNotificationsProperties properties) {
+        if (properties.usesSchemaRegistry()) {
+            if (properties.getSchemaRegistryUrl() == null
+                    || properties.getSchemaRegistryUrl().isBlank()) {
+                throw new IllegalStateException(
+                        "app.kafka.schema-registry-url must be set when Avro serializer/deserializer is configured");
+            }
+            config.put("schema.registry.url", properties.getSchemaRegistryUrl());
+        }
     }
 }

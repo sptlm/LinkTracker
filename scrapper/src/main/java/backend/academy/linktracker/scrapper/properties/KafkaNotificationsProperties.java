@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -33,11 +34,26 @@ public class KafkaNotificationsProperties {
     private Short updatesTopicReplicationFactor = 3;
 
     @NotNull
-    private KafkaPayloadFormat payloadFormat = KafkaPayloadFormat.JSON;
+    @Min(1)
+    private Integer updatesTopicMinInSyncReplicas = 2;
+
+    @NotNull
+    private Class<?> keySerializer = StringSerializer.class;
+
+    @NotNull
+    private Class<?> valueSerializer = StringSerializer.class;
 
     private String schemaRegistryUrl;
 
     @NotNull
     @Min(1)
     private Integer outboxMaxAttempts = 5;
+
+    @NotNull
+    @Min(1)
+    private Integer outboxBatchSize = 100;
+
+    public boolean usesSchemaRegistry() {
+        return valueSerializer != null && valueSerializer.getName().startsWith("io.confluent.kafka.serializers.");
+    }
 }

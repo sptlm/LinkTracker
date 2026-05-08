@@ -12,7 +12,11 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
-@ConditionalOnProperty(prefix = "app.kafka", name = "outbox-enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "app.kafka",
+        name = "direct-publisher-enabled",
+        havingValue = "false",
+        matchIfMissing = true)
 public class OutboxDispatcher {
 
     private final OutboxRepository outboxRepository;
@@ -21,13 +25,13 @@ public class OutboxDispatcher {
 
     @Scheduled(fixedDelayString = "${app.kafka.outbox-dispatch-interval:1s}")
     public void dispatchPending() {
-        int batchSize = 100;
+        int batchSize = kafkaProperties.getOutboxBatchSize();
         int maxAttempts = kafkaProperties.getOutboxMaxAttempts();
         List<OutboxEvent> events = outboxRepository.findPendingBatch(batchSize, maxAttempts);
 
         for (OutboxEvent event : events) {
             try {
-                kafkaOutboxSender.send(event.id(), event.payload());
+                kafkaOutboxSender.send(event.id(), event.payload()).join();
                 outboxRepository.markSent(event.id());
             } catch (Exception e) {
                 int nextAttempts = event.attempts() + 1;

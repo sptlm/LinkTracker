@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.scrapper.AbstractKafkaIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
@@ -20,36 +21,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
         classes = backend.academy.linktracker.scrapper.ScrapperApplication.class,
         properties = {
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=link-updates-it",
+            "app.kafka.direct-publisher-enabled=true",
+            "app.kafka.updates-topic-replication-factor=1",
+            "app.kafka.updates-topic-min-in-sync-replicas=1",
             "spring.flyway.enabled=false",
             "spring.task.scheduling.enabled=false"
         })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class KafkaUpdatePublisherIT {
-
-    @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
-    @DynamicPropertySource
-    static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
-
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
-    }
+class KafkaUpdatePublisherIT extends AbstractKafkaIntegrationTest {
 
     @Autowired
     private UpdatePublisher updatePublisher;
@@ -69,7 +54,7 @@ class KafkaUpdatePublisherIT {
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                kafkaContainer.getBootstrapServers(),
+                kafkaBootstrapServers(),
                 ConsumerConfig.GROUP_ID_CONFIG,
                 "scrapper-it-consumer",
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,

@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
@@ -29,6 +30,7 @@ public class LinkPollingService {
     private final UpdatePublisher updatePublisher;
     private final ScrapperPollingProperties pollingProperties;
     private final ExecutorService pollingExecutorService;
+    private final TransactionTemplate transactionTemplate;
 
     public void pollUpdates() {
         long offset = 0;
@@ -105,15 +107,16 @@ public class LinkPollingService {
             return;
         }
 
-        linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
-
         LinkUpdate request = new LinkUpdate()
                 .id(link.id())
                 .url(URI.create(link.url()))
                 .description(result.description())
                 .tgChatIds(chatIds);
 
-        updatePublisher.publish(request);
+        transactionTemplate.executeWithoutResult(status -> {
+            linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
+            updatePublisher.publish(request);
+        });
 
         log.atInfo()
                 .addKeyValue("linkId", link.id())
@@ -133,7 +136,7 @@ public class LinkPollingService {
                 .url(URI.create(link.url()))
                 .description("Не удалось обработать ссылку в текущем цикле: %s".formatted(link.url()))
                 .tgChatIds(chatIds);
-        updatePublisher.publish(request);
+        transactionTemplate.executeWithoutResult(status -> updatePublisher.publish(request));
     }
 
     private LinkUpdater findUpdater(TrackedLink link) {

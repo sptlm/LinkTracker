@@ -4,8 +4,10 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
+import backend.academy.linktracker.bot.AbstractKafkaIntegrationTest;
+import backend.academy.linktracker.bot.TestcontainersConfiguration;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
-import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
+import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
 import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -16,56 +18,31 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(
         properties = {
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic=link-updates-bot-avro-it",
             "app.kafka.group-id=bot-avro-it-group",
-            "app.kafka.payload-format=AVRO",
+            "app.kafka.value-deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer",
+            "app.kafka.dlq-value-serializer=io.confluent.kafka.serializers.KafkaAvroSerializer",
             "app.kafka.dlq-topic=link-updates-bot-avro-it-dlq",
+            "app.kafka.dlq-topic-replication-factor=1",
             "app.kafka.max-attempts=3"
         })
 @ActiveProfiles("test")
-class KafkaUpdateConsumerAvroIT {
-
-    @Container
-    static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("apache/kafka-native:4.1.1"));
-
-    @Container
-    static GenericContainer<?> schemaRegistry = new GenericContainer<>(
-                    DockerImageName.parse("confluentinc/cp-schema-registry:7.7.1"))
-            .withExposedPorts(8081)
-            .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-            .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081");
+class KafkaUpdateConsumerAvroIT extends AbstractKafkaIntegrationTest {
 
     @DynamicPropertySource
-    static void kafkaProps(DynamicPropertyRegistry registry) {
-        if (!kafkaContainer.isRunning()) {
-            kafkaContainer.start();
-        }
-        if (!schemaRegistry.isRunning()) {
-            schemaRegistry.withEnv(
-                    "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS",
-                    "PLAINTEXT://host.testcontainers.internal:" + kafkaContainer.getMappedPort(9092));
-            schemaRegistry.start();
-        }
-
-        registry.add("app.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
-        registry.add("app.kafka.schema-registry-url", () -> "http://localhost:" + schemaRegistry.getMappedPort(8081));
+    static void schemaRegistryProps(DynamicPropertyRegistry registry) {
+        registry.add("app.kafka.schema-registry-url", TestcontainersConfiguration::schemaRegistryUrl);
     }
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Autowired
-    private LinkUpdateAvroCodec avroCodec;
+    private LinkUpdateAvroMapper avroMapper;
 
     @MockitoBean
     private BotUpdateService botUpdateService;
@@ -78,11 +55,13 @@ class KafkaUpdateConsumerAvroIT {
                 .description("avro payload")
                 .tgChatIds(List.of(3L, 4L));
 
-        kafkaTemplate.send("link-updates-bot-avro-it", "808", avroCodec.encodeToBase64(update));
+        kafkaTemplate.send("link-updates-bot-avro-it", "808", avroMapper.toRecord(update));
 
         verify(botUpdateService, timeout(10_000))
-                .processUpdate(argThat(it -> it.getId() == 808L
-                        && "avro payload".equals(it.getDescription())
-                        && it.getTgChatIds().equals(List.of(3L, 4L))));
+                .processUpdateForChat(
+                        argThat(it -> it.getId() == 808L
+                                && "avro payload".equals(it.getDescription())
+                                && it.getTgChatIds().equals(List.of(3L, 4L))),
+                        argThat(chatId -> chatId.equals(3L)));
     }
 }

@@ -1,9 +1,6 @@
 package backend.academy.linktracker.scrapper.outbox;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
-import backend.academy.linktracker.contract.kafka.LinkUpdateAvroCodec;
-import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
-import backend.academy.linktracker.scrapper.properties.KafkaPayloadFormat;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,20 +11,20 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
-@ConditionalOnProperty(prefix = "app.kafka", name = "outbox-enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "app.kafka",
+        name = "direct-publisher-enabled",
+        havingValue = "false",
+        matchIfMissing = true)
 public class OutboxUpdatePublisher implements UpdatePublisher {
 
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
-    private final KafkaNotificationsProperties kafkaProperties;
-    private final LinkUpdateAvroCodec avroCodec;
 
     @Override
     public void publish(LinkUpdate request) {
         try {
-            String payload = kafkaProperties.getPayloadFormat() == KafkaPayloadFormat.AVRO
-                    ? avroCodec.encodeToBase64(request)
-                    : objectMapper.writeValueAsString(request);
+            String payload = objectMapper.writeValueAsString(request);
             outboxRepository.enqueue(payload);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to serialize update message for outbox", e);
