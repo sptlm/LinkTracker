@@ -15,10 +15,22 @@ import org.testcontainers.utility.DockerImageName;
 public class TestcontainersConfiguration {
 
     private static final Network NETWORK = Network.newNetwork();
+    public static final PostgreSQLContainer<?> POSTGRESQL_CONTAINER = new PostgreSQLContainer<>(
+                    DockerImageName.parse("postgres:17-alpine"))
+            .withDatabaseName("linktracker")
+            .withUsername("postgres")
+            .withPassword("postgres")
+            .withNetwork(NETWORK)
+            .withNetworkAliases("postgres");
     public static final KafkaContainer KAFKA_CONTAINER = new KafkaContainer(
                     DockerImageName.parse("apache/kafka-native:4.1.1"))
             .withNetwork(NETWORK)
             .withNetworkAliases("kafka");
+    public static final GenericContainer<?> VALKEY_CONTAINER = new GenericContainer<>(
+                    DockerImageName.parse("valkey/valkey:8.0-alpine"))
+            .withNetwork(NETWORK)
+            .withNetworkAliases("valkey")
+            .withExposedPorts(6379);
 
     private static Path findJar(String moduleName) {
         String basePath = new File(moduleName).exists() ? "./" : "../";
@@ -36,17 +48,17 @@ public class TestcontainersConfiguration {
 
     @Bean
     public PostgreSQLContainer<?> postgresContainer() {
-        return new PostgreSQLContainer<>(DockerImageName.parse("postgres:17-alpine"))
-                .withDatabaseName("linktracker")
-                .withUsername("postgres")
-                .withPassword("postgres")
-                .withNetwork(NETWORK)
-                .withNetworkAliases("postgres");
+        return POSTGRESQL_CONTAINER;
     }
 
     @Bean
     public KafkaContainer kafkaContainer() {
         return KAFKA_CONTAINER;
+    }
+
+    @Bean
+    public GenericContainer<?> valkeyContainer() {
+        return VALKEY_CONTAINER;
     }
 
     public static String kafkaBootstrapServers() {
@@ -56,8 +68,44 @@ public class TestcontainersConfiguration {
         return KAFKA_CONTAINER.getBootstrapServers();
     }
 
+    public static String postgresJdbcUrl() {
+        if (!POSTGRESQL_CONTAINER.isRunning()) {
+            POSTGRESQL_CONTAINER.start();
+        }
+        return POSTGRESQL_CONTAINER.getJdbcUrl();
+    }
+
+    public static String postgresUsername() {
+        if (!POSTGRESQL_CONTAINER.isRunning()) {
+            POSTGRESQL_CONTAINER.start();
+        }
+        return POSTGRESQL_CONTAINER.getUsername();
+    }
+
+    public static String postgresPassword() {
+        if (!POSTGRESQL_CONTAINER.isRunning()) {
+            POSTGRESQL_CONTAINER.start();
+        }
+        return POSTGRESQL_CONTAINER.getPassword();
+    }
+
+    public static String valkeyHost() {
+        if (!VALKEY_CONTAINER.isRunning()) {
+            VALKEY_CONTAINER.start();
+        }
+        return VALKEY_CONTAINER.getHost();
+    }
+
+    public static Integer valkeyPort() {
+        if (!VALKEY_CONTAINER.isRunning()) {
+            VALKEY_CONTAINER.start();
+        }
+        return VALKEY_CONTAINER.getMappedPort(6379);
+    }
+
     @Bean
-    public GenericContainer<?> scrapperContainer(PostgreSQLContainer<?> postgresContainer) {
+    public GenericContainer<?> scrapperContainer(
+            PostgreSQLContainer<?> postgresContainer, GenericContainer<?> valkeyContainer) {
         return new GenericContainer<>(new ImageFromDockerfile()
                         .withFileFromPath("app.jar", findJar("scrapper"))
                         .withDockerfileFromBuilder(builder -> builder.from("openjdk:25-ea-slim")
@@ -65,13 +113,17 @@ public class TestcontainersConfiguration {
                                 .entryPoint("java", "--enable-preview", "-jar", "/app.jar")
                                 .build()))
                 .dependsOn(postgresContainer)
+                .dependsOn(valkeyContainer)
                 .withNetwork(NETWORK)
                 .withNetworkAliases("scrapper")
                 .withExposedPorts(8081)
+                .withEnv("SPRING_PROFILES_ACTIVE", "test")
                 .withEnv("SCRAPPER_NOTIFICATION_TRANSPORT", "HTTP")
                 .withEnv("SCRAPPER_DATASOURCE_URL", "jdbc:postgresql://postgres:5432/linktracker")
                 .withEnv("SCRAPPER_DATASOURCE_USERNAME", "postgres")
                 .withEnv("SCRAPPER_DATASOURCE_PASSWORD", "postgres")
+                .withEnv("SCRAPPER_VALKEY_HOST", "valkey")
+                .withEnv("SCRAPPER_VALKEY_PORT", "6379")
                 .withEnv("GITHUB_TOKEN", "mock")
                 .withEnv("STACKOVERFLOW_KEY", "mock")
                 .withEnv("STACKOVERFLOW_ACCESS_KEY", "mock");

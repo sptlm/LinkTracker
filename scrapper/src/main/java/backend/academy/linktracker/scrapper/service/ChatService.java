@@ -16,6 +16,7 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final LinkRepository linkRepository;
+    private final LinkListCacheService linkListCacheService;
 
     public void register(long chatId) {
         if (chatRepository.exists(chatId)) {
@@ -39,6 +40,7 @@ public class ChatService {
         });
 
         chatRepository.delete(chatId);
+        linkListCacheService.evictAfterCommit(chatId);
     }
 
     public void ensureExists(long chatId) {

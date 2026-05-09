@@ -29,6 +29,7 @@ public class TagService {
     private final SubscriptionRepository subscriptionRepository;
     private final TagRepository tagRepository;
     private final SupportedLinkParser supportedLinkParser;
+    private final LinkListCacheService linkListCacheService;
 
     @Transactional(readOnly = true)
     public LinkTagsResponse getTags(long chatId, URI link) {
@@ -48,6 +49,7 @@ public class TagService {
         }
 
         tagRepository.add(chatId, context.link().id(), tag);
+        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));
@@ -58,6 +60,7 @@ public class TagService {
         SubscriptionContext context = getSubscriptionContext(chatId, request == null ? null : request.link());
         List<String> tags = normalizeTags(request == null ? null : request.tags());
         tagRepository.replace(chatId, context.link().id(), tags);
+        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));
@@ -73,6 +76,7 @@ public class TagService {
         }
 
         tagRepository.delete(chatId, context.link().id(), tag);
+        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));

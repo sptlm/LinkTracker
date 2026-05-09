@@ -32,6 +32,9 @@ class ChatServiceTest {
     @Mock
     private LinkRepository linkRepository;
 
+    @Mock
+    private LinkListCacheService linkListCacheService;
+
     @InjectMocks
     private ChatService chatService;
 

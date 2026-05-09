@@ -5,7 +5,7 @@ import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
-import backend.academy.linktracker.scrapper.service.LinkTrackingService;
+import backend.academy.linktracker.scrapper.service.CachedLinkTrackingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class LinkController implements LinksApi {
 
-    private final LinkTrackingService linkTrackingService;
+    private final CachedLinkTrackingService linkTrackingService;
 
     @GetMapping
     public ResponseEntity<ListLinksResponse> linksGet(@RequestHeader("Tg-Chat-Id") Long chatId) {

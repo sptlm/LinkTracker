@@ -1,6 +1,7 @@
 package backend.academy.linktracker.scrapper.integration;
 
 import backend.academy.linktracker.scrapper.ScrapperApplication;
+import backend.academy.linktracker.scrapper.TestcontainersConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,19 +20,16 @@ public abstract class AbstractPostgresIT {
 
     @Container
     @SuppressWarnings("resource")
-    static final PostgreSQLContainer<?> POSTGRESQL_CONTAINER = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("linktracker")
-            .withUsername("postgres")
-            .withPassword("postgres");
+    static final PostgreSQLContainer<?> POSTGRESQL_CONTAINER = TestcontainersConfiguration.POSTGRESQL_CONTAINER;
 
     @Autowired
     private JdbcClient jdbcClient;
 
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRESQL_CONTAINER::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRESQL_CONTAINER::getUsername);
-        registry.add("spring.datasource.password", POSTGRESQL_CONTAINER::getPassword);
+        registry.add("spring.datasource.url", TestcontainersConfiguration::postgresJdbcUrl);
+        registry.add("spring.datasource.username", TestcontainersConfiguration::postgresUsername);
+        registry.add("spring.datasource.password", TestcontainersConfiguration::postgresPassword);
     }
 
     @BeforeEach

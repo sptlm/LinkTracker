@@ -16,6 +16,127 @@ services:
       timeout: 5s
       retries: 10
 
+  valkey-cluster-1:
+    image: valkey/valkey:8.0-alpine
+    container_name: linktracker-valkey-cluster-1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - valkey-server
+      - --port
+      - "6379"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "6380"
+      - --cluster-announce-bus-port
+      - "16380"
+    ports:
+      - "6380:6379"
+      - "16380:16379"
+    volumes:
+      - valkey-cluster-1-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey-cluster-2:
+    image: valkey/valkey:8.0-alpine
+    container_name: linktracker-valkey-cluster-2
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - valkey-server
+      - --port
+      - "6379"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "6381"
+      - --cluster-announce-bus-port
+      - "16381"
+    ports:
+      - "6381:6379"
+      - "16381:16379"
+    volumes:
+      - valkey-cluster-2-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey-cluster-3:
+    image: valkey/valkey:8.0-alpine
+    container_name: linktracker-valkey-cluster-3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - valkey-server
+      - --port
+      - "6379"
+      - --cluster-enabled
+      - "yes"
+      - --cluster-config-file
+      - nodes.conf
+      - --cluster-node-timeout
+      - "5000"
+      - --appendonly
+      - "yes"
+      - --cluster-announce-hostname
+      - host.docker.internal
+      - --cluster-announce-port
+      - "6382"
+      - --cluster-announce-bus-port
+      - "16382"
+    ports:
+      - "6382:6379"
+      - "16382:16379"
+    volumes:
+      - valkey-cluster-3-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  valkey-cluster-init:
+    image: valkey/valkey:8.0-alpine
+    container_name: linktracker-valkey-cluster-init
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      valkey-cluster-1:
+        condition: service_healthy
+      valkey-cluster-2:
+        condition: service_healthy
+      valkey-cluster-3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "valkey-cli -h host.docker.internal -p 6380 cluster info | grep -q 'cluster_state:ok'
+      || valkey-cli --cluster create
+      host.docker.internal:6380 host.docker.internal:6381 host.docker.internal:6382
+      --cluster-replicas 0 --cluster-yes"
+
   kafka-1:
     image: confluentinc/cp-kafka:7.7.1
     container_name: linktracker-kafka-1
@@ -132,3 +253,6 @@ services:
 
 volumes:
   postgres-data:
+  valkey-cluster-1-data:
+  valkey-cluster-2-data:
+  valkey-cluster-3-data:
