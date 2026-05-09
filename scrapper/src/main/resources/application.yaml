@@ -33,6 +33,7 @@ app:
     cache:
       enabled: ${SCRAPPER_VALKEY_CACHE_ENABLED:true}
       ttl: ${SCRAPPER_VALKEY_CACHE_TTL:10m}
+      operation-timeout: ${SCRAPPER_VALKEY_CACHE_OPERATION_TIMEOUT:500ms}
       client-side:
         enabled: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_ENABLED:true}
         max-size: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_MAX_SIZE:10000}
@@ -61,7 +62,7 @@ app:
     base-url: https://api.github.com
     token: ${GITHUB_TOKEN} # Use env variable. DO NOT KEEP TOKEN HERE
   polling:
-    enabled: ${SCRAPPER_POLLING_ENABLED:true}
+    enabled: ${SCRAPPER_POLLING_ENABLED:false}
     interval: 60s
   persistence:
     access-type: ${SCRAPPER_ACCESS_TYPE:ORM}

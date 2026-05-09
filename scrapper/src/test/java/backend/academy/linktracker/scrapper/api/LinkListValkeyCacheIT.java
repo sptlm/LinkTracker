@@ -41,7 +41,7 @@ class LinkListValkeyCacheIT extends AbstractPostgresValkeyIT {
 
     @BeforeEach
     void cleanValkey() {
-        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+        redisTemplate.delete("1");
     }
 
     @Test

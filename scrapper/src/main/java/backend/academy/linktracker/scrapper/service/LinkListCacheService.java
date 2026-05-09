@@ -4,7 +4,15 @@ import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.properties.ValkeyCacheProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PreDestroy;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,6 +29,7 @@ public class LinkListCacheService {
     private final ObjectMapper objectMapper;
     private final ValkeyCacheProperties properties;
     private final LinkListClientSideCache clientSideCache;
+    private final ExecutorService cacheExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public Optional<ListLinksResponse> get(long chatId) {
         if (!properties.isEnabled()) {
@@ -28,15 +37,10 @@ public class LinkListCacheService {
         }
 
         String key = cacheKey(chatId);
-        String cachedValue;
-        try {
-            cachedValue = clientSideCache
-                    .get(key, () -> redisTemplate.opsForValue().get(key))
-                    .orElse(null);
-        } catch (RuntimeException e) {
-            logCacheFailure("read", chatId, e);
-            return Optional.empty();
-        }
+        String cachedValue = executeCacheOperation("read", chatId, () -> clientSideCache
+                        .get(key, () -> redisTemplate.opsForValue().get(key))
+                        .orElse(null))
+                .orElse(null);
 
         if (cachedValue == null) {
             return Optional.empty();
@@ -58,11 +62,12 @@ public class LinkListCacheService {
         try {
             String key = cacheKey(chatId);
             String payload = objectMapper.writeValueAsString(response);
-            redisTemplate.opsForValue().set(key, payload, properties.getTtl());
+            executeCacheOperation("write", chatId, () -> {
+                redisTemplate.opsForValue().set(key, payload, properties.getTtl());
+                return null;
+            });
         } catch (JsonProcessingException e) {
             logCacheFailure("serialize", chatId, e);
-        } catch (RuntimeException e) {
-            logCacheFailure("write", chatId, e);
         }
     }
 
@@ -85,20 +90,47 @@ public class LinkListCacheService {
             return;
         }
 
-        try {
-            String key = cacheKey(chatId);
+        String key = cacheKey(chatId);
+        executeCacheOperation("evict", chatId, () -> {
             redisTemplate.delete(key);
             clientSideCache.evictLocal(key);
-        } catch (RuntimeException e) {
-            logCacheFailure("evict", chatId, e);
-        }
+            return null;
+        });
     }
 
     private String cacheKey(long chatId) {
         return String.valueOf(chatId);
     }
 
-    private void logCacheFailure(String operation, long chatId, Exception e) {
+    private <T> Optional<T> executeCacheOperation(String operation, long chatId, Supplier<T> supplier) {
+        Future<T> future = cacheExecutor.submit(supplier::get);
+        try {
+            return Optional.ofNullable(future.get(operationTimeoutMillis(), TimeUnit.MILLISECONDS));
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            logCacheFailure(operation + "-timeout", chatId, e);
+            return Optional.empty();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logCacheFailure(operation, chatId, e);
+            return Optional.empty();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            logCacheFailure(operation, chatId, cause);
+            return Optional.empty();
+        }
+    }
+
+    private long operationTimeoutMillis() {
+        return Math.max(1, properties.getOperationTimeout().toMillis());
+    }
+
+    @PreDestroy
+    public void close() {
+        cacheExecutor.shutdownNow();
+    }
+
+    private void logCacheFailure(String operation, long chatId, Throwable e) {
         log.atWarn()
                 .addKeyValue("operation", operation)
                 .addKeyValue("chatId", chatId)

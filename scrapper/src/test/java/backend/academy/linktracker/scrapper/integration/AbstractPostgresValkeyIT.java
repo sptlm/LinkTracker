@@ -10,12 +10,19 @@ public abstract class AbstractPostgresValkeyIT extends AbstractPostgresIT {
 
     @Container
     @SuppressWarnings("resource")
-    static final GenericContainer<?> VALKEY_CONTAINER = TestcontainersConfiguration.VALKEY_CONTAINER;
+    static final GenericContainer<?> VALKEY_CLUSTER_NODE_1 = TestcontainersConfiguration.VALKEY_CLUSTER_NODE_1;
+
+    @Container
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> VALKEY_CLUSTER_NODE_2 = TestcontainersConfiguration.VALKEY_CLUSTER_NODE_2;
+
+    @Container
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> VALKEY_CLUSTER_NODE_3 = TestcontainersConfiguration.VALKEY_CLUSTER_NODE_3;
 
     @DynamicPropertySource
     static void registerValkeyProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", TestcontainersConfiguration::valkeyHost);
-        registry.add("spring.data.redis.port", TestcontainersConfiguration::valkeyPort);
+        registry.add("spring.data.redis.cluster.nodes", TestcontainersConfiguration::valkeyClusterNodes);
         registry.add("app.valkey.cache.enabled", () -> true);
     }
 }

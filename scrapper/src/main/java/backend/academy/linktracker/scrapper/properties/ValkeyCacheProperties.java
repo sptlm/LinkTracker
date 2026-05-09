@@ -23,6 +23,9 @@ public class ValkeyCacheProperties {
     private Duration ttl = Duration.ofMinutes(10);
 
     @NotNull
+    private Duration operationTimeout = Duration.ofMillis(500);
+
+    @NotNull
     private ClientSide clientSide = new ClientSide();
 
     @Getter
