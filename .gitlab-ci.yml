@@ -1,7 +1,8 @@
 image: "${GITLAB_DOCKER_PROXY}/eclipse-temurin:25-jdk-alpine"
 
 variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_ARGS: "-s ${CI_PROJECT_DIR}/.mvn/settings.xml -P ci"
+  MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository"
   GITLAB_DOCKER_PROXY: "gitlab.education.tbank.ru:443/backend-academy-java-2025/lecture-materials/dependency_proxy/containers"
 
 workflow:
