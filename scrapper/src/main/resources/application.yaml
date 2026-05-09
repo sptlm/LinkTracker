@@ -20,8 +20,22 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+  data:
+    redis:
+      host: ${SCRAPPER_VALKEY_HOST:localhost}
+      port: ${SCRAPPER_VALKEY_PORT:6379}
+      timeout: ${SCRAPPER_VALKEY_TIMEOUT:2s}
+      repositories:
+        enabled: false
 
 app:
+  valkey:
+    cache:
+      enabled: ${SCRAPPER_VALKEY_CACHE_ENABLED:false}
+      ttl: ${SCRAPPER_VALKEY_CACHE_TTL:10m}
+      client-side:
+        enabled: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_ENABLED:false}
+        max-size: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_MAX_SIZE:10000}
   notifications:
     transport: ${SCRAPPER_NOTIFICATION_TRANSPORT:KAFKA}
   kafka:
@@ -51,3 +65,15 @@ app:
   persistence:
     access-type: ${SCRAPPER_ACCESS_TYPE:ORM}
     polling-batch-size: 100
+---
+spring:
+  config:
+    activate:
+      on-profile: "!test"
+  data:
+    redis:
+      cluster:
+        nodes: ${SCRAPPER_VALKEY_CLUSTER_NODES:localhost:6380,localhost:6381,localhost:6382}
+      timeout: ${SCRAPPER_VALKEY_TIMEOUT:2s}
+      repositories:
+        enabled: false
