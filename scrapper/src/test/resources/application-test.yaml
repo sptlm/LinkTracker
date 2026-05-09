@@ -6,6 +6,9 @@ spring:
     clean-disabled: false
 
 app:
+  valkey:
+    cache:
+      enabled: false
   notifications:
     transport: HTTP
   clients:

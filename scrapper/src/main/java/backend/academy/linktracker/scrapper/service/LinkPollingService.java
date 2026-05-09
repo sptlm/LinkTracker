@@ -134,7 +134,7 @@ public class LinkPollingService {
         LinkUpdate request = new LinkUpdate()
                 .id(link.id())
                 .url(URI.create(link.url()))
-                .description("Не удалось обработать ссылку в текущем цикле: %s".formatted(link.url()))
+                .description("Failed to check link in current polling cycle: %s".formatted(link.url()))
                 .tgChatIds(chatIds);
         transactionTemplate.executeWithoutResult(status -> updatePublisher.publish(request));
     }

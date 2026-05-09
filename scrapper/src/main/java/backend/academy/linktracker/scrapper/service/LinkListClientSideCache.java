@@ -15,6 +15,7 @@ import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
 import io.lettuce.core.cluster.models.partitions.RedisClusterNode;
 import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.protocol.ProtocolVersion;
+import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.support.caching.CacheAccessor;
 import io.lettuce.core.support.caching.CacheFrontend;
 import io.lettuce.core.support.caching.CacheFrontend.ValueRetrievalException;
@@ -37,6 +38,7 @@ public class LinkListClientSideCache implements Closeable {
 
     private final DataRedisProperties redisProperties;
     private final ValkeyCacheProperties cacheProperties;
+    private final ClientResources clientResources;
     private final Object monitor = new Object();
     private final Cache<String, String> localCache;
     private final Map<String, NodeCache> clusterNodeCaches = new ConcurrentHashMap<>();
@@ -48,9 +50,13 @@ public class LinkListClientSideCache implements Closeable {
     private volatile StatefulRedisClusterConnection<String, String> clusterConnection;
     private volatile boolean unavailable;
 
-    public LinkListClientSideCache(DataRedisProperties redisProperties, ValkeyCacheProperties cacheProperties) {
+    public LinkListClientSideCache(
+            DataRedisProperties redisProperties,
+            ValkeyCacheProperties cacheProperties,
+            ClientResources clientResources) {
         this.redisProperties = redisProperties;
         this.cacheProperties = cacheProperties;
+        this.clientResources = clientResources;
         this.localCache = CacheBuilder.newBuilder()
                 .maximumSize(cacheProperties.getClientSide().getMaxSize())
                 .build();
@@ -130,7 +136,7 @@ public class LinkListClientSideCache implements Closeable {
             }
 
             try {
-                RedisClusterClient newClient = RedisClusterClient.create(clusterRedisUris());
+                RedisClusterClient newClient = RedisClusterClient.create(clientResources, clusterRedisUris());
                 newClient.setOptions(ClusterClientOptions.builder()
                         .protocolVersion(ProtocolVersion.RESP3)
                         .build());
@@ -189,7 +195,7 @@ public class LinkListClientSideCache implements Closeable {
             }
 
             try {
-                RedisClient newClient = RedisClient.create(redisUri());
+                RedisClient newClient = RedisClient.create(clientResources, redisUri());
                 newClient.setOptions(ClientOptions.builder()
                         .protocolVersion(ProtocolVersion.RESP3)
                         .build());

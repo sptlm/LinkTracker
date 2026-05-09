@@ -5,6 +5,8 @@
 
 ### Maven ###
 target/
+scrapper/src/test/jmeter/results/
+jmeter.log
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup

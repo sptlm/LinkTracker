@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -163,7 +164,7 @@ class LinkPollingServiceTest {
 
         linkPollingService.pollUpdates();
 
-        verify(updatePublisher, org.mockito.Mockito.times(2)).publish(any(LinkUpdate.class));
+        verify(updatePublisher, times(2)).publish(any(LinkUpdate.class));
     }
 
     @Test
