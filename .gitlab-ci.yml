@@ -24,7 +24,8 @@ build:
   stage: build
   timeout: 20m
   script:
-    - ./mvnw package -T 1C -DskipTests=true -Djacoco.skip=true
+    - ./mvnw -B -U dependency:go-offline
+    - ./mvnw -B package -T 1C -DskipTests=true -Djacoco.skip=true
       -Denforcer.skip=true -Dflatten.skip=true
       -Dmodernizer.skip=true -Dspotbugs.skip=true -Dpmd.skip=true
       --projects '!build-report-aggregate' -am
