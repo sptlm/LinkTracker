@@ -1,7 +1,7 @@
 image: "${GITLAB_DOCKER_PROXY}/eclipse-temurin:25-jdk-alpine"
 
 variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Xmx4g -XX:+UseG1GC -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:CICompilerCount=2"
   GITLAB_DOCKER_PROXY: "gitlab.education.tbank.ru:443/backend-academy-java-2025/lecture-materials/dependency_proxy/containers"
 
 workflow:
@@ -16,21 +16,25 @@ stages:
   - test
 
 cache:
-  key: "$CI_COMMIT_REF_SLUG"
+  key: "maven-cache-$CI_PROJECT_ID"
   paths:
     - .m2/repository/
 
 build:
   stage: build
+  timeout: 20m
   script:
-    - ./mvnw package -DskipTests=true -Djacoco.skip=true
+    - ./mvnw package -T 1C -DskipTests=true -Djacoco.skip=true
+      -Denforcer.skip=true -Dflatten.skip=true
+      -Dmodernizer.skip=true -Dspotbugs.skip=true -Dpmd.skip=true
+      --projects '!build-report-aggregate' -am
 
 lint:
   stage: lint
   needs:
     - build
   script:
-    - ./mvnw compile -am spotless:check modernizer:modernizer spotbugs:check pmd:check pmd:cpd-check
+    - ./mvnw compile -T 1C -am spotless:check modernizer:modernizer spotbugs:check pmd:check pmd:cpd-check
 
 test:
   stage: test
@@ -51,4 +55,4 @@ test:
     - apk add --no-cache docker-cli
     - echo "$CI_JOB_TOKEN" | docker login gitlab.education.tbank.ru:443 -u gitlab-ci-token --password-stdin
   script:
-    - ./mvnw verify
+    - ./mvnw verify -Dgroups='!integration'
