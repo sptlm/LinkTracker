@@ -42,8 +42,8 @@ public class ValkeyCacheConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "app.valkey.cache", name = "enabled", havingValue = "true", matchIfMissing = true)
     @ConditionalOnProperty(prefix = "app.valkey.cache.client-side", name = "enabled", havingValue = "false")
-    public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper,
-            ValkeyCacheProperties properties) {
+    public CacheManager redisCacheManager(
+            RedisConnectionFactory connectionFactory, ObjectMapper objectMapper, ValkeyCacheProperties properties) {
         RedisCacheConfiguration linkListCacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(properties.getTtl())
                 .disableCachingNullValues()
@@ -127,7 +127,8 @@ public class ValkeyCacheConfiguration {
             name = "enabled",
             havingValue = "true",
             matchIfMissing = true)
-    public StatefulRedisClusterConnection<String, String> valkeyClusterConnection(RedisClusterClient valkeyClusterClient) {
+    public StatefulRedisClusterConnection<String, String> valkeyClusterConnection(
+            RedisClusterClient valkeyClusterClient) {
         return valkeyClusterClient.connect();
     }
 
