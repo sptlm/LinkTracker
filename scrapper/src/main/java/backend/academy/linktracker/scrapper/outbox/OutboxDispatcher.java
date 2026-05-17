@@ -11,11 +11,10 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
 @ConditionalOnProperty(
         prefix = "app.kafka",
-        name = "direct-publisher-enabled",
-        havingValue = "false",
+        name = "outbox-dispatch-enabled",
+        havingValue = "true",
         matchIfMissing = true)
 public class OutboxDispatcher {
 

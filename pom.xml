@@ -69,6 +69,7 @@
         <springdoc.version>3.0.1</springdoc.version>
         <wiremock-grpc.version>0.11.0</wiremock-grpc.version>
         <wiremock-spring-boot.version>4.1.0</wiremock-spring-boot.version>
+        <bucket4j.version>8.18.0</bucket4j.version>
 
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
@@ -200,6 +201,11 @@
                 <groupId>io.confluent</groupId>
                 <artifactId>kafka-avro-serializer</artifactId>
                 <version>${confluent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-core</artifactId>
+                <version>${bucket4j.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

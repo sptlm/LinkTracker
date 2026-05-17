@@ -1,13 +1,19 @@
 package backend.academy.linktracker.scrapper.client.stackoverflow;
 
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
+import backend.academy.linktracker.scrapper.client.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswerItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswersResponse;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentsResponse;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionsResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import java.util.List;
+import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
@@ -18,12 +24,23 @@ import org.springframework.web.client.RestClientResponseException;
 public class RestStackOverflowClient implements StackOverflowClient {
 
     private final RestClient restClient;
+    private final RetryableHttpStatusClassifier retryableStatusClassifier;
+
+    @Autowired
+    public RestStackOverflowClient(
+            @Qualifier("stackOverflowRestClient") RestClient restClient,
+            RetryableHttpStatusClassifier retryableStatusClassifier) {
+        this.restClient = restClient;
+        this.retryableStatusClassifier = retryableStatusClassifier;
+    }
 
     public RestStackOverflowClient(@Qualifier("stackOverflowRestClient") RestClient restClient) {
-        this.restClient = restClient;
+        this(restClient, new RetryableHttpStatusClassifier(Set.of()));
     }
 
     @Override
+    @Retry(name = "stackoverflow")
+    @CircuitBreaker(name = "stackoverflow")
     public StackOverflowQuestionItem getQuestion(long questionId) {
         try {
             StackOverflowQuestionsResponse response = restClient
@@ -43,7 +60,7 @@ public class RestStackOverflowClient implements StackOverflowClient {
 
             return items.getFirst();
         } catch (RestClientResponseException e) {
-            throw new ExternalServiceException(
+            throw externalStatusException(
                     "StackOverflow request failed for question %d, status=%d"
                             .formatted(questionId, e.getStatusCode().value()),
                     e);
@@ -56,6 +73,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
     }
 
     @Override
+    @Retry(name = "stackoverflow")
+    @CircuitBreaker(name = "stackoverflow")
     public List<StackOverflowAnswerItem> getLatestAnswers(long questionId, int limit) {
         try {
             StackOverflowAnswersResponse response = restClient
@@ -72,6 +91,11 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowAnswersResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (RestClientResponseException e) {
+            throw externalStatusException(
+                    "StackOverflow answers request failed for question %d, status=%d"
+                            .formatted(questionId, e.getStatusCode().value()),
+                    e);
         } catch (ResourceAccessException e) {
             throw new ExternalServiceException(
                     "StackOverflow is temporarily unavailable for question " + questionId, e);
@@ -81,6 +105,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
     }
 
     @Override
+    @Retry(name = "stackoverflow")
+    @CircuitBreaker(name = "stackoverflow")
     public List<StackOverflowCommentItem> getLatestComments(long questionId, int limit) {
         try {
             StackOverflowCommentsResponse response = restClient
@@ -97,11 +123,24 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowCommentsResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (RestClientResponseException e) {
+            throw externalStatusException(
+                    "StackOverflow comments request failed for question %d, status=%d"
+                            .formatted(questionId, e.getStatusCode().value()),
+                    e);
         } catch (ResourceAccessException e) {
             throw new ExternalServiceException(
                     "StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow comments request failed for question " + questionId, e);
         }
+    }
+
+    private ExternalServiceException externalStatusException(String message, RestClientResponseException e) {
+        int statusCode = e.getStatusCode().value();
+        if (retryableStatusClassifier.isRetryable(statusCode)) {
+            return new RetryableHttpStatusException(message, statusCode, e);
+        }
+        return new ExternalServiceException(message, e);
     }
 }

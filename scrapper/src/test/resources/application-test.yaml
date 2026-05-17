@@ -6,11 +6,15 @@ spring:
     clean-disabled: false
 
 app:
+  rate-limit:
+    enabled: false
   valkey:
     cache:
       enabled: false
   notifications:
     transport: HTTP
+  kafka:
+    outbox-dispatch-enabled: false
   clients:
     bot-base-url: http://localhost:18080
   stackoverflow:
