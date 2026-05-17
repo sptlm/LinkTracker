@@ -29,6 +29,18 @@ spring:
         enabled: false
 
 app:
+  http-client:
+    connect-timeout: ${SCRAPPER_HTTP_CONNECT_TIMEOUT:1s}
+    read-timeout: ${SCRAPPER_HTTP_READ_TIMEOUT:2s}
+  resilience:
+    http:
+      retryable-statuses: ${SCRAPPER_HTTP_RETRYABLE_STATUSES:500,502,503,504}
+  rate-limit:
+    enabled: ${SCRAPPER_RATE_LIMIT_ENABLED:true}
+    capacity: ${SCRAPPER_RATE_LIMIT_CAPACITY:60}
+    refill-tokens: ${SCRAPPER_RATE_LIMIT_REFILL_TOKENS:60}
+    refill-period: ${SCRAPPER_RATE_LIMIT_REFILL_PERIOD:1m}
+    cache-expire-after-access: ${SCRAPPER_RATE_LIMIT_CACHE_EXPIRE_AFTER_ACCESS:10m}
   valkey:
     cache:
       enabled: ${SCRAPPER_VALKEY_CACHE_ENABLED:true}
@@ -70,6 +82,60 @@ app:
   persistence:
     access-type: ${SCRAPPER_ACCESS_TYPE:ORM}
     polling-batch-size: 100
+
+resilience4j:
+  retry:
+    instances:
+      github:
+        max-attempts: ${SCRAPPER_RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${SCRAPPER_RETRY_WAIT_DURATION:250ms}
+        retry-exceptions:
+          - backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException
+        enable-exponential-backoff: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_ENABLED:false}
+        exponential-backoff-multiplier: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
+        exponential-max-wait-duration: ${SCRAPPER_RETRY_EXPONENTIAL_MAX_WAIT_DURATION:5s}
+      stackoverflow:
+        max-attempts: ${SCRAPPER_RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${SCRAPPER_RETRY_WAIT_DURATION:250ms}
+        retry-exceptions:
+          - backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException
+        enable-exponential-backoff: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_ENABLED:false}
+        exponential-backoff-multiplier: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
+        exponential-max-wait-duration: ${SCRAPPER_RETRY_EXPONENTIAL_MAX_WAIT_DURATION:5s}
+      bot:
+        max-attempts: ${SCRAPPER_RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${SCRAPPER_RETRY_WAIT_DURATION:250ms}
+        retry-exceptions:
+          - backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException
+        enable-exponential-backoff: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_ENABLED:false}
+        exponential-backoff-multiplier: ${SCRAPPER_RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
+        exponential-max-wait-duration: ${SCRAPPER_RETRY_EXPONENTIAL_MAX_WAIT_DURATION:5s}
+  circuitbreaker:
+    instances:
+      github:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${SCRAPPER_CB_SLIDING_WINDOW_SIZE:10}
+        minimum-number-of-calls: ${SCRAPPER_CB_MINIMUM_REQUIRED_CALLS:5}
+        failure-rate-threshold: ${SCRAPPER_CB_FAILURE_RATE_THRESHOLD:50}
+        permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
+        wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
+        automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
+      stackoverflow:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${SCRAPPER_CB_SLIDING_WINDOW_SIZE:10}
+        minimum-number-of-calls: ${SCRAPPER_CB_MINIMUM_REQUIRED_CALLS:5}
+        failure-rate-threshold: ${SCRAPPER_CB_FAILURE_RATE_THRESHOLD:50}
+        permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
+        wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
+        automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
+      bot:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${SCRAPPER_CB_SLIDING_WINDOW_SIZE:10}
+        minimum-number-of-calls: ${SCRAPPER_CB_MINIMUM_REQUIRED_CALLS:5}
+        failure-rate-threshold: ${SCRAPPER_CB_FAILURE_RATE_THRESHOLD:50}
+        permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
+        wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
+        automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
 ---
 spring:
   config:

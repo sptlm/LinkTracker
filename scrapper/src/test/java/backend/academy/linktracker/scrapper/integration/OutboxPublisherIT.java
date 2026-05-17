@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
             "app.notifications.transport=KAFKA",
             "app.kafka.updates-topic-replication-factor=1",
             "app.kafka.updates-topic-min-in-sync-replicas=1",
+            "app.kafka.outbox-dispatch-enabled=true",
             "app.kafka.outbox-dispatch-interval=10m",
             "app.kafka.outbox-max-attempts=2"
         })

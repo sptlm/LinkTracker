@@ -14,7 +14,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "app.notifications", name = "transport", havingValue = "KAFKA", matchIfMissing = true)
+@ConditionalOnProperty(
+        prefix = "app.kafka",
+        name = "outbox-dispatch-enabled",
+        havingValue = "true",
+        matchIfMissing = true)
 public class KafkaOutboxSender {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;

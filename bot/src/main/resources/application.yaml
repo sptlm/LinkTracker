@@ -6,6 +6,12 @@ spring:
     name: bot
 
 app:
+  http-client:
+    connect-timeout: ${BOT_HTTP_CONNECT_TIMEOUT:1s}
+    read-timeout: ${BOT_HTTP_READ_TIMEOUT:2s}
+  resilience:
+    http:
+      retryable-statuses: ${BOT_HTTP_RETRYABLE_STATUSES:500,502,503,504}
   notifications:
     transport: ${BOT_NOTIFICATION_TRANSPORT:KAFKA}
   kafka:
@@ -28,7 +34,7 @@ app:
     update-listener-sleep: 1s
     debug: false
   scrapper:
-    base-url: http://localhost:8081
+    base-url: ${BOT_SCRAPPER_BASE_URL:http://localhost:8081}
   messages:
     unknown-command: "Неизвестная команда. Воспользуйтесь /help, чтобы посмотреть список доступных команд."
     start-welcome: "Ку, %s! Используйте /help, чтобы посмотреть доступные команды."
@@ -51,3 +57,25 @@ app:
     updates-template: |
       Обнаружено обновление по ссылке: %s
       %s
+
+resilience4j:
+  retry:
+    instances:
+      scrapper:
+        max-attempts: ${BOT_RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${BOT_RETRY_WAIT_DURATION:250ms}
+        retry-exceptions:
+          - backend.academy.linktracker.bot.client.scrapper.RetryableScrapperClientException
+        enable-exponential-backoff: ${BOT_RETRY_EXPONENTIAL_BACKOFF_ENABLED:false}
+        exponential-backoff-multiplier: ${BOT_RETRY_EXPONENTIAL_BACKOFF_MULTIPLIER:2}
+        exponential-max-wait-duration: ${BOT_RETRY_EXPONENTIAL_MAX_WAIT_DURATION:5s}
+  circuitbreaker:
+    instances:
+      scrapper:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${BOT_CB_SLIDING_WINDOW_SIZE:10}
+        minimum-number-of-calls: ${BOT_CB_MINIMUM_REQUIRED_CALLS:5}
+        failure-rate-threshold: ${BOT_CB_FAILURE_RATE_THRESHOLD:50}
+        permitted-number-of-calls-in-half-open-state: ${BOT_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
+        wait-duration-in-open-state: ${BOT_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
+        automatic-transition-from-open-to-half-open-enabled: ${BOT_CB_AUTO_TRANSITION_ENABLED:true}
