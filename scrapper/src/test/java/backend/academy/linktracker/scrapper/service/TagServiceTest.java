@@ -46,9 +46,6 @@ class TagServiceTest {
     @Mock
     private SupportedLinkParser supportedLinkParser;
 
-    @Mock
-    private LinkListCacheService linkListCacheService;
-
     @InjectMocks
     private TagService tagService;
 

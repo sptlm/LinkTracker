@@ -1,10 +1,14 @@
 package backend.academy.linktracker.scrapper.service;
 
+import static backend.academy.linktracker.scrapper.configuration.ValkeyCacheConfiguration.LINK_LIST_CACHE;
+
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,25 +16,19 @@ import org.springframework.stereotype.Service;
 public class CachedLinkTrackingService {
 
     private final LinkTrackingService linkTrackingService;
-    private final LinkListCacheService cacheService;
 
+    @Cacheable(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     public ListLinksResponse getLinks(long chatId) {
-        return cacheService.get(chatId).orElseGet(() -> {
-            ListLinksResponse response = linkTrackingService.getLinks(chatId);
-            cacheService.put(chatId, response);
-            return response;
-        });
+        return linkTrackingService.getLinks(chatId);
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
-        LinksPost200Response response = linkTrackingService.addLink(chatId, request);
-        cacheService.evictAfterCommit(chatId);
-        return response;
+        return linkTrackingService.addLink(chatId, request);
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     public LinksPost200Response removeLink(long chatId, RemoveLinkRequest request) {
-        LinksPost200Response response = linkTrackingService.removeLink(chatId, request);
-        cacheService.evictAfterCommit(chatId);
-        return response;
+        return linkTrackingService.removeLink(chatId, request);
     }
 }

@@ -33,10 +33,13 @@ app:
     cache:
       enabled: ${SCRAPPER_VALKEY_CACHE_ENABLED:true}
       ttl: ${SCRAPPER_VALKEY_CACHE_TTL:10m}
-      operation-timeout: ${SCRAPPER_VALKEY_CACHE_OPERATION_TIMEOUT:500ms}
       client-side:
         enabled: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_ENABLED:true}
         max-size: ${SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_MAX_SIZE:10000}
+      host-mapping:
+        enabled: ${SCRAPPER_VALKEY_HOST_MAPPING_ENABLED:true}
+        source: ${SCRAPPER_VALKEY_HOST_MAPPING_SOURCE:host.docker.internal}
+        target: ${SCRAPPER_VALKEY_HOST_MAPPING_TARGET:localhost}
   notifications:
     transport: ${SCRAPPER_NOTIFICATION_TRANSPORT:KAFKA}
   kafka:

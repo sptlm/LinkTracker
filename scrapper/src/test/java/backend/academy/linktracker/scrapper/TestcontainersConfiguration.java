@@ -7,7 +7,6 @@ import java.util.stream.Stream;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.testcontainers.containers.Container;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -36,17 +35,11 @@ public class TestcontainersConfiguration {
             .withNetworkAliases("valkey")
             .withExposedPorts(6379);
 
-    @SuppressWarnings({"deprecation", "rawtypes", "resource"})
-    public static final FixedHostPortGenericContainer VALKEY_CLUSTER_NODE_1 =
-            valkeyClusterNode("valkey-cluster-1", 6390, 16390);
+    public static final GenericContainer<?> VALKEY_CLUSTER_NODE_1 = valkeyClusterNode("valkey-cluster-1");
 
-    @SuppressWarnings({"deprecation", "rawtypes", "resource"})
-    public static final FixedHostPortGenericContainer VALKEY_CLUSTER_NODE_2 =
-            valkeyClusterNode("valkey-cluster-2", 6391, 16391);
+    public static final GenericContainer<?> VALKEY_CLUSTER_NODE_2 = valkeyClusterNode("valkey-cluster-2");
 
-    @SuppressWarnings({"deprecation", "rawtypes", "resource"})
-    public static final FixedHostPortGenericContainer VALKEY_CLUSTER_NODE_3 =
-            valkeyClusterNode("valkey-cluster-3", 6392, 16392);
+    public static final GenericContainer<?> VALKEY_CLUSTER_NODE_3 = valkeyClusterNode("valkey-cluster-3");
 
     private static Path findJar(String moduleName) {
         String basePath = new File(moduleName).exists() ? "./" : "../";
@@ -62,12 +55,9 @@ public class TestcontainersConfiguration {
         return jars[0].toPath();
     }
 
-    @SuppressWarnings({"deprecation", "rawtypes"})
-    private static FixedHostPortGenericContainer valkeyClusterNode(String alias, int hostPort, int hostClusterBusPort) {
-        return (FixedHostPortGenericContainer) new FixedHostPortGenericContainer(
-                        DockerImageName.parse("valkey/valkey:8.0-alpine").asCanonicalNameString())
-                .withFixedExposedPort(hostPort, 6379)
-                .withFixedExposedPort(hostClusterBusPort, 16379)
+    private static GenericContainer<?> valkeyClusterNode(String alias) {
+        return new GenericContainer<>(DockerImageName.parse("valkey/valkey:8.0-alpine"))
+                .withExposedPorts(6379, 16379)
                 .withNetwork(NETWORK)
                 .withNetworkAliases(alias)
                 .withExtraHost("host.docker.internal", "host-gateway")
@@ -84,11 +74,7 @@ public class TestcontainersConfiguration {
                         "--appendonly",
                         "no",
                         "--cluster-announce-hostname",
-                        "host.docker.internal",
-                        "--cluster-announce-port",
-                        String.valueOf(hostPort),
-                        "--cluster-announce-bus-port",
-                        String.valueOf(hostClusterBusPort));
+                        "host.docker.internal");
     }
 
     @Bean
@@ -156,37 +142,43 @@ public class TestcontainersConfiguration {
                         container.start();
                     }
                 });
+        Stream.of(VALKEY_CLUSTER_NODE_1, VALKEY_CLUSTER_NODE_2, VALKEY_CLUSTER_NODE_3)
+                .forEach(TestcontainersConfiguration::configureAnnouncedPorts);
 
         try {
-            Container.ExecResult clusterInfo = VALKEY_CLUSTER_NODE_1.execInContainer(
-                    "valkey-cli", "-h", "host.docker.internal", "-p", "6390", "cluster", "info");
+            Container.ExecResult clusterInfo = VALKEY_CLUSTER_NODE_1.execInContainer("valkey-cli", "cluster", "info");
             if (clusterInfo.getStdout().contains("cluster_state:ok")) {
                 return;
             }
 
-            Stream.of("6390", "6391", "6392").forEach(port -> {
-                try {
-                    Container.ExecResult resetResult = VALKEY_CLUSTER_NODE_1.execInContainer(
-                            "valkey-cli", "-h", "host.docker.internal", "-p", port, "cluster", "reset", "hard");
-                    if (resetResult.getExitCode() != 0) {
-                        throw new IllegalStateException("Failed to reset Valkey test node " + port + ": "
-                                + resetResult.getStdout() + resetResult.getStderr());
-                    }
-                } catch (IOException e) {
-                    throw new IllegalStateException("Failed to reset Valkey test node " + port, e);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted while resetting Valkey test node " + port, e);
-                }
-            });
+            Stream.of(VALKEY_CLUSTER_NODE_1, VALKEY_CLUSTER_NODE_2, VALKEY_CLUSTER_NODE_3)
+                    .forEach(container -> {
+                        try {
+                            Container.ExecResult resetResult =
+                                    container.execInContainer("valkey-cli", "cluster", "reset", "hard");
+                            if (resetResult.getExitCode() != 0) {
+                                throw new IllegalStateException("Failed to reset Valkey test node "
+                                        + container.getContainerName()
+                                        + ": "
+                                        + resetResult.getStdout() + resetResult.getStderr());
+                            }
+                        } catch (IOException e) {
+                            throw new IllegalStateException(
+                                    "Failed to reset Valkey test node " + container.getContainerName(), e);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(
+                                    "Interrupted while resetting Valkey test node " + container.getContainerName(), e);
+                        }
+                    });
 
             Container.ExecResult createResult = VALKEY_CLUSTER_NODE_1.execInContainer(
                     "valkey-cli",
                     "--cluster",
                     "create",
-                    "host.docker.internal:6390",
-                    "host.docker.internal:6391",
-                    "host.docker.internal:6392",
+                    valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_1),
+                    valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_2),
+                    valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_3),
                     "--cluster-replicas",
                     "0",
                     "--cluster-yes");
@@ -204,7 +196,50 @@ public class TestcontainersConfiguration {
 
     public static String valkeyClusterNodes() {
         startValkeyCluster();
-        return "host.docker.internal:6390,host.docker.internal:6391,host.docker.internal:6392";
+        return String.join(
+                ",",
+                valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_1),
+                valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_2),
+                valkeyClusterNodeAddress(VALKEY_CLUSTER_NODE_3));
+    }
+
+    private static void configureAnnouncedPorts(GenericContainer<?> container) {
+        try {
+            Container.ExecResult announcePort = container.execInContainer(
+                    "valkey-cli",
+                    "config",
+                    "set",
+                    "cluster-announce-port",
+                    String.valueOf(container.getMappedPort(6379)));
+            Container.ExecResult announceBusPort = container.execInContainer(
+                    "valkey-cli",
+                    "config",
+                    "set",
+                    "cluster-announce-bus-port",
+                    String.valueOf(container.getMappedPort(16379)));
+            if (announcePort.getExitCode() != 0 || announceBusPort.getExitCode() != 0) {
+                throw new IllegalStateException("Failed to configure announced ports for Valkey test node "
+                        + container.getContainerName()
+                        + ": "
+                        + announcePort.getStdout()
+                        + announcePort.getStderr()
+                        + announceBusPort.getStdout()
+                        + announceBusPort.getStderr());
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to configure announced ports for Valkey test node " + container.getContainerName(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "Interrupted while configuring announced ports for Valkey test node "
+                            + container.getContainerName(),
+                    e);
+        }
+    }
+
+    private static String valkeyClusterNodeAddress(GenericContainer<?> container) {
+        return "host.docker.internal:" + container.getMappedPort(6379);
     }
 
     @Bean

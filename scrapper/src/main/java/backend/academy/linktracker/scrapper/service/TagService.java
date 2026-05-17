@@ -1,5 +1,7 @@
 package backend.academy.linktracker.scrapper.service;
 
+import static backend.academy.linktracker.scrapper.configuration.ValkeyCacheConfiguration.LINK_LIST_CACHE;
+
 import backend.academy.linktracker.scrapper.api.dto.LinkTagOperationRequest;
 import backend.academy.linktracker.scrapper.api.dto.LinkTagsResponse;
 import backend.academy.linktracker.scrapper.api.dto.LinkTagsUpdateRequest;
@@ -17,6 +19,7 @@ import java.net.URI;
 import java.util.LinkedHashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +32,6 @@ public class TagService {
     private final SubscriptionRepository subscriptionRepository;
     private final TagRepository tagRepository;
     private final SupportedLinkParser supportedLinkParser;
-    private final LinkListCacheService linkListCacheService;
 
     @Transactional(readOnly = true)
     public LinkTagsResponse getTags(long chatId, URI link) {
@@ -39,6 +41,7 @@ public class TagService {
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     @Transactional
     public LinkTagsResponse addTag(long chatId, LinkTagOperationRequest request) {
         String tag = normalizeTag(request == null ? null : request.tag());
@@ -49,23 +52,23 @@ public class TagService {
         }
 
         tagRepository.add(chatId, context.link().id(), tag);
-        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     @Transactional
     public LinkTagsResponse updateTags(long chatId, LinkTagsUpdateRequest request) {
         SubscriptionContext context = getSubscriptionContext(chatId, request == null ? null : request.link());
         List<String> tags = normalizeTags(request == null ? null : request.tags());
         tagRepository.replace(chatId, context.link().id(), tags);
-        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     @Transactional
     public LinkTagsResponse removeTag(long chatId, LinkTagOperationRequest request) {
         String tag = normalizeTag(request == null ? null : request.tag());
@@ -76,7 +79,6 @@ public class TagService {
         }
 
         tagRepository.delete(chatId, context.link().id(), tag);
-        linkListCacheService.evictAfterCommit(chatId);
         return toResponse(
                 context.link(),
                 tagRepository.findByChatIdAndLinkId(chatId, context.link().id()));

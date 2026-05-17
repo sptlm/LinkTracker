@@ -88,9 +88,8 @@ jmeter.bat -n `
 - только Valkey cache: `SCRAPPER_VALKEY_CACHE_ENABLED=true`, `SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_ENABLED=false`
 - Valkey cache с client-side caching: `SCRAPPER_VALKEY_CACHE_ENABLED=true`, `SCRAPPER_VALKEY_CLIENT_SIDE_CACHE_ENABLED=true`
 
-Если нода Valkey или topology кластера недоступны, Scrapper считает операции с кэшем best-effort
-и продолжает работу без падения после `SCRAPPER_VALKEY_CACHE_OPERATION_TIMEOUT` (`500ms` по
-умолчанию). Такие предупреждения означают, что замер уже не является корректным cache-бенчмарком:
+Если нода Valkey или topology кластера недоступны, такие предупреждения означают, что замер уже не является корректным
+cache-бенчмарком:
 перед повторным прогоном нужно перезапустить или пересоздать Valkey cluster.
 
 Сгенерированный HTML-отчет JMeter содержит throughput, среднюю latency, p50/p99 перцентили,

@@ -1,11 +1,14 @@
 package backend.academy.linktracker.scrapper.service;
 
+import static backend.academy.linktracker.scrapper.configuration.ValkeyCacheConfiguration.LINK_LIST_CACHE;
+
 import backend.academy.linktracker.scrapper.api.exception.ChatAlreadyRegisteredException;
 import backend.academy.linktracker.scrapper.api.exception.ChatNotFoundException;
 import backend.academy.linktracker.scrapper.repository.ChatRepository;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +19,6 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final LinkRepository linkRepository;
-    private final LinkListCacheService linkListCacheService;
 
     public void register(long chatId) {
         if (chatRepository.exists(chatId)) {
@@ -26,6 +28,7 @@ public class ChatService {
         chatRepository.save(chatId);
     }
 
+    @CacheEvict(cacheNames = LINK_LIST_CACHE, key = "'chat#' + #chatId")
     @Transactional
     public void delete(long chatId) {
         if (!chatRepository.exists(chatId)) {
@@ -40,7 +43,6 @@ public class ChatService {
         });
 
         chatRepository.delete(chatId);
-        linkListCacheService.evictAfterCommit(chatId);
     }
 
     public void ensureExists(long chatId) {
