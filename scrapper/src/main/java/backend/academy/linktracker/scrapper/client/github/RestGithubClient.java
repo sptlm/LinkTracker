@@ -1,8 +1,8 @@
 package backend.academy.linktracker.scrapper.client.github;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
 import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
-import backend.academy.linktracker.scrapper.client.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubIssueItem;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -13,6 +13,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -52,6 +53,8 @@ public class RestGithubClient implements GithubClient {
             }
 
             return response;
+        } catch (HttpClientErrorException e) {
+            throw clientStatusException(e);
         } catch (RestClientResponseException e) {
             throw externalStatusException(
                     "GitHub request failed for repository %s/%s, status=%d"
@@ -83,6 +86,8 @@ public class RestGithubClient implements GithubClient {
                     .body(GithubIssueItem[].class);
 
             return items == null ? List.of() : Arrays.asList(items);
+        } catch (HttpClientErrorException e) {
+            throw clientStatusException(e);
         } catch (RestClientResponseException e) {
             throw externalStatusException(
                     "GitHub issues request failed for repository %s/%s, status=%d"
@@ -103,5 +108,14 @@ public class RestGithubClient implements GithubClient {
             return new RetryableHttpStatusException(message, statusCode, e);
         }
         return new ExternalServiceException(message, e);
+    }
+
+    private RuntimeException clientStatusException(HttpClientErrorException e) {
+        int statusCode = e.getStatusCode().value();
+        if (retryableStatusClassifier.isRetryable(statusCode)) {
+            return new RetryableHttpStatusException(
+                    "GitHub request failed, status=%d".formatted(statusCode), statusCode, e);
+        }
+        return e;
     }
 }

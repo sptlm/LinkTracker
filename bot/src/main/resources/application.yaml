@@ -79,3 +79,5 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: ${BOT_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
         wait-duration-in-open-state: ${BOT_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
         automatic-transition-from-open-to-half-open-enabled: ${BOT_CB_AUTO_TRANSITION_ENABLED:true}
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException

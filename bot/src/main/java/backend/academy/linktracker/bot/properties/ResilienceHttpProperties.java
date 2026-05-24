@@ -1,7 +1,8 @@
 package backend.academy.linktracker.bot.properties;
 
 import jakarta.validation.constraints.NotEmpty;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,5 +19,5 @@ import org.springframework.validation.annotation.Validated;
 public class ResilienceHttpProperties {
 
     @NotEmpty
-    private List<Integer> retryableStatuses = List.of(500, 502, 503, 504);
+    private Set<Integer> retryableStatuses = new LinkedHashSet<>(Set.of(500, 502, 503, 504));
 }

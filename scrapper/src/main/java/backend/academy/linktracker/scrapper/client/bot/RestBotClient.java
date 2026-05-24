@@ -1,15 +1,16 @@
 package backend.academy.linktracker.scrapper.client.bot;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
 import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
-import backend.academy.linktracker.scrapper.client.RetryableHttpStatusClassifier;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
@@ -37,6 +38,13 @@ public class RestBotClient implements BotClient {
     public void sendUpdate(LinkUpdate request) {
         try {
             restClient.post().uri("/updates").body(request).retrieve().toBodilessEntity();
+        } catch (HttpClientErrorException e) {
+            int statusCode = e.getStatusCode().value();
+            String message = "Bot request failed, status=%d".formatted(statusCode);
+            if (retryableStatusClassifier.isRetryable(statusCode)) {
+                throw new RetryableHttpStatusException(message, statusCode, e);
+            }
+            throw e;
         } catch (RestClientResponseException e) {
             int statusCode = e.getStatusCode().value();
             String message = "Bot request failed, status=%d".formatted(statusCode);

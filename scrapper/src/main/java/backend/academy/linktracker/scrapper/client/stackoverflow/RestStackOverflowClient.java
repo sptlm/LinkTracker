@@ -1,8 +1,8 @@
 package backend.academy.linktracker.scrapper.client.stackoverflow;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
 import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
-import backend.academy.linktracker.scrapper.client.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswerItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowAnswersResponse;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentItem;
@@ -16,6 +16,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -59,6 +60,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
             }
 
             return items.getFirst();
+        } catch (HttpClientErrorException e) {
+            throw clientStatusException(questionId, e);
         } catch (RestClientResponseException e) {
             throw externalStatusException(
                     "StackOverflow request failed for question %d, status=%d"
@@ -91,6 +94,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowAnswersResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (HttpClientErrorException e) {
+            throw clientStatusException(questionId, e);
         } catch (RestClientResponseException e) {
             throw externalStatusException(
                     "StackOverflow answers request failed for question %d, status=%d"
@@ -123,6 +128,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     .body(StackOverflowCommentsResponse.class);
 
             return response == null || response.items() == null ? List.of() : response.items();
+        } catch (HttpClientErrorException e) {
+            throw clientStatusException(questionId, e);
         } catch (RestClientResponseException e) {
             throw externalStatusException(
                     "StackOverflow comments request failed for question %d, status=%d"
@@ -142,5 +149,16 @@ public class RestStackOverflowClient implements StackOverflowClient {
             return new RetryableHttpStatusException(message, statusCode, e);
         }
         return new ExternalServiceException(message, e);
+    }
+
+    private RuntimeException clientStatusException(long questionId, HttpClientErrorException e) {
+        int statusCode = e.getStatusCode().value();
+        if (retryableStatusClassifier.isRetryable(statusCode)) {
+            return new RetryableHttpStatusException(
+                    "StackOverflow request failed for question %d, status=%d".formatted(questionId, statusCode),
+                    statusCode,
+                    e);
+        }
+        return e;
     }
 }

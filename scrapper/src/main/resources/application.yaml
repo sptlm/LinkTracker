@@ -41,6 +41,7 @@ app:
     refill-tokens: ${SCRAPPER_RATE_LIMIT_REFILL_TOKENS:60}
     refill-period: ${SCRAPPER_RATE_LIMIT_REFILL_PERIOD:1m}
     cache-expire-after-access: ${SCRAPPER_RATE_LIMIT_CACHE_EXPIRE_AFTER_ACCESS:10m}
+    cache-maximum-size: ${SCRAPPER_RATE_LIMIT_CACHE_MAXIMUM_SIZE:10000}
   valkey:
     cache:
       enabled: ${SCRAPPER_VALKEY_CACHE_ENABLED:true}
@@ -120,6 +121,8 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
         wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
         automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
       stackoverflow:
         sliding-window-type: COUNT_BASED
         sliding-window-size: ${SCRAPPER_CB_SLIDING_WINDOW_SIZE:10}
@@ -128,6 +131,8 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
         wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
         automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
       bot:
         sliding-window-type: COUNT_BASED
         sliding-window-size: ${SCRAPPER_CB_SLIDING_WINDOW_SIZE:10}
@@ -136,6 +141,8 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: ${SCRAPPER_CB_PERMITTED_CALLS_IN_HALF_OPEN_STATE:5}
         wait-duration-in-open-state: ${SCRAPPER_CB_WAIT_DURATION_IN_OPEN_STATE:1s}
         automatic-transition-from-open-to-half-open-enabled: ${SCRAPPER_CB_AUTO_TRANSITION_ENABLED:true}
+        ignore-exceptions:
+          - org.springframework.web.client.HttpClientErrorException
 ---
 spring:
   config:

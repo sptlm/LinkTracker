@@ -31,4 +31,7 @@ public class RateLimitProperties {
 
     @NotNull
     private Duration cacheExpireAfterAccess = Duration.ofMinutes(10);
+
+    @Min(1)
+    private long cacheMaximumSize = 10_000;
 }

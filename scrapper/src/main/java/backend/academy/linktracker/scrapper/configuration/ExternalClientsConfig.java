@@ -1,8 +1,10 @@
 package backend.academy.linktracker.scrapper.configuration;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.properties.BotClientProperties;
 import backend.academy.linktracker.scrapper.properties.GithubProperties;
 import backend.academy.linktracker.scrapper.properties.HttpClientProperties;
+import backend.academy.linktracker.scrapper.properties.ResilienceHttpProperties;
 import backend.academy.linktracker.scrapper.properties.StackoverflowProperties;
 import java.net.http.HttpClient;
 import org.springframework.context.annotation.Bean;
@@ -47,6 +49,11 @@ public class ExternalClientsConfig {
                 .requestFactory(requestFactory(httpProperties))
                 .defaultHeader("Accept", "application/json")
                 .build();
+    }
+
+    @Bean
+    public RetryableHttpStatusClassifier retryableHttpStatusClassifier(ResilienceHttpProperties properties) {
+        return new RetryableHttpStatusClassifier(properties.getRetryableStatuses());
     }
 
     private JdkClientHttpRequestFactory requestFactory(HttpClientProperties properties) {

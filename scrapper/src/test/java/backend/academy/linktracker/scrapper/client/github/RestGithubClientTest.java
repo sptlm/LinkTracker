@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 class RestGithubClientTest {
@@ -28,7 +29,7 @@ class RestGithubClientTest {
      * не приводя к падению приложения.
      */
     @Test
-    void shouldWrapGithubHttpErrorIntoExternalServiceException() {
+    void shouldPropagateGithubClientHttpErrorForCircuitBreakerIgnoreRules() {
         WireMockServer server = new WireMockServer(0);
         try {
             server.start();
@@ -38,7 +39,7 @@ class RestGithubClientTest {
             server.stubFor(
                     get(urlEqualTo("/repos/user/repo")).willReturn(aResponse().withStatus(400)));
 
-            assertThrows(ExternalServiceException.class, () -> client.getRepository("user", "repo"));
+            assertThrows(HttpClientErrorException.BadRequest.class, () -> client.getRepository("user", "repo"));
             server.verify(1, getRequestedFor(urlEqualTo("/repos/user/repo")));
         } finally {
             server.stop();

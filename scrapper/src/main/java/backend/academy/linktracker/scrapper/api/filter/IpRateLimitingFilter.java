@@ -18,7 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class IpRateLimitingFilter extends OncePerRequestFilter {
 
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    private static final String TG_CHAT_ID_HEADER = "Tg-Chat-Id";
 
     private final RateLimitProperties properties;
     private final Cache<String, Bucket> buckets;
@@ -27,6 +27,7 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
         this.properties = properties;
         this.buckets = Caffeine.newBuilder()
                 .expireAfterAccess(properties.getCacheExpireAfterAccess())
+                .maximumSize(properties.getCacheMaximumSize())
                 .build();
     }
 
@@ -38,7 +39,7 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        Bucket bucket = buckets.get(clientIp(request), ignored -> newBucket());
+        Bucket bucket = buckets.get(rateLimitKey(request), ignored -> newBucket());
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
         if (probe.isConsumed()) {
@@ -59,11 +60,11 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
         return Bucket.builder().addLimit(limit).build();
     }
 
-    private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (forwardedFor == null || forwardedFor.isBlank()) {
-            return request.getRemoteAddr();
+    private String rateLimitKey(HttpServletRequest request) {
+        String chatId = request.getHeader(TG_CHAT_ID_HEADER);
+        if (chatId != null && !chatId.isBlank()) {
+            return "tg-chat-id:" + chatId.trim();
         }
-        return forwardedFor.split(",", 2)[0].trim();
+        return "remote-addr:" + request.getRemoteAddr();
     }
 }

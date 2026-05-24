@@ -1,5 +1,6 @@
 package backend.academy.linktracker.bot.client.scrapper;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
@@ -32,6 +33,8 @@ public class HttpScrapperClient implements ScrapperClient {
             scrapperRestClient.post().uri("/tg-chat/{id}", chatId).retrieve().toBodilessEntity();
         } catch (HttpClientErrorException.Conflict e) {
             throw new ChatAlreadyExistsException("Chat already exists", e);
+        } catch (HttpClientErrorException e) {
+            throw scrapperClientStatusException("Failed to register chat in scrapper", e);
         } catch (RestClientResponseException e) {
             throw scrapperStatusException("Failed to register chat in scrapper", e);
         } catch (RestClientException e) {
@@ -51,6 +54,8 @@ public class HttpScrapperClient implements ScrapperClient {
                     .toBodilessEntity();
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
+        } catch (HttpClientErrorException e) {
+            throw scrapperClientStatusException("Failed to delete chat in scrapper", e);
         } catch (RestClientResponseException e) {
             throw scrapperStatusException("Failed to delete chat in scrapper", e);
         } catch (RestClientException e) {
@@ -75,6 +80,8 @@ public class HttpScrapperClient implements ScrapperClient {
                     : new ListLinksResponse().links(List.of()).size(0);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
+        } catch (HttpClientErrorException e) {
+            throw scrapperClientStatusException("Failed to get links from scrapper", e);
         } catch (RestClientResponseException e) {
             throw scrapperStatusException("Failed to get links from scrapper", e);
         } catch (RestClientException e) {
@@ -98,6 +105,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw new DuplicateLinkException("Link already tracked", e);
         } catch (HttpClientErrorException.NotFound e) {
             throw new ChatNotRegisteredException("Chat not found", e);
+        } catch (HttpClientErrorException e) {
+            throw scrapperClientStatusException("Failed to add link in scrapper", e);
         } catch (RestClientResponseException e) {
             throw scrapperStatusException("Failed to add link in scrapper", e);
         } catch (RestClientException e) {
@@ -119,6 +128,8 @@ public class HttpScrapperClient implements ScrapperClient {
                     .body(LinkResponse.class);
         } catch (HttpClientErrorException.NotFound e) {
             throw new TrackedLinkNotFoundException("Chat or link not found", e);
+        } catch (HttpClientErrorException e) {
+            throw scrapperClientStatusException("Failed to remove link in scrapper", e);
         } catch (RestClientResponseException e) {
             throw scrapperStatusException("Failed to remove link in scrapper", e);
         } catch (RestClientException e) {
@@ -133,5 +144,14 @@ public class HttpScrapperClient implements ScrapperClient {
             return new RetryableScrapperClientException(statusMessage, statusCode, e);
         }
         return new ScrapperClientException(statusMessage, e);
+    }
+
+    private RuntimeException scrapperClientStatusException(String message, HttpClientErrorException e) {
+        int statusCode = e.getStatusCode().value();
+        if (retryableStatusClassifier.isRetryable(statusCode)) {
+            return new RetryableScrapperClientException(
+                    "%s, status=%d".formatted(message, statusCode), statusCode, e);
+        }
+        return e;
     }
 }
