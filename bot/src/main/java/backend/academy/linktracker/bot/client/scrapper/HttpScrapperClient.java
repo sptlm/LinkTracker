@@ -149,8 +149,7 @@ public class HttpScrapperClient implements ScrapperClient {
     private RuntimeException scrapperClientStatusException(String message, HttpClientErrorException e) {
         int statusCode = e.getStatusCode().value();
         if (retryableStatusClassifier.isRetryable(statusCode)) {
-            return new RetryableScrapperClientException(
-                    "%s, status=%d".formatted(message, statusCode), statusCode, e);
+            return new RetryableScrapperClientException("%s, status=%d".formatted(message, statusCode), statusCode, e);
         }
         return e;
     }
