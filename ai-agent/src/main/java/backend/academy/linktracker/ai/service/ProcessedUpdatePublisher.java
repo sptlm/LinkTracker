@@ -6,9 +6,11 @@ import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProcessedUpdatePublisher {
@@ -23,7 +25,17 @@ public class ProcessedUpdatePublisher {
             Object payload = kafkaProperties.usesSchemaRegistry()
                     ? avroMapper.toRecord(update)
                     : objectMapper.writeValueAsString(update);
-            kafkaTemplate.send(kafkaProperties.getProcessedUpdatesTopic(), String.valueOf(update.getId()), payload);
+            kafkaTemplate
+                    .send(kafkaProperties.getProcessedUpdatesTopic(), String.valueOf(update.getId()), payload)
+                    .whenComplete((result, exception) -> {
+                        if (exception != null) {
+                            log.atWarn()
+                                    .setCause(exception)
+                                    .addKeyValue("updateId", update.getId())
+                                    .addKeyValue("topic", kafkaProperties.getProcessedUpdatesTopic())
+                                    .log("Failed to publish processed update");
+                        }
+                    });
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to serialize processed update", e);
         }

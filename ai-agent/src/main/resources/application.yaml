@@ -32,7 +32,7 @@ ai-agent:
     threshold: 500
     provider: ${AI_AGENT_SUMMARIZATION_PROVIDER:api}
     api:
-      base-url: ${AI_AGENT_SUMMARIZATION_API_BASE_URL:}
+      base-url: ${AI_AGENT_SUMMARIZATION_API_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
       token: ${AI_AGENT_SUMMARIZATION_API_TOKEN:}
-      model: ${AI_AGENT_SUMMARIZATION_API_MODEL:}
+      model: ${AI_AGENT_SUMMARIZATION_API_MODEL:gemini-3.5-flash}
       timeout: ${AI_AGENT_SUMMARIZATION_API_TIMEOUT:5s}

@@ -12,9 +12,6 @@ public class TruncatingSummarizer implements Summarizer {
         if (text == null || text.length() <= threshold) {
             return text;
         }
-        if (threshold <= ELLIPSIS.length()) {
-            return text.substring(0, threshold);
-        }
-        return text.substring(0, threshold - ELLIPSIS.length()) + ELLIPSIS;
+        return text.substring(0, threshold) + ELLIPSIS;
     }
 }

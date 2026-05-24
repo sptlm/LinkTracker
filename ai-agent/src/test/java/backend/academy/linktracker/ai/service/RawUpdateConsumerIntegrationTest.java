@@ -1,7 +1,9 @@
 package backend.academy.linktracker.ai.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import backend.academy.linktracker.ai.AbstractKafkaIntegrationTest;
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
@@ -16,8 +18,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -35,6 +40,7 @@ import org.springframework.test.context.ActiveProfiles;
             "ai-agent.summarization.threshold=12"
         })
 @ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
 
     @Autowired
@@ -62,14 +68,14 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
 
         LinkUpdate processed = objectMapper.readValue(record.value(), LinkUpdate.class);
         assertEquals(101L, processed.getId());
-        assertEquals("long upda...", processed.getDescription());
+        assertEquals("long update ...", processed.getDescription());
         assertEquals("alice", processed.getAuthor());
         assertEquals("HIGH", processed.getPriority());
         assertEquals(List.of(10L, 20L), processed.getTgChatIds());
     }
 
     @Test
-    void shouldSkipMalformedPayloadWithoutStoppingConsumer() throws Exception {
+    void shouldSkipMalformedPayloadWithoutStoppingConsumer(CapturedOutput output) throws Exception {
         kafkaTemplate.send("link-raw-updates-ai-it", "bad-json", "{not-json}").get();
 
         LinkUpdate update = new LinkUpdate()
@@ -89,6 +95,23 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
         LinkUpdate processed = objectMapper.readValue(record.value(), LinkUpdate.class);
         assertEquals(202L, processed.getId());
         assertEquals("valid update", processed.getDescription());
+        assertThat(output.toString()).contains("Failed to deserialize raw update");
+    }
+
+    @Test
+    void shouldNotPublishFilteredUpdate() throws Exception {
+        LinkUpdate update = new LinkUpdate()
+                .id(303L)
+                .url(URI.create("https://example.com/spam"))
+                .description("this update contains spam content")
+                .author("alice")
+                .tgChatIds(List.of(40L));
+
+        kafkaTemplate
+                .send("link-raw-updates-ai-it", "303", objectMapper.writeValueAsString(update))
+                .get();
+
+        assertNull(pollSingleRecord("link-processed-updates-ai-it", "303", Duration.ofSeconds(3)));
     }
 
     private ConsumerRecord<String, String> pollSingleRecord(String topic, String expectedKey, Duration timeout) {

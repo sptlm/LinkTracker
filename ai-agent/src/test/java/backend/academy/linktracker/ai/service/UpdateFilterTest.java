@@ -33,14 +33,14 @@ class UpdateFilterTest {
 
     @Test
     void shouldFilterByExcludedAuthor() {
-        LinkUpdate update = update("This update has enough useful content", "bot-user");
+        LinkUpdate update = update("This update has enough useful content", " bot-user ");
 
         assertFalse(filter.shouldProcess(update));
     }
 
     @Test
     void shouldFilterByMinimumLength() {
-        LinkUpdate update = update("too short", "alice");
+        LinkUpdate update = update("                    ", "alice");
 
         assertFalse(filter.shouldProcess(update));
     }
@@ -48,6 +48,14 @@ class UpdateFilterTest {
     @Test
     void shouldPassValidUpdate() {
         LinkUpdate update = update("This update has enough useful content", "alice");
+
+        assertTrue(filter.shouldProcess(update));
+    }
+
+    @Test
+    void shouldNotFilterStopWordAsPartOfAnotherWord() {
+        properties.getFiltering().setStopWords(List.of("ads"));
+        LinkUpdate update = update("This update discusses shadows in enough detail", "alice");
 
         assertTrue(filter.shouldProcess(update));
     }

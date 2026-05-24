@@ -11,28 +11,20 @@ import org.springframework.stereotype.Service;
 public class FallbackSummarizer implements Summarizer {
 
     private final AiAgentProperties properties;
-    private final AiApiSummarizer aiApiSummarizer;
+    private final GeminiSummarizer geminiSummarizer;
     private final TruncatingSummarizer truncatingSummarizer;
 
     @Override
     public String summarize(String text, int threshold) {
-        if (properties.getSummarization().getProvider() == AiAgentProperties.Provider.STUB || !isApiConfigured()) {
+        if (properties.getSummarization().getProvider() == AiAgentProperties.Provider.STUB) {
             return truncatingSummarizer.summarize(text, threshold);
         }
 
         try {
-            return aiApiSummarizer.summarize(text, threshold);
+            return geminiSummarizer.summarize(text, threshold);
         } catch (Exception e) {
-            log.atWarn().setCause(e).log("AI summarization failed, falling back to truncating summarizer");
+            log.atWarn().setCause(e).log("Gemini summarization failed, falling back to truncating summarizer");
             return truncatingSummarizer.summarize(text, threshold);
         }
-    }
-
-    private boolean isApiConfigured() {
-        AiAgentProperties.Api api = properties.getSummarization().getApi();
-        return api.getBaseUrl() != null
-                && !api.getBaseUrl().isBlank()
-                && api.getToken() != null
-                && !api.getToken().isBlank();
     }
 }
