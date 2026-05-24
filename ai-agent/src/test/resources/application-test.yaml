@@ -1,0 +1,8 @@
+ai-agent:
+  filtering:
+    stop-words: []
+    excluded-authors: []
+    min-length: 0
+  summarization:
+    provider: STUB
+    threshold: 500

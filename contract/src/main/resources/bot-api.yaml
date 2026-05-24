@@ -52,8 +52,12 @@ components:
           format: uri
         description:
           type: string
+        author:
+          type: string
         tgChatIds:
           type: array
           items:
             type: integer
             format: int64
+        priority:
+          type: string

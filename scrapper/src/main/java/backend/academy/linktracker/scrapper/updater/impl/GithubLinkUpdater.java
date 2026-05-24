@@ -61,7 +61,8 @@ public class GithubLinkUpdater implements LinkUpdater {
                 .orElse(null);
 
         if (newEvent != null) {
-            return LinkUpdateCheckResult.changed(formatDescription(newEvent), observedUpdatedAt);
+            String author = newEvent.user() != null ? newEvent.user().login() : null;
+            return LinkUpdateCheckResult.changed(formatDescription(newEvent), observedUpdatedAt, author);
         }
 
         return LinkUpdateCheckResult.unchanged(null, observedUpdatedAt);

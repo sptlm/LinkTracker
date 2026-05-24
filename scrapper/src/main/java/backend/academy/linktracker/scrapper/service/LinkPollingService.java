@@ -111,6 +111,7 @@ public class LinkPollingService {
                 .id(link.id())
                 .url(URI.create(link.url()))
                 .description(result.description())
+                .author(result.author())
                 .tgChatIds(chatIds);
 
         transactionTemplate.executeWithoutResult(status -> {

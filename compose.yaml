@@ -360,7 +360,10 @@ services:
     entrypoint: [ '/bin/sh', '-c' ]
     command: >
       "kafka-topics --bootstrap-server kafka-1:29092,kafka-2:29092,kafka-3:29092
-      --create --if-not-exists --topic link-updates --partitions 3 --replication-factor 3
+      --create --if-not-exists --topic link.raw-updates --partitions 3 --replication-factor 3
+      --config min.insync.replicas=2
+      && kafka-topics --bootstrap-server kafka-1:29092,kafka-2:29092,kafka-3:29092
+      --create --if-not-exists --topic link.processed-updates --partitions 3 --replication-factor 3
       --config min.insync.replicas=2"
 
 volumes:

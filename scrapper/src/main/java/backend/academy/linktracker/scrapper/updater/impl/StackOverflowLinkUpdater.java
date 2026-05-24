@@ -51,7 +51,7 @@ public class StackOverflowLinkUpdater implements LinkUpdater {
         TrackedEvent newEvent = findNewEvent(link.lastUpdatedAt(), answers, comments);
         if (newEvent != null) {
             String description = formatDescription(question.title(), newEvent);
-            return LinkUpdateCheckResult.changed(description, observedUpdatedAt);
+            return LinkUpdateCheckResult.changed(description, observedUpdatedAt, newEvent.user());
         }
 
         return LinkUpdateCheckResult.unchanged(null, observedUpdatedAt);

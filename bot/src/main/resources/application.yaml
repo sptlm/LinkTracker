@@ -16,7 +16,7 @@ app:
     transport: ${BOT_NOTIFICATION_TRANSPORT:KAFKA}
   kafka:
     bootstrap-servers: ${BOT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
-    updates-topic: ${BOT_KAFKA_UPDATES_TOPIC:link-updates}
+    updates-topic: ${BOT_KAFKA_UPDATES_TOPIC:link.processed-updates}
     group-id: ${BOT_KAFKA_GROUP_ID:bot-updates-consumer}
     key-deserializer: ${BOT_KAFKA_KEY_DESERIALIZER:org.apache.kafka.common.serialization.StringDeserializer}
     value-deserializer: ${BOT_KAFKA_VALUE_DESERIALIZER:org.apache.kafka.common.serialization.StringDeserializer}

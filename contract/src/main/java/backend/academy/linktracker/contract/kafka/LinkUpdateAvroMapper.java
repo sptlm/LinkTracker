@@ -26,6 +26,8 @@ public final class LinkUpdateAvroMapper {
         record.put("url", String.valueOf(update.getUrl()));
         record.put("description", update.getDescription());
         record.put("tgChatIds", update.getTgChatIds() == null ? List.of() : update.getTgChatIds());
+        record.put("author", update.getAuthor());
+        record.put("priority", update.getPriority());
         return record;
     }
 
@@ -34,7 +36,9 @@ public final class LinkUpdateAvroMapper {
                 .id((Long) record.get("id"))
                 .url(URI.create(String.valueOf(record.get("url"))))
                 .description(String.valueOf(record.get("description")))
-                .tgChatIds(chatIds(record.get("tgChatIds")));
+                .tgChatIds(chatIds(record.get("tgChatIds")))
+                .author(nullableString(record.get("author")))
+                .priority(nullableString(record.get("priority")));
     }
 
     public Schema schema() {
@@ -53,6 +57,10 @@ public final class LinkUpdateAvroMapper {
             }
         }
         return chatIds;
+    }
+
+    private String nullableString(Object rawValue) {
+        return rawValue == null ? null : String.valueOf(rawValue);
     }
 
     private Schema loadSchema() {

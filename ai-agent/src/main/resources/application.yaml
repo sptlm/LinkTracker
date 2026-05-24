@@ -4,3 +4,35 @@ server:
 spring:
   application:
     name: ai-agent
+
+app:
+  kafka:
+    bootstrap-servers: ${AI_AGENT_KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    raw-updates-topic: ${AI_AGENT_KAFKA_RAW_UPDATES_TOPIC:link.raw-updates}
+    processed-updates-topic: ${AI_AGENT_KAFKA_PROCESSED_UPDATES_TOPIC:link.processed-updates}
+    group-id: ${AI_AGENT_KAFKA_GROUP_ID:ai-agent-updates-consumer}
+    topics-partitions: ${AI_AGENT_KAFKA_TOPICS_PARTITIONS:3}
+    topics-replication-factor: ${AI_AGENT_KAFKA_TOPICS_REPLICATION_FACTOR:3}
+    key-serializer: ${AI_AGENT_KAFKA_KEY_SERIALIZER:org.apache.kafka.common.serialization.StringSerializer}
+    value-serializer: ${AI_AGENT_KAFKA_VALUE_SERIALIZER:org.apache.kafka.common.serialization.StringSerializer}
+    key-deserializer: ${AI_AGENT_KAFKA_KEY_DESERIALIZER:org.apache.kafka.common.serialization.StringDeserializer}
+    value-deserializer: ${AI_AGENT_KAFKA_VALUE_DESERIALIZER:org.apache.kafka.common.serialization.StringDeserializer}
+    schema-registry-url: ${AI_AGENT_KAFKA_SCHEMA_REGISTRY_URL:http://localhost:8085}
+
+ai-agent:
+  filtering:
+    stop-words:
+      - spam
+      - ads
+      - promo
+    excluded-authors:
+      - bot-user
+    min-length: 20
+  summarization:
+    threshold: 500
+    provider: ${AI_AGENT_SUMMARIZATION_PROVIDER:api}
+    api:
+      base-url: ${AI_AGENT_SUMMARIZATION_API_BASE_URL:}
+      token: ${AI_AGENT_SUMMARIZATION_API_TOKEN:}
+      model: ${AI_AGENT_SUMMARIZATION_API_MODEL:}
+      timeout: ${AI_AGENT_SUMMARIZATION_API_TIMEOUT:5s}
