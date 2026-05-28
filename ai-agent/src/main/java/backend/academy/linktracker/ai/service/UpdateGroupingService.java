@@ -95,9 +95,13 @@ public class UpdateGroupingService {
     }
 
     private UpdatePriority priorityOf(LinkUpdate update) {
+        if (update.getPriority() == null || update.getPriority().isBlank()) {
+            return UpdatePriority.MEDIUM;
+        }
+
         try {
             return UpdatePriority.valueOf(update.getPriority());
-        } catch (IllegalArgumentException | NullPointerException ignored) {
+        } catch (IllegalArgumentException ignored) {
             return UpdatePriority.MEDIUM;
         }
     }
