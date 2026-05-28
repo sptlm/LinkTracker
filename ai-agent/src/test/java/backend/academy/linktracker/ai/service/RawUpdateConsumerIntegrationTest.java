@@ -114,6 +114,22 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
         assertNull(pollSingleRecord("link-processed-updates-ai-it", "303", Duration.ofSeconds(3)));
     }
 
+    @Test
+    void shouldNotPublishUpdateWithoutChats() throws Exception {
+        LinkUpdate update = new LinkUpdate()
+                .id(404L)
+                .url(URI.create("https://example.com/no-chats"))
+                .description("valid update text")
+                .author("alice")
+                .tgChatIds(List.of());
+
+        kafkaTemplate
+                .send("link-raw-updates-ai-it", "404", objectMapper.writeValueAsString(update))
+                .get();
+
+        assertNull(pollSingleRecord("link-processed-updates-ai-it", "404", Duration.ofSeconds(3)));
+    }
+
     private ConsumerRecord<String, String> pollSingleRecord(String topic, String expectedKey, Duration timeout) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,

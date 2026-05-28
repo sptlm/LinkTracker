@@ -80,6 +80,9 @@ public class AiAgentProperties {
         private String model;
 
         @NotNull
+        private String prompt = "Summarize the following update in 2-3 sentences:";
+
+        @NotNull
         private Duration timeout = Duration.ofSeconds(5);
     }
 }

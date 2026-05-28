@@ -7,8 +7,10 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UpdateFilter {
@@ -16,15 +18,30 @@ public class UpdateFilter {
     private final AiAgentProperties properties;
 
     public boolean shouldProcess(LinkUpdate update) {
-        if (update == null || update.getDescription() == null) {
+        if (update == null) {
+            log.debug("Update filtered out because payload is null");
+            return false;
+        }
+        if (update.getDescription() == null) {
+            logFiltered(update, "description is null");
             return false;
         }
 
         AiAgentProperties.Filtering filtering = properties.getFiltering();
         String description = update.getDescription();
-        return hasEnoughText(description, filtering)
-                && hasNoStopWords(description, filtering)
-                && hasAllowedAuthor(update.getAuthor(), filtering);
+        if (!hasEnoughText(description, filtering)) {
+            logFiltered(update, "description is shorter than configured minimum length");
+            return false;
+        }
+        if (!hasNoStopWords(description, filtering)) {
+            logFiltered(update, "description contains a stop word");
+            return false;
+        }
+        if (!hasAllowedAuthor(update.getAuthor(), filtering)) {
+            logFiltered(update, "author is excluded");
+            return false;
+        }
+        return true;
     }
 
     private boolean hasEnoughText(String description, AiAgentProperties.Filtering filtering) {
@@ -50,5 +67,12 @@ public class UpdateFilter {
         return filtering.getExcludedAuthors().stream()
                 .filter(excluded -> excluded != null && !excluded.isBlank())
                 .noneMatch(excluded -> excluded.trim().equalsIgnoreCase(normalizedAuthor));
+    }
+
+    private void logFiltered(LinkUpdate update, String reason) {
+        log.atInfo()
+                .addKeyValue("updateId", update.getId())
+                .addKeyValue("author", update.getAuthor())
+                .log("Update filtered out: {}", reason);
     }
 }

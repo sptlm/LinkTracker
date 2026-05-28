@@ -1,19 +1,19 @@
 package backend.academy.linktracker.ai.service;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import backend.academy.linktracker.ai.properties.AiAgentProperties;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,32 +23,46 @@ import org.springframework.web.client.RestClient;
 class GeminiSummarizerTest {
 
     private final ObjectMapper objectMapper = JsonMapper.builder().build();
-    private final AtomicReference<String> requestBody = new AtomicReference<>();
-    private final AtomicReference<String> apiKeyHeader = new AtomicReference<>();
 
-    private HttpServer server;
+    private WireMockServer server;
 
     @BeforeEach
-    void setUp() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(0), 0);
-        server.createContext("/models/gemini-test:generateContent", this::handleSummarization);
+    void setUp() {
+        server = new WireMockServer(0);
         server.start();
     }
 
     @AfterEach
     void tearDown() {
-        server.stop(0);
+        server.stop();
     }
 
     @Test
     void shouldCallGeminiApiAndReturnSummary() throws Exception {
+        server.stubFor(post(urlEqualTo("/models/gemini-test:generateContent"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("""
+                                {
+                                  "candidates": [
+                                    {
+                                      "content": {
+                                        "parts": [
+                                          {
+                                            "text": "Short Gemini summary"
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                                """)));
+
         AiAgentProperties properties = new AiAgentProperties();
-        properties
-                .getSummarization()
-                .getApi()
-                .setBaseUrl("http://localhost:" + server.getAddress().getPort());
+        properties.getSummarization().getApi().setBaseUrl(server.baseUrl());
         properties.getSummarization().getApi().setModel("gemini-test");
         properties.getSummarization().getApi().setToken("test-key");
+        properties.getSummarization().getApi().setPrompt("Summarize the following update in 2-3 sentences:");
         properties.getSummarization().getApi().setTimeout(Duration.ofSeconds(2));
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getSummarization().getApi().getTimeout());
@@ -63,36 +77,11 @@ class GeminiSummarizerTest {
         String summary = summarizer.summarize("A very long update that should be summarized", 20);
 
         assertEquals("Short Gemini summary", summary);
-        assertEquals("test-key", apiKeyHeader.get());
-        JsonNode root = objectMapper.readTree(requestBody.get());
-        String prompt =
-                root.path("contents").get(0).path("parts").get(0).path("text").asText();
-        assertTrue(prompt.contains("Summarize the following update in 2-3 sentences"));
-        assertTrue(prompt.contains("A very long update that should be summarized"));
-    }
-
-    private void handleSummarization(HttpExchange exchange) throws IOException {
-        apiKeyHeader.set(exchange.getRequestHeaders().getFirst("x-goog-api-key"));
-        requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-
-        byte[] response = """
-                {
-                  "candidates": [
-                    {
-                      "content": {
-                        "parts": [
-                          {
-                            "text": "Short Gemini summary"
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-                """.getBytes(StandardCharsets.UTF_8);
-        exchange.getResponseHeaders().add("Content-Type", "application/json");
-        exchange.sendResponseHeaders(200, response.length);
-        exchange.getResponseBody().write(response);
-        exchange.close();
+        server.verify(postRequestedFor(urlEqualTo("/models/gemini-test:generateContent"))
+                .withHeader("x-goog-api-key", equalTo("test-key"))
+                .withRequestBody(matchingJsonPath(
+                        "$.contents[0].parts[0].text", containing("Summarize the following update in 2-3 sentences")))
+                .withRequestBody(matchingJsonPath(
+                        "$.contents[0].parts[0].text", containing("A very long update that should be summarized"))));
     }
 }

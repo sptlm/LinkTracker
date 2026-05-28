@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(prefix = "ai-agent.summarization", name = "provider", havingValue = "API")
 public class GeminiSummarizer implements Summarizer {
-
-    private static final String PROMPT = "Summarize the following update in 2-3 sentences:\n\n";
 
     private final AiAgentProperties properties;
     private final ObjectMapper objectMapper;
@@ -53,7 +53,12 @@ public class GeminiSummarizer implements Summarizer {
     }
 
     private Map<String, Object> geminiRequest(String text) {
-        return Map.of("contents", List.of(Map.of("parts", List.of(Map.of("text", PROMPT + text)))));
+        return Map.of(
+                "contents",
+                List.of(Map.of(
+                        "parts",
+                        List.of(Map.of(
+                                "text", properties.getSummarization().getApi().getPrompt() + "\n\n" + text)))));
     }
 
     private String geminiEndpoint(AiAgentProperties.Api api) {

@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
 
 class AiAgentUpdateProcessorTest {
 
@@ -21,8 +22,10 @@ class AiAgentUpdateProcessorTest {
         properties.getSummarization().setThreshold(10);
         TruncatingSummarizer truncatingSummarizer = new TruncatingSummarizer();
         GeminiSummarizer geminiSummarizer = Mockito.mock(GeminiSummarizer.class);
+        ObjectProvider<GeminiSummarizer> geminiSummarizerProvider = objectProvider();
+        when(geminiSummarizerProvider.getObject()).thenReturn(geminiSummarizer);
         FallbackSummarizer fallbackSummarizer =
-                new FallbackSummarizer(properties, geminiSummarizer, truncatingSummarizer);
+                new FallbackSummarizer(properties, geminiSummarizerProvider, truncatingSummarizer);
         AiAgentUpdateProcessor processor =
                 new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), fallbackSummarizer);
         LinkUpdate update = update("123456789012345");
@@ -39,7 +42,7 @@ class AiAgentUpdateProcessorTest {
         AiAgentProperties properties = new AiAgentProperties();
         properties.getFiltering().setMinLength(0);
         properties.getSummarization().setThreshold(10);
-        FallbackSummarizer summarizer = Mockito.mock(FallbackSummarizer.class);
+        Summarizer summarizer = Mockito.mock(Summarizer.class);
         AiAgentUpdateProcessor processor =
                 new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), summarizer);
         LinkUpdate update = update("short");
@@ -55,7 +58,7 @@ class AiAgentUpdateProcessorTest {
         AiAgentProperties properties = new AiAgentProperties();
         properties.getFiltering().setMinLength(0);
         properties.getSummarization().setThreshold(10);
-        FallbackSummarizer summarizer = Mockito.mock(FallbackSummarizer.class);
+        Summarizer summarizer = Mockito.mock(Summarizer.class);
         when(summarizer.summarize("123456789012345", 10)).thenReturn("summary from api");
         AiAgentUpdateProcessor processor =
                 new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), summarizer);
@@ -72,5 +75,10 @@ class AiAgentUpdateProcessorTest {
                 .description(description)
                 .author("alice")
                 .tgChatIds(List.of(1L));
+    }
+
+    @SuppressWarnings("unchecked")
+    private ObjectProvider<GeminiSummarizer> objectProvider() {
+        return Mockito.mock(ObjectProvider.class);
     }
 }

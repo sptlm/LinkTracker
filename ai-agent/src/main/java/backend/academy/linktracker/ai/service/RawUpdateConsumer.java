@@ -65,6 +65,7 @@ public class RawUpdateConsumer {
                 && update.getId() != null
                 && update.getUrl() != null
                 && update.getDescription() != null
-                && update.getTgChatIds() != null;
+                && update.getTgChatIds() != null
+                && !update.getTgChatIds().isEmpty();
     }
 }

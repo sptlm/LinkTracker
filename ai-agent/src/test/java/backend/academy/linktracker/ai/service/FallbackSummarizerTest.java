@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import backend.academy.linktracker.ai.properties.AiAgentProperties;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.ObjectProvider;
 
 class FallbackSummarizerTest {
 
@@ -15,11 +16,18 @@ class FallbackSummarizerTest {
         properties.getSummarization().setProvider(AiAgentProperties.Provider.API);
         GeminiSummarizer geminiSummarizer = Mockito.mock(GeminiSummarizer.class);
         when(geminiSummarizer.summarize("123456789012345", 10)).thenThrow(new IllegalStateException("api failed"));
+        ObjectProvider<GeminiSummarizer> geminiSummarizerProvider = objectProvider();
+        when(geminiSummarizerProvider.getObject()).thenReturn(geminiSummarizer);
         FallbackSummarizer fallbackSummarizer =
-                new FallbackSummarizer(properties, geminiSummarizer, new TruncatingSummarizer());
+                new FallbackSummarizer(properties, geminiSummarizerProvider, new TruncatingSummarizer());
 
         String summary = fallbackSummarizer.summarize("123456789012345", 10);
 
         assertEquals("1234567890...", summary);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ObjectProvider<GeminiSummarizer> objectProvider() {
+        return Mockito.mock(ObjectProvider.class);
     }
 }

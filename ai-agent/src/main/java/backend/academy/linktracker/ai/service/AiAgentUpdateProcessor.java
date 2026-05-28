@@ -14,7 +14,7 @@ public class AiAgentUpdateProcessor {
 
     private final AiAgentProperties properties;
     private final UpdateFilter updateFilter;
-    private final FallbackSummarizer summarizer;
+    private final Summarizer summarizer;
 
     public Optional<LinkUpdate> process(LinkUpdate update) {
         if (!updateFilter.shouldProcess(update)) {
