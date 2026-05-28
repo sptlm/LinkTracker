@@ -29,6 +29,14 @@ public class AiAgentProperties {
     @NotNull
     private Summarization summarization = new Summarization();
 
+    @Valid
+    @NotNull
+    private Prioritization prioritization = new Prioritization();
+
+    @Valid
+    @NotNull
+    private Grouping grouping = new Grouping();
+
     @Getter
     @Setter
     @EqualsAndHashCode
@@ -60,6 +68,29 @@ public class AiAgentProperties {
         @Valid
         @NotNull
         private Api api = new Api();
+    }
+
+    @Getter
+    @Setter
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    public static class Prioritization {
+
+        @NotNull
+        private List<String> highKeywords = new ArrayList<>();
+
+        @NotNull
+        private List<String> lowKeywords = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    public static class Grouping {
+
+        @NotNull
+        private Duration windowMs = Duration.ofMillis(30_000);
     }
 
     public enum Provider {

@@ -19,7 +19,7 @@ public class RawUpdateConsumer {
     private final ObjectMapper objectMapper;
     private final LinkUpdateAvroMapper avroMapper;
     private final AiAgentUpdateProcessor updateProcessor;
-    private final ProcessedUpdatePublisher updatePublisher;
+    private final UpdateGroupingService groupingService;
 
     @KafkaListener(topics = "${app.kafka.raw-updates-topic}", containerFactory = "kafkaListenerContainerFactory")
     public void consume(ConsumerRecord<String, Object> record) {
@@ -33,7 +33,7 @@ public class RawUpdateConsumer {
             return;
         }
 
-        updateProcessor.process(update).ifPresent(updatePublisher::publish);
+        updateProcessor.process(update).ifPresent(groupingService::accept);
     }
 
     private LinkUpdate readUpdate(ConsumerRecord<String, Object> record) {

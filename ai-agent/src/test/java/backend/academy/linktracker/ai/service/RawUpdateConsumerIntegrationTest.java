@@ -37,7 +37,12 @@ import org.springframework.test.context.ActiveProfiles;
             "ai-agent.filtering.excluded-authors[0]=bot-user",
             "ai-agent.filtering.min-length=5",
             "ai-agent.summarization.provider=STUB",
-            "ai-agent.summarization.threshold=12"
+            "ai-agent.summarization.threshold=12",
+            "ai-agent.prioritization.high-keywords[0]=critical",
+            "ai-agent.prioritization.high-keywords[1]=urgent",
+            "ai-agent.prioritization.low-keywords[0]=typo",
+            "ai-agent.prioritization.low-keywords[1]=docs",
+            "ai-agent.grouping.window-ms=50ms"
         })
 @ActiveProfiles("test")
 @ExtendWith(OutputCaptureExtension.class)
@@ -56,7 +61,7 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
                 .url(URI.create("https://github.com/example/repo"))
                 .description("long update text")
                 .author("alice")
-                .tgChatIds(List.of(10L, 20L));
+                .tgChatIds(List.of(10L));
 
         kafkaTemplate
                 .send("link-raw-updates-ai-it", "101", objectMapper.writeValueAsString(update))
@@ -70,8 +75,8 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
         assertEquals(101L, processed.getId());
         assertEquals("long update ...", processed.getDescription());
         assertEquals("alice", processed.getAuthor());
-        assertEquals("HIGH", processed.getPriority());
-        assertEquals(List.of(10L, 20L), processed.getTgChatIds());
+        assertEquals("MEDIUM", processed.getPriority());
+        assertEquals(List.of(10L), processed.getTgChatIds());
     }
 
     @Test
@@ -95,7 +100,41 @@ class RawUpdateConsumerIntegrationTest extends AbstractKafkaIntegrationTest {
         LinkUpdate processed = objectMapper.readValue(record.value(), LinkUpdate.class);
         assertEquals(202L, processed.getId());
         assertEquals("valid update", processed.getDescription());
+        assertEquals("MEDIUM", processed.getPriority());
         assertThat(output.toString()).contains("Failed to deserialize raw update");
+    }
+
+    @Test
+    void shouldGroupRawUpdatesForSameChatAndPublishSingleProcessedUpdate() throws Exception {
+        LinkUpdate first = new LinkUpdate()
+                .id(501L)
+                .url(URI.create("https://example.com/first"))
+                .description("docs update text")
+                .author("alice")
+                .tgChatIds(List.of(50L));
+        LinkUpdate second = new LinkUpdate()
+                .id(502L)
+                .url(URI.create("https://example.com/second"))
+                .description("critical update text")
+                .author("bob")
+                .tgChatIds(List.of(50L));
+
+        kafkaTemplate
+                .send("link-raw-updates-ai-it", "501", objectMapper.writeValueAsString(first))
+                .get();
+        kafkaTemplate
+                .send("link-raw-updates-ai-it", "502", objectMapper.writeValueAsString(second))
+                .get();
+
+        ConsumerRecord<String, String> record =
+                pollSingleRecord("link-processed-updates-ai-it", "501", Duration.ofSeconds(10));
+        assertNotNull(record);
+
+        LinkUpdate processed = objectMapper.readValue(record.value(), LinkUpdate.class);
+        assertEquals(501L, processed.getId());
+        assertEquals("1. docs update ..." + System.lineSeparator() + "2. critical upd...", processed.getDescription());
+        assertEquals(List.of(50L), processed.getTgChatIds());
+        assertEquals("HIGH", processed.getPriority());
     }
 
     @Test

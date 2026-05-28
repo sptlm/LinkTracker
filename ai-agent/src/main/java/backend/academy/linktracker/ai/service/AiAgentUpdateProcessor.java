@@ -10,11 +10,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AiAgentUpdateProcessor {
 
-    private static final String DEFAULT_PRIORITY = "HIGH";
-
     private final AiAgentProperties properties;
     private final UpdateFilter updateFilter;
     private final Summarizer summarizer;
+    private final UpdatePrioritizer prioritizer;
 
     public Optional<LinkUpdate> process(LinkUpdate update) {
         if (!updateFilter.shouldProcess(update)) {
@@ -25,6 +24,7 @@ public class AiAgentUpdateProcessor {
         String description = update.getDescription();
         String processedDescription =
                 description.length() > threshold ? summarizer.summarize(description, threshold) : description;
+        UpdatePriority priority = prioritizer.prioritize(description);
 
         return Optional.of(new LinkUpdate()
                 .id(update.getId())
@@ -32,6 +32,6 @@ public class AiAgentUpdateProcessor {
                 .description(processedDescription)
                 .author(update.getAuthor())
                 .tgChatIds(update.getTgChatIds())
-                .priority(DEFAULT_PRIORITY));
+                .priority(priority.name()));
     }
 }

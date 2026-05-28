@@ -6,3 +6,16 @@ ai-agent:
   summarization:
     provider: STUB
     threshold: 500
+  prioritization:
+    high-keywords:
+      - critical
+      - urgent
+      - breaking
+      - security
+    low-keywords:
+      - minor
+      - typo
+      - chore
+      - docs
+  grouping:
+    window-ms: 50ms

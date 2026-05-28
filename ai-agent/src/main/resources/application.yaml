@@ -37,3 +37,16 @@ ai-agent:
       model: ${AI_AGENT_SUMMARIZATION_API_MODEL:gemini-3.5-flash}
       prompt: ${AI_AGENT_SUMMARIZATION_API_PROMPT:Summarize the following update in 2-3 sentences:}
       timeout: ${AI_AGENT_SUMMARIZATION_API_TIMEOUT:5s}
+  prioritization:
+    high-keywords:
+      - critical
+      - urgent
+      - breaking
+      - security
+    low-keywords:
+      - minor
+      - typo
+      - chore
+      - docs
+  grouping:
+    window-ms: ${AI_AGENT_GROUPING_WINDOW_MS:30000}

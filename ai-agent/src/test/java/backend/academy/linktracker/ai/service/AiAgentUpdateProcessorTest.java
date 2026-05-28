@@ -26,14 +26,14 @@ class AiAgentUpdateProcessorTest {
         when(geminiSummarizerProvider.getObject()).thenReturn(geminiSummarizer);
         FallbackSummarizer fallbackSummarizer =
                 new FallbackSummarizer(properties, geminiSummarizerProvider, truncatingSummarizer);
-        AiAgentUpdateProcessor processor =
-                new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), fallbackSummarizer);
+        AiAgentUpdateProcessor processor = new AiAgentUpdateProcessor(
+                properties, new UpdateFilter(properties), fallbackSummarizer, new UpdatePrioritizer(properties));
         LinkUpdate update = update("123456789012345");
 
         LinkUpdate processed = processor.process(update).orElseThrow();
 
         assertEquals("1234567890...", processed.getDescription());
-        assertEquals("HIGH", processed.getPriority());
+        assertEquals("MEDIUM", processed.getPriority());
         verifyNoInteractions(geminiSummarizer);
     }
 
@@ -43,8 +43,8 @@ class AiAgentUpdateProcessorTest {
         properties.getFiltering().setMinLength(0);
         properties.getSummarization().setThreshold(10);
         Summarizer summarizer = Mockito.mock(Summarizer.class);
-        AiAgentUpdateProcessor processor =
-                new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), summarizer);
+        AiAgentUpdateProcessor processor = new AiAgentUpdateProcessor(
+                properties, new UpdateFilter(properties), summarizer, new UpdatePrioritizer(properties));
         LinkUpdate update = update("short");
 
         LinkUpdate processed = processor.process(update).orElseThrow();
@@ -60,8 +60,8 @@ class AiAgentUpdateProcessorTest {
         properties.getSummarization().setThreshold(10);
         Summarizer summarizer = Mockito.mock(Summarizer.class);
         when(summarizer.summarize("123456789012345", 10)).thenReturn("summary from api");
-        AiAgentUpdateProcessor processor =
-                new AiAgentUpdateProcessor(properties, new UpdateFilter(properties), summarizer);
+        AiAgentUpdateProcessor processor = new AiAgentUpdateProcessor(
+                properties, new UpdateFilter(properties), summarizer, new UpdatePrioritizer(properties));
 
         LinkUpdate processed = processor.process(update("123456789012345")).orElseThrow();
 
