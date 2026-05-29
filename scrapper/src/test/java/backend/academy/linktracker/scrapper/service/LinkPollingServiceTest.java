@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.properties.ScrapperPollingProperties;
@@ -46,6 +47,9 @@ class LinkPollingServiceTest {
     @Mock
     private UpdatePublisher updatePublisher;
 
+    @Mock
+    private ScrapperMetrics metrics;
+
     private LinkPollingService linkPollingService;
     private ExecutorService executorService;
 
@@ -62,7 +66,8 @@ class LinkPollingServiceTest {
                 updatePublisher,
                 pollingProperties,
                 executorService,
-                new TransactionTemplate(testTransactionManager()));
+                new TransactionTemplate(testTransactionManager()),
+                metrics);
     }
 
     @AfterEach

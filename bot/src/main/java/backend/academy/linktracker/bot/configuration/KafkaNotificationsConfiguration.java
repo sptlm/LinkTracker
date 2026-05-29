@@ -6,6 +6,7 @@ import backend.academy.linktracker.bot.service.exception.UpdateValidationExcepti
 import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -17,6 +18,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
@@ -54,6 +56,11 @@ public class KafkaNotificationsConfiguration {
     @Bean
     public KafkaTemplate<String, Object> dlqKafkaTemplate(ProducerFactory<String, Object> dlqProducerFactory) {
         return new KafkaTemplate<>(dlqProducerFactory);
+    }
+
+    @Bean
+    public KafkaAdmin kafkaAdmin(KafkaNotificationsProperties properties) {
+        return new KafkaAdmin(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, properties.getBootstrapServers()));
     }
 
     @Bean

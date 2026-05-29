@@ -2,6 +2,7 @@ package backend.academy.linktracker.bot.telegram;
 
 import backend.academy.linktracker.bot.command.CommandContext;
 import backend.academy.linktracker.bot.command.CommandRegistry;
+import backend.academy.linktracker.bot.metrics.BotMetrics;
 import backend.academy.linktracker.bot.service.BotMessagesService;
 import backend.academy.linktracker.bot.service.TrackDialogService;
 import com.pengrad.telegrambot.TelegramBot;
@@ -22,6 +23,7 @@ public class TelegramUpdateListener implements UpdatesListener {
     private final CommandRegistry commandRegistry;
     private final BotMessagesService messages;
     private final TrackDialogService trackDialogService;
+    private final BotMetrics metrics;
 
     @Override
     public int process(List<Update> updates) {
@@ -40,6 +42,7 @@ public class TelegramUpdateListener implements UpdatesListener {
 
     private void processUpdate(Update update) {
         if (update.message() == null || update.message().text() == null) {
+            metrics.recordTelegramRequest("unsupported");
             return;
         }
 
@@ -51,6 +54,7 @@ public class TelegramUpdateListener implements UpdatesListener {
 
         String messageText = message.text().trim();
         if (messageText.isBlank()) {
+            metrics.recordTelegramRequest("blank_message");
             return;
         }
 
@@ -64,11 +68,14 @@ public class TelegramUpdateListener implements UpdatesListener {
                 .log("Received message");
 
         if (messageText.startsWith("/")) {
+            metrics.recordTelegramRequest("command");
             processCommand(context, messageText);
             return;
         }
 
+        metrics.recordTelegramRequest("message");
         if (trackDialogService.processIfActive(context)) {
+            metrics.recordTelegramRequest("dialog");
             log.atInfo()
                     .addKeyValue("chatId", context.chatId())
                     .addKeyValue("userId", context.userId())
@@ -78,6 +85,7 @@ public class TelegramUpdateListener implements UpdatesListener {
 
     private void processCommand(CommandContext context, String messageText) {
         String commandName = extractCommandName(messageText);
+        metrics.recordCommandRequest(commandName);
 
         if (trackDialogService.hasActiveDialog(context) && !"/cancel".equals(commandName)) {
             trackDialogService.cancel(context);
@@ -93,6 +101,7 @@ public class TelegramUpdateListener implements UpdatesListener {
                 .find(commandName)
                 .ifPresentOrElse(
                         command -> {
+                            long startedAt = System.nanoTime();
                             try {
                                 log.atInfo()
                                         .addKeyValue("chatId", context.chatId())
@@ -110,6 +119,8 @@ public class TelegramUpdateListener implements UpdatesListener {
                                         .log("Command handling failed");
 
                                 context.reply(messages.scrapperUnavailable());
+                            } finally {
+                                metrics.recordCommandHandlingDuration(commandName, startedAt);
                             }
                         },
                         () -> {

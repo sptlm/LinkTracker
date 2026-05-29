@@ -6,7 +6,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
+import backend.academy.linktracker.bot.metrics.BotMetrics;
 import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.github.resilience4j.retry.Retry;
@@ -27,7 +29,8 @@ class HttpScrapperClientTest {
             server.start();
             HttpScrapperClient client = new HttpScrapperClient(
                     RestClient.builder().baseUrl(server.baseUrl()).build(),
-                    new RetryableHttpStatusClassifier(Set.of(500)));
+                    new RetryableHttpStatusClassifier(Set.of(500)),
+                    mock(BotMetrics.class));
             server.stubFor(post(urlEqualTo("/tg-chat/1")).willReturn(aResponse().withStatus(500)));
 
             assertThrows(RetryableScrapperClientException.class, () -> client.registerChat(1L));

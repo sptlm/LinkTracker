@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.properties.ScrapperPollingProperties;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
@@ -31,6 +32,7 @@ public class LinkPollingService {
     private final ScrapperPollingProperties pollingProperties;
     private final ExecutorService pollingExecutorService;
     private final TransactionTemplate transactionTemplate;
+    private final ScrapperMetrics metrics;
 
     public void pollUpdates() {
         long offset = 0;
@@ -85,7 +87,13 @@ public class LinkPollingService {
         Instant checkedAt = Instant.now();
 
         LinkUpdater updater = findUpdater(link);
-        LinkUpdateCheckResult result = updater.check(link);
+        long updaterStartedAt = System.nanoTime();
+        LinkUpdateCheckResult result;
+        try {
+            result = updater.check(link);
+        } finally {
+            metrics.recordRequestDuration("external_source", sourceName(link), updaterStartedAt);
+        }
 
         Instant updatedAt = result.changed()
                 ? (result.newUpdatedAt() != null ? result.newUpdatedAt() : checkedAt)
@@ -115,7 +123,9 @@ public class LinkPollingService {
                 .tgChatIds(chatIds);
 
         transactionTemplate.executeWithoutResult(status -> {
+            long databaseStartedAt = System.nanoTime();
             linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
+            metrics.recordRequestDuration("database", "tracked_link", databaseStartedAt);
             updatePublisher.publish(request);
         });
 
@@ -138,6 +148,10 @@ public class LinkPollingService {
                 .description("Failed to check link in current polling cycle: %s".formatted(link.url()))
                 .tgChatIds(chatIds);
         transactionTemplate.executeWithoutResult(status -> updatePublisher.publish(request));
+    }
+
+    private String sourceName(TrackedLink link) {
+        return link.type().name().toLowerCase(java.util.Locale.ROOT);
     }
 
     private LinkUpdater findUpdater(TrackedLink link) {

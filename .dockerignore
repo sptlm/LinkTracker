@@ -1,0 +1,12 @@
+.git
+.gradle
+.idea
+.mvn/wrapper
+**/target
+**/build
+**/.flattened-pom.xml
+*.log
+.env
+.env.*
+grafana
+prometheus

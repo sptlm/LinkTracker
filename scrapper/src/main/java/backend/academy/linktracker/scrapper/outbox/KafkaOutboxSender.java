@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.outbox;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,9 +26,16 @@ public class KafkaOutboxSender {
     private final KafkaNotificationsProperties kafkaProperties;
     private final ObjectMapper objectMapper;
     private final LinkUpdateAvroMapper avroMapper;
+    private final ScrapperMetrics metrics;
 
     public CompletableFuture<SendResult<String, Object>> send(long outboxId, String payload) {
-        return kafkaTemplate.send(kafkaProperties.getUpdatesTopic(), String.valueOf(outboxId), kafkaPayload(payload));
+        long startedAt = System.nanoTime();
+        try {
+            return kafkaTemplate.send(
+                    kafkaProperties.getUpdatesTopic(), String.valueOf(outboxId), kafkaPayload(payload));
+        } finally {
+            metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt);
+        }
     }
 
     private Object kafkaPayload(String payload) {

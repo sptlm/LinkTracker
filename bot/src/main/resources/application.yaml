@@ -1,6 +1,39 @@
 server:
   port: 8080
 
+management:
+  server:
+    port: ${BOT_MANAGEMENT_PORT:8011}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /
+      path-mapping:
+        prometheus: metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      app_type: bot
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  prometheus:
+    metrics:
+      export:
+        pushgateway:
+          enabled: ${BOT_PUSHGATEWAY_ENABLED:false}
+          address: ${BOT_PUSHGATEWAY_ADDRESS:localhost:9091}
+          job: ${spring.application.name}
+          push-rate: ${BOT_PUSHGATEWAY_PUSH_RATE:30s}
+          grouping-key:
+            application: ${spring.application.name}
+            app_type: bot
+
 spring:
   application:
     name: bot
@@ -81,3 +114,7 @@ resilience4j:
         automatic-transition-from-open-to-half-open-enabled: ${BOT_CB_AUTO_TRANSITION_ENABLED:true}
         ignore-exceptions:
           - org.springframework.web.client.HttpClientErrorException
+          - backend.academy.linktracker.bot.client.scrapper.ChatAlreadyExistsException
+          - backend.academy.linktracker.bot.client.scrapper.ChatNotRegisteredException
+          - backend.academy.linktracker.bot.client.scrapper.DuplicateLinkException
+          - backend.academy.linktracker.bot.client.scrapper.TrackedLinkNotFoundException

@@ -1,6 +1,7 @@
 package backend.academy.linktracker.bot.service;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
+import backend.academy.linktracker.bot.metrics.BotMetrics;
 import backend.academy.linktracker.bot.service.exception.UpdateDeliveryException;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
@@ -16,6 +17,7 @@ public class BotUpdateService {
 
     private final TelegramBot bot;
     private final BotMessagesService messages;
+    private final BotMetrics metrics;
 
     public void processUpdate(LinkUpdate request) {
         List<Long> chatIds = request.getTgChatIds() == null ? List.of() : request.getTgChatIds();
@@ -37,6 +39,7 @@ public class BotUpdateService {
         String text = messages.updatesMessage(String.valueOf(request.getUrl()), request.getDescription());
         try {
             bot.execute(new SendMessage(chatId, text));
+            metrics.recordSentNotification();
 
             log.atInfo()
                     .addKeyValue("chatId", chatId)

@@ -2,6 +2,7 @@ package backend.academy.linktracker.scrapper.service.impl;
 
 import backend.academy.linktracker.bot.generated.dto.LinkUpdate;
 import backend.academy.linktracker.contract.kafka.LinkUpdateAvroMapper;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.properties.KafkaNotificationsProperties;
 import backend.academy.linktracker.scrapper.service.UpdatePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,9 +22,11 @@ public class KafkaUpdatePublisher implements UpdatePublisher {
     private final KafkaNotificationsProperties kafkaProperties;
     private final ObjectMapper objectMapper;
     private final LinkUpdateAvroMapper avroMapper;
+    private final ScrapperMetrics metrics;
 
     @Override
     public void publish(LinkUpdate request) {
+        long startedAt = System.nanoTime();
         try {
             Object payload = kafkaProperties.usesSchemaRegistry()
                     ? avroMapper.toRecord(request)
@@ -31,6 +34,8 @@ public class KafkaUpdatePublisher implements UpdatePublisher {
             kafkaTemplate.send(kafkaProperties.getUpdatesTopic(), String.valueOf(request.getId()), payload);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to serialize update message", e);
+        } finally {
+            metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt);
         }
     }
 }

@@ -1,6 +1,37 @@
 server:
   port: 8081
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /
+      path-mapping:
+        prometheus: metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      app_type: scrapper
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  prometheus:
+    metrics:
+      export:
+        pushgateway:
+          enabled: ${SCRAPPER_PUSHGATEWAY_ENABLED:false}
+          address: ${SCRAPPER_PUSHGATEWAY_ADDRESS:localhost:9091}
+          job: ${spring.application.name}
+          push-rate: ${SCRAPPER_PUSHGATEWAY_PUSH_RATE:30s}
+          grouping-key:
+            application: ${spring.application.name}
+            app_type: scrapper
+
 spring:
   application:
     name: scrapper

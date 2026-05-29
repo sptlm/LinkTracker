@@ -1,0 +1,48 @@
+# RED dashboard
+
+# HTTP request rate by application and status
+sum by (application, status) (rate(http_server_requests_seconds_count{application=~"$application"}[1m]))
+
+# HTTP 5xx error rate by application
+sum by (application) (rate(http_server_requests_seconds_count{application=~"$application",status=~"5.."}[1m]))
+
+# HTTP latency p50/p95/p99
+histogram_quantile(0.50, sum by (le, application) (rate(http_server_requests_seconds_bucket{application=~"$application"}[5m])))
+histogram_quantile(0.95, sum by (le, application) (rate(http_server_requests_seconds_bucket{application=~"$application"}[5m])))
+histogram_quantile(0.99, sum by (le, application) (rate(http_server_requests_seconds_bucket{application=~"$application"}[5m])))
+
+# JVM memory usage by area and pool
+sum by (application, area, id) (jvm_memory_used_bytes{application=~"$application"})
+
+# RAM alert expression
+sum by (application) (jvm_memory_used_bytes{area="heap"}) / clamp_min(sum by (application) (jvm_memory_max_bytes{area="heap"}), 1) * 100
+
+# Business dashboard
+
+# User messages per second
+sum by (request_type) (rate(telegram_requests_total{application=~"$application",app_type=~"$app_type",request_type=~"message|dialog|command"}[1m]))
+
+# Active tracked links in DB by source
+sum by (tracked_source) (links_on_track_total{application=~"$application",app_type=~"$app_type"})
+
+# Scrape duration p50/p95/p99 by source
+histogram_quantile(0.50, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type",scope="external_source"}[5m])))
+histogram_quantile(0.95, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type",scope="external_source"}[5m])))
+histogram_quantile(0.99, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type",scope="external_source"}[5m])))
+
+# Bot command handling duration p50/p95/p99
+histogram_quantile(0.50, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type"}[5m])))
+histogram_quantile(0.95, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type"}[5m])))
+histogram_quantile(0.99, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~"$application",app_type=~"$app_type"}[5m])))
+
+# Telegram bot requests by request type
+sum by (request_type) (rate(telegram_requests_total{application=~"$application",app_type=~"$app_type"}[1m]))
+
+# Sent notifications per second
+sum(rate(sent_notification_total{application=~"$application",app_type=~"$app_type"}[1m]))
+
+# Scrapper API requests by source
+sum by (source) (rate(api_requests_total{application=~"$application",app_type=~"$app_type"}[1m]))
+
+# Bot calls to Scrapper API p95 by method
+histogram_quantile(0.95, sum by (le, scope_type) (rate(command_duration_ms_total_bucket{application=~"$application",scope="scrapper_sync_api"}[5m])))

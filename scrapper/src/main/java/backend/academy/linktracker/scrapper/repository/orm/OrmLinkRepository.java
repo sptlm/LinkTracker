@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.repository.orm;
 
+import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import backend.academy.linktracker.scrapper.repository.orm.entity.TrackedLinkEntity;
@@ -58,6 +59,11 @@ public class OrmLinkRepository implements LinkRepository {
         return trackedLinkJpaRepository.findPage(offset, limit).stream()
                 .map(converter::toModel)
                 .toList();
+    }
+
+    @Override
+    public long countByType(LinkSourceType type) {
+        return trackedLinkJpaRepository.countByType(type.name());
     }
 
     @Override

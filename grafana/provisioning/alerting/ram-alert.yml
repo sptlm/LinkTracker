@@ -1,0 +1,55 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: Link Tracker RAM
+    folder: Link Tracker
+    interval: 1m
+    rules:
+      - uid: linktracker-high-ram
+        title: High JVM RAM usage
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              datasource:
+                type: prometheus
+                uid: prometheus
+              expr: sum by (application) (jvm_memory_used_bytes{area="heap"}) / clamp_min(sum by (application) (jvm_memory_max_bytes{area="heap"}), 1) * 100
+              instant: true
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 80
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              refId: C
+              type: threshold
+        for: 2m
+        annotations:
+          summary: JVM heap usage is above 80% for {{ $labels.application }}.
+        labels:
+          severity: warning
+        isPaused: false

@@ -20,6 +20,8 @@ public interface TrackedLinkJpaRepository extends JpaRepository<TrackedLinkEntit
     @Query(value = "select * from tracked_link order by id limit :limit offset :offset", nativeQuery = true)
     List<TrackedLinkEntity> findPage(@Param("offset") long offset, @Param("limit") int limit);
 
+    long countByType(String type);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update TrackedLinkEntity t

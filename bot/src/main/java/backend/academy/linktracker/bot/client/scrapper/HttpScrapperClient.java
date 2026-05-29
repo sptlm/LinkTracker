@@ -1,5 +1,6 @@
 package backend.academy.linktracker.bot.client.scrapper;
 
+import backend.academy.linktracker.bot.metrics.BotMetrics;
 import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinkResponse;
@@ -24,11 +25,13 @@ public class HttpScrapperClient implements ScrapperClient {
 
     private final RestClient scrapperRestClient;
     private final RetryableHttpStatusClassifier retryableStatusClassifier;
+    private final BotMetrics metrics;
 
     @Override
     @Retry(name = "scrapper")
     @CircuitBreaker(name = "scrapper")
     public void registerChat(long chatId) {
+        long startedAt = System.nanoTime();
         try {
             scrapperRestClient.post().uri("/tg-chat/{id}", chatId).retrieve().toBodilessEntity();
         } catch (HttpClientErrorException.Conflict e) {
@@ -39,6 +42,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw scrapperStatusException("Failed to register chat in scrapper", e);
         } catch (RestClientException e) {
             throw new ScrapperClientException("Failed to register chat in scrapper", e);
+        } finally {
+            metrics.recordCommandDuration("scrapper_sync_api", "registerChat", startedAt);
         }
     }
 
@@ -46,6 +51,7 @@ public class HttpScrapperClient implements ScrapperClient {
     @Retry(name = "scrapper")
     @CircuitBreaker(name = "scrapper")
     public void deleteChat(long chatId) {
+        long startedAt = System.nanoTime();
         try {
             scrapperRestClient
                     .method(HttpMethod.DELETE)
@@ -60,6 +66,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw scrapperStatusException("Failed to delete chat in scrapper", e);
         } catch (RestClientException e) {
             throw new ScrapperClientException("Failed to delete chat in scrapper", e);
+        } finally {
+            metrics.recordCommandDuration("scrapper_sync_api", "deleteChat", startedAt);
         }
     }
 
@@ -67,6 +75,7 @@ public class HttpScrapperClient implements ScrapperClient {
     @Retry(name = "scrapper")
     @CircuitBreaker(name = "scrapper")
     public ListLinksResponse getLinks(long chatId) {
+        long startedAt = System.nanoTime();
         try {
             ListLinksResponse response = scrapperRestClient
                     .get()
@@ -86,6 +95,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw scrapperStatusException("Failed to get links from scrapper", e);
         } catch (RestClientException e) {
             throw new ScrapperClientException("Failed to get links from scrapper", e);
+        } finally {
+            metrics.recordCommandDuration("scrapper_sync_api", "getLinks", startedAt);
         }
     }
 
@@ -93,6 +104,7 @@ public class HttpScrapperClient implements ScrapperClient {
     @Retry(name = "scrapper")
     @CircuitBreaker(name = "scrapper")
     public LinkResponse addLink(long chatId, AddLinkRequest request) {
+        long startedAt = System.nanoTime();
         try {
             return scrapperRestClient
                     .post()
@@ -111,6 +123,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw scrapperStatusException("Failed to add link in scrapper", e);
         } catch (RestClientException e) {
             throw new ScrapperClientException("Failed to add link in scrapper", e);
+        } finally {
+            metrics.recordCommandDuration("scrapper_sync_api", "addLink", startedAt);
         }
     }
 
@@ -118,6 +132,7 @@ public class HttpScrapperClient implements ScrapperClient {
     @Retry(name = "scrapper")
     @CircuitBreaker(name = "scrapper")
     public LinkResponse removeLink(long chatId, RemoveLinkRequest request) {
+        long startedAt = System.nanoTime();
         try {
             return scrapperRestClient
                     .method(HttpMethod.DELETE)
@@ -134,6 +149,8 @@ public class HttpScrapperClient implements ScrapperClient {
             throw scrapperStatusException("Failed to remove link in scrapper", e);
         } catch (RestClientException e) {
             throw new ScrapperClientException("Failed to remove link in scrapper", e);
+        } finally {
+            metrics.recordCommandDuration("scrapper_sync_api", "removeLink", startedAt);
         }
     }
 

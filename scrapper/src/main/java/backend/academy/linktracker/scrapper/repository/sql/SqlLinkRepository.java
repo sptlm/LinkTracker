@@ -108,6 +108,16 @@ public class SqlLinkRepository implements LinkRepository {
     }
 
     @Override
+    public long countByType(LinkSourceType type) {
+        Long count = jdbcClient
+                .sql("select count(*) from tracked_link where type = :type")
+                .param("type", type.name())
+                .query(Long.class)
+                .single();
+        return count == null ? 0 : count;
+    }
+
+    @Override
     public void updatePollingState(long linkId, Instant lastCheckedAt, Instant lastUpdatedAt) {
         jdbcClient
                 .sql("""

@@ -1,0 +1,145 @@
+{
+  "uid": "linktracker-business",
+  "title": "Link Tracker Business Metrics",
+  "tags": ["link-tracker", "business"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(up, application)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": {"selected": false, "text": "All", "value": "$__all"}
+      },
+      {
+        "name": "app_type",
+        "type": "custom",
+        "query": "bot,scrapper",
+        "includeAll": true,
+        "multi": true,
+        "current": {"selected": false, "text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "User messages per second",
+      "description": "Incoming Telegram user messages and dialog replies.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (request_type) (rate(telegram_requests_total{application=~\"$application\",app_type=~\"$app_type\",request_type=~\"message|dialog|command\"}[1m]))",
+          "legendFormat": "{{request_type}}"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Active tracked links",
+      "description": "Current number of active links in the database split by tracked source.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (tracked_source) (links_on_track_total{application=~\"$application\",app_type=~\"$app_type\"})",
+          "legendFormat": "{{tracked_source}}"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Scrape operation duration p50/p95/p99",
+      "description": "Duration of one source scrape operation for GitHub and StackOverflow.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\",scope=\"external_source\"}[5m])))",
+          "legendFormat": "{{scope_type}} p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\",scope=\"external_source\"}[5m])))",
+          "legendFormat": "{{scope_type}} p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, scope_type) (rate(request_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\",scope=\"external_source\"}[5m])))",
+          "legendFormat": "{{scope_type}} p99"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Bot command handling duration p50/p95/p99",
+      "description": "End-to-end duration of command handling in the Bot service.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\"}[5m])))",
+          "legendFormat": "{{command}} p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\"}[5m])))",
+          "legendFormat": "{{command}} p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le, command) (rate(command_handling_duration_ms_total_bucket{application=~\"$application\",app_type=~\"$app_type\"}[5m])))",
+          "legendFormat": "{{command}} p99"
+        }
+      ],
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Telegram bot requests",
+      "description": "Telegram updates received by the Bot application split by request type.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (request_type) (rate(telegram_requests_total{application=~\"$application\",app_type=~\"$app_type\"}[1m]))",
+          "legendFormat": "{{request_type}}"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Sent notifications",
+      "description": "Rate of successfully sent Telegram notifications.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(sent_notification_total{application=~\"$application\",app_type=~\"$app_type\"}[1m]))",
+          "legendFormat": "notifications"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+    }
+  ]
+}

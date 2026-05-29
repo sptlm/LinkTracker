@@ -9,6 +9,7 @@ import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverfl
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowCommentsResponse;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionItem;
 import backend.academy.linktracker.scrapper.client.stackoverflow.dto.StackOverflowQuestionsResponse;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.List;
@@ -26,23 +27,29 @@ public class RestStackOverflowClient implements StackOverflowClient {
 
     private final RestClient restClient;
     private final RetryableHttpStatusClassifier retryableStatusClassifier;
+    private final ScrapperMetrics metrics;
 
     @Autowired
     public RestStackOverflowClient(
             @Qualifier("stackOverflowRestClient") RestClient restClient,
-            RetryableHttpStatusClassifier retryableStatusClassifier) {
+            RetryableHttpStatusClassifier retryableStatusClassifier,
+            ScrapperMetrics metrics) {
         this.restClient = restClient;
         this.retryableStatusClassifier = retryableStatusClassifier;
+        this.metrics = metrics;
     }
 
     public RestStackOverflowClient(@Qualifier("stackOverflowRestClient") RestClient restClient) {
-        this(restClient, new RetryableHttpStatusClassifier(Set.of()));
+        this.restClient = restClient;
+        this.retryableStatusClassifier = new RetryableHttpStatusClassifier(Set.of());
+        this.metrics = null;
     }
 
     @Override
     @Retry(name = "stackoverflow")
     @CircuitBreaker(name = "stackoverflow")
     public StackOverflowQuestionItem getQuestion(long questionId) {
+        long startedAt = System.nanoTime();
         try {
             StackOverflowQuestionsResponse response = restClient
                     .get()
@@ -72,6 +79,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     "StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow request failed for question " + questionId, e);
+        } finally {
+            recordExternalSourceDuration(startedAt);
         }
     }
 
@@ -79,6 +88,7 @@ public class RestStackOverflowClient implements StackOverflowClient {
     @Retry(name = "stackoverflow")
     @CircuitBreaker(name = "stackoverflow")
     public List<StackOverflowAnswerItem> getLatestAnswers(long questionId, int limit) {
+        long startedAt = System.nanoTime();
         try {
             StackOverflowAnswersResponse response = restClient
                     .get()
@@ -106,6 +116,8 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     "StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow answers request failed for question " + questionId, e);
+        } finally {
+            recordExternalSourceDuration(startedAt);
         }
     }
 
@@ -113,6 +125,7 @@ public class RestStackOverflowClient implements StackOverflowClient {
     @Retry(name = "stackoverflow")
     @CircuitBreaker(name = "stackoverflow")
     public List<StackOverflowCommentItem> getLatestComments(long questionId, int limit) {
+        long startedAt = System.nanoTime();
         try {
             StackOverflowCommentsResponse response = restClient
                     .get()
@@ -140,6 +153,14 @@ public class RestStackOverflowClient implements StackOverflowClient {
                     "StackOverflow is temporarily unavailable for question " + questionId, e);
         } catch (Exception e) {
             throw new ExternalServiceException("StackOverflow comments request failed for question " + questionId, e);
+        } finally {
+            recordExternalSourceDuration(startedAt);
+        }
+    }
+
+    private void recordExternalSourceDuration(long startedAt) {
+        if (metrics != null) {
+            metrics.recordRequestDuration("external_source", "stackoverflow", startedAt);
         }
     }
 

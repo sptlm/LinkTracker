@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.api.filter;
 
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.properties.RateLimitProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -21,10 +22,12 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
     private static final String TG_CHAT_ID_HEADER = "Tg-Chat-Id";
 
     private final RateLimitProperties properties;
+    private final ScrapperMetrics metrics;
     private final Cache<String, Bucket> buckets;
 
-    public IpRateLimitingFilter(RateLimitProperties properties) {
+    public IpRateLimitingFilter(RateLimitProperties properties, ScrapperMetrics metrics) {
         this.properties = properties;
+        this.metrics = metrics;
         this.buckets = Caffeine.newBuilder()
                 .expireAfterAccess(properties.getCacheExpireAfterAccess())
                 .maximumSize(properties.getCacheMaximumSize())
@@ -33,12 +36,20 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !properties.isEnabled() || request.getRequestURI().startsWith("/actuator");
+        return request.getRequestURI().startsWith("/actuator")
+                || request.getRequestURI().startsWith("/metrics");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        metrics.recordApiRequest(requestSource(request));
+
+        if (!properties.isEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Bucket bucket = buckets.get(rateLimitKey(request), ignored -> newBucket());
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
@@ -66,5 +77,17 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
             return "tg-chat-id:" + chatId.trim();
         }
         return "remote-addr:" + request.getRemoteAddr();
+    }
+
+    private String requestSource(HttpServletRequest request) {
+        String chatId = request.getHeader(TG_CHAT_ID_HEADER);
+        if (chatId != null && !chatId.isBlank()) {
+            return "bot";
+        }
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent != null && userAgent.toLowerCase(java.util.Locale.ROOT).contains("prometheus")) {
+            return "prometheus";
+        }
+        return "unknown";
     }
 }

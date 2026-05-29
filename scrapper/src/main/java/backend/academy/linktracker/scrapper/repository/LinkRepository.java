@@ -1,5 +1,6 @@
 package backend.academy.linktracker.scrapper.repository;
 
+import backend.academy.linktracker.scrapper.model.LinkSourceType;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +19,8 @@ public interface LinkRepository {
     List<TrackedLink> findAll();
 
     List<TrackedLink> findPage(long offset, int limit);
+
+    long countByType(LinkSourceType type);
 
     void updatePollingState(long linkId, Instant lastCheckedAt, Instant lastUpdatedAt);
 

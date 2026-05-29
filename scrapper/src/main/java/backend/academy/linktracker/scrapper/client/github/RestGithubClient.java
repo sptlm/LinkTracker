@@ -5,6 +5,7 @@ import backend.academy.linktracker.scrapper.api.exception.ExternalServiceExcepti
 import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubIssueItem;
 import backend.academy.linktracker.scrapper.client.github.dto.GithubRepositoryResponse;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Arrays;
@@ -23,23 +24,29 @@ public class RestGithubClient implements GithubClient {
 
     private final RestClient restClient;
     private final RetryableHttpStatusClassifier retryableStatusClassifier;
+    private final ScrapperMetrics metrics;
 
     @Autowired
     public RestGithubClient(
             @Qualifier("githubRestClient") RestClient restClient,
-            RetryableHttpStatusClassifier retryableStatusClassifier) {
+            RetryableHttpStatusClassifier retryableStatusClassifier,
+            ScrapperMetrics metrics) {
         this.restClient = restClient;
         this.retryableStatusClassifier = retryableStatusClassifier;
+        this.metrics = metrics;
     }
 
     public RestGithubClient(@Qualifier("githubRestClient") RestClient restClient) {
-        this(restClient, new RetryableHttpStatusClassifier(Set.of()));
+        this.restClient = restClient;
+        this.retryableStatusClassifier = new RetryableHttpStatusClassifier(Set.of());
+        this.metrics = null;
     }
 
     @Override
     @Retry(name = "github")
     @CircuitBreaker(name = "github")
     public GithubRepositoryResponse getRepository(String owner, String repo) {
+        long startedAt = System.nanoTime();
         try {
             GithubRepositoryResponse response = restClient
                     .get()
@@ -65,6 +72,8 @@ public class RestGithubClient implements GithubClient {
                     "GitHub is temporarily unavailable for repository %s/%s".formatted(owner, repo), e);
         } catch (Exception e) {
             throw new ExternalServiceException("GitHub request failed for repository %s/%s".formatted(owner, repo), e);
+        } finally {
+            recordExternalSourceDuration(startedAt);
         }
     }
 
@@ -72,6 +81,7 @@ public class RestGithubClient implements GithubClient {
     @Retry(name = "github")
     @CircuitBreaker(name = "github")
     public List<GithubIssueItem> getLatestIssuesAndPullRequests(String owner, String repo, int limit) {
+        long startedAt = System.nanoTime();
         try {
             GithubIssueItem[] items = restClient
                     .get()
@@ -99,6 +109,14 @@ public class RestGithubClient implements GithubClient {
         } catch (Exception e) {
             throw new ExternalServiceException(
                     "GitHub issues request failed for repository %s/%s".formatted(owner, repo), e);
+        } finally {
+            recordExternalSourceDuration(startedAt);
+        }
+    }
+
+    private void recordExternalSourceDuration(long startedAt) {
+        if (metrics != null) {
+            metrics.recordRequestDuration("external_source", "github", startedAt);
         }
     }
 

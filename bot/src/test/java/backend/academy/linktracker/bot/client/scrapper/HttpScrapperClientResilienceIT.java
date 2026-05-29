@@ -95,4 +95,18 @@ class HttpScrapperClientResilienceIT {
 
         assertThat(Duration.between(startedAt, Instant.now())).isLessThan(Duration.ofMillis(1_500));
     }
+
+    @Test
+    void shouldNotCountBusinessExceptionsAsCircuitBreakerFailures() {
+        stubFor(post(urlEqualTo("/tg-chat/3")).willReturn(aResponse().withStatus(409)));
+        var circuitBreaker = circuitBreakerRegistry.circuitBreaker("scrapper");
+
+        for (int i = 0; i < 6; i++) {
+            assertThatThrownBy(() -> scrapperClient.registerChat(3L)).isInstanceOf(ChatAlreadyExistsException.class);
+        }
+
+        assertThat(circuitBreaker.getState())
+                .isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED);
+        assertThat(circuitBreaker.getMetrics().getNumberOfFailedCalls()).isZero();
+    }
 }
