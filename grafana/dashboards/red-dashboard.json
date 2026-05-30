@@ -93,12 +93,17 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "JVM memory used",
-      "description": "JVM memory usage split by application, memory area and memory pool.",
+      "title": "Application memory used",
+      "description": "Process resident memory (RAM) and JVM memory pools split by application.",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "targets": [
         {
           "refId": "A",
+          "expr": "sum by (application) (process_resident_memory_bytes{application=~\"$application\"})",
+          "legendFormat": "{{application}} resident"
+        },
+        {
+          "refId": "B",
           "expr": "sum by (application, area, id) (jvm_memory_used_bytes{application=~\"$application\"})",
           "legendFormat": "{{application}} {{area}} {{id}}"
         }

@@ -27,6 +27,16 @@ public class RepositoryMetricsAspect {
 
     private String repositoryName(ProceedingJoinPoint joinPoint) {
         String simpleName = joinPoint.getSignature().getDeclaringType().getSimpleName();
-        return simpleName.replace("Repository", "").toLowerCase(java.util.Locale.ROOT);
+        return switch (simpleName) {
+            case "LinkRepository", "SqlLinkRepository", "OrmLinkRepository", "TrackedLinkJpaRepository" ->
+                "tracked_link";
+            case "SubscriptionRepository",
+                    "SqlSubscriptionRepository",
+                    "OrmSubscriptionRepository",
+                    "LinkSubscriptionJpaRepository" -> "link_subscription";
+            case "ChatRepository", "SqlChatRepository", "OrmChatRepository", "TgChatJpaRepository" -> "tg_chat";
+            case "TagRepository", "SqlTagRepository", "OrmTagRepository" -> "subscription_tag";
+            default -> simpleName.replace("Repository", "").toLowerCase(java.util.Locale.ROOT);
+        };
     }
 }

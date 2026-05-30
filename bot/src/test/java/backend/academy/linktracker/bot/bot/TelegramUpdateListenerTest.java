@@ -76,6 +76,7 @@ class TelegramUpdateListenerTest {
         listener.process(List.of(update));
 
         verify(command).handle(any());
+        verify(metrics).recordCommandRequest("/start");
         verify(bot, never()).execute(any(SendMessage.class));
     }
 
@@ -88,6 +89,7 @@ class TelegramUpdateListenerTest {
 
         listener.process(List.of(update));
 
+        verify(metrics).recordCommandRequest("unknown");
         verify(bot).execute(any(SendMessage.class));
     }
 
@@ -99,6 +101,20 @@ class TelegramUpdateListenerTest {
         listener.process(List.of(update));
 
         verify(commandRegistry, never()).find(any());
+        verify(metrics).recordTelegramRequest("message");
+        verify(metrics, never()).recordTelegramRequest("dialog");
+        verify(bot, never()).execute(any(SendMessage.class));
+    }
+
+    @Test
+    void shouldRecordDialogMessageOnlyAsDialog() {
+        when(message.text()).thenReturn("https://github.com/user/repo");
+        when(trackDialogService.processIfActive(any())).thenReturn(true);
+
+        listener.process(List.of(update));
+
+        verify(metrics).recordTelegramRequest("dialog");
+        verify(metrics, never()).recordTelegramRequest("message");
         verify(bot, never()).execute(any(SendMessage.class));
     }
 }

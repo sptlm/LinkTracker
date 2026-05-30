@@ -84,10 +84,6 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
         if (chatId != null && !chatId.isBlank()) {
             return "bot";
         }
-        String userAgent = request.getHeader("User-Agent");
-        if (userAgent != null && userAgent.toLowerCase(java.util.Locale.ROOT).contains("prometheus")) {
-            return "prometheus";
-        }
         return "unknown";
     }
 }

@@ -376,8 +376,6 @@ services:
         condition: service_healthy
       kafka-topics-init:
         condition: service_completed_successfully
-      pushgateway:
-        condition: service_started
     environment:
       SCRAPPER_DATASOURCE_URL: jdbc:postgresql://postgres:5432/linktracker
       SCRAPPER_DATASOURCE_USERNAME: postgres
@@ -386,7 +384,7 @@ services:
       SCRAPPER_KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       SCRAPPER_VALKEY_CACHE_ENABLED: "false"
       SCRAPPER_VALKEY_CLUSTER_NODES: host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382
-      SCRAPPER_PUSHGATEWAY_ENABLED: "true"
+      SCRAPPER_PUSHGATEWAY_ENABLED: ${SCRAPPER_PUSHGATEWAY_ENABLED:-false}
       SCRAPPER_PUSHGATEWAY_ADDRESS: pushgateway:9091
       SCRAPPER_POLLING_ENABLED: ${SCRAPPER_POLLING_ENABLED:-false}
       APP_CLIENTS_BOT_BASE_URL: http://bot:8080
@@ -409,13 +407,11 @@ services:
         condition: service_healthy
       kafka-topics-init:
         condition: service_completed_successfully
-      pushgateway:
-        condition: service_started
     environment:
       BOT_SCRAPPER_BASE_URL: http://scrapper:8081
       BOT_KAFKA_BOOTSTRAP_SERVERS: kafka-1:29092,kafka-2:29092,kafka-3:29092
       BOT_KAFKA_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      BOT_PUSHGATEWAY_ENABLED: "true"
+      BOT_PUSHGATEWAY_ENABLED: ${BOT_PUSHGATEWAY_ENABLED:-false}
       BOT_PUSHGATEWAY_ADDRESS: pushgateway:9091
       TELEGRAM_TOKEN: ${TELEGRAM_TOKEN:-}
     ports:

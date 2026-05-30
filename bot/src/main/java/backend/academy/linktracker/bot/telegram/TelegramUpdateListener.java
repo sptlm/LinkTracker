@@ -73,19 +73,22 @@ public class TelegramUpdateListener implements UpdatesListener {
             return;
         }
 
-        metrics.recordTelegramRequest("message");
         if (trackDialogService.processIfActive(context)) {
             metrics.recordTelegramRequest("dialog");
             log.atInfo()
                     .addKeyValue("chatId", context.chatId())
                     .addKeyValue("userId", context.userId())
                     .log("Track dialog step processed");
+            return;
         }
+
+        metrics.recordTelegramRequest("message");
     }
 
     private void processCommand(CommandContext context, String messageText) {
         String commandName = extractCommandName(messageText);
-        metrics.recordCommandRequest(commandName);
+        var registeredCommand = commandRegistry.find(commandName);
+        metrics.recordCommandRequest(registeredCommand.isPresent() ? commandName : "unknown");
 
         if (trackDialogService.hasActiveDialog(context) && !"/cancel".equals(commandName)) {
             trackDialogService.cancel(context);
@@ -97,41 +100,39 @@ public class TelegramUpdateListener implements UpdatesListener {
                     .log("Active dialog cancelled by another command");
         }
 
-        commandRegistry
-                .find(commandName)
-                .ifPresentOrElse(
-                        command -> {
-                            long startedAt = System.nanoTime();
-                            try {
-                                log.atInfo()
-                                        .addKeyValue("chatId", context.chatId())
-                                        .addKeyValue("userId", context.userId())
-                                        .addKeyValue("command", commandName)
-                                        .log("Command dispatched");
+        registeredCommand.ifPresentOrElse(
+                handledCommand -> {
+                    long startedAt = System.nanoTime();
+                    try {
+                        log.atInfo()
+                                .addKeyValue("chatId", context.chatId())
+                                .addKeyValue("userId", context.userId())
+                                .addKeyValue("command", commandName)
+                                .log("Command dispatched");
 
-                                command.handle(context);
-                            } catch (Exception e) {
-                                log.atError()
-                                        .setCause(e)
-                                        .addKeyValue("chatId", context.chatId())
-                                        .addKeyValue("userId", context.userId())
-                                        .addKeyValue("command", commandName)
-                                        .log("Command handling failed");
+                        handledCommand.handle(context);
+                    } catch (Exception e) {
+                        log.atError()
+                                .setCause(e)
+                                .addKeyValue("chatId", context.chatId())
+                                .addKeyValue("userId", context.userId())
+                                .addKeyValue("command", commandName)
+                                .log("Command handling failed");
 
-                                context.reply(messages.scrapperUnavailable());
-                            } finally {
-                                metrics.recordCommandHandlingDuration(commandName, startedAt);
-                            }
-                        },
-                        () -> {
-                            log.atInfo()
-                                    .addKeyValue("chatId", context.chatId())
-                                    .addKeyValue("userId", context.userId())
-                                    .addKeyValue("command", commandName)
-                                    .log("Unknown command received");
+                        context.reply(messages.scrapperUnavailable());
+                    } finally {
+                        metrics.recordCommandHandlingDuration(commandName, startedAt);
+                    }
+                },
+                () -> {
+                    log.atInfo()
+                            .addKeyValue("chatId", context.chatId())
+                            .addKeyValue("userId", context.userId())
+                            .addKeyValue("command", commandName)
+                            .log("Unknown command received");
 
-                            context.reply(messages.unknownCommand());
-                        });
+                    context.reply(messages.unknownCommand());
+                });
     }
 
     private String extractCommandName(String text) {

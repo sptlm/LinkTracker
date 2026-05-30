@@ -30,12 +30,11 @@ public class KafkaOutboxSender {
 
     public CompletableFuture<SendResult<String, Object>> send(long outboxId, String payload) {
         long startedAt = System.nanoTime();
-        try {
-            return kafkaTemplate.send(
-                    kafkaProperties.getUpdatesTopic(), String.valueOf(outboxId), kafkaPayload(payload));
-        } finally {
-            metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt);
-        }
+        CompletableFuture<SendResult<String, Object>> future =
+                kafkaTemplate.send(kafkaProperties.getUpdatesTopic(), String.valueOf(outboxId), kafkaPayload(payload));
+        future.whenComplete((result, error) ->
+                metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt));
+        return future;
     }
 
     private Object kafkaPayload(String payload) {

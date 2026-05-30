@@ -6,10 +6,12 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.EnumMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,11 +22,14 @@ public class ScrapperMetrics {
     private final MeterRegistry meterRegistry;
     private final Map<String, Counter> apiRequestCounters = new ConcurrentHashMap<>();
     private final Map<String, DistributionSummary> durationSummaries = new ConcurrentHashMap<>();
+    private final Map<LinkSourceType, AtomicLong> trackedLinks = new EnumMap<>(LinkSourceType.class);
 
     public ScrapperMetrics(MeterRegistry meterRegistry, LinkRepository linkRepository) {
         this.meterRegistry = meterRegistry;
         for (LinkSourceType type : LinkSourceType.values()) {
-            Gauge.builder("links_on_track_total", linkRepository, repository -> repository.countByType(type))
+            AtomicLong count = new AtomicLong(linkRepository.countByType(type));
+            trackedLinks.put(type, count);
+            Gauge.builder("links_on_track_total", count, AtomicLong::get)
                     .description("Number of active links stored for monitoring")
                     .tag("tracked_source", sourceName(type))
                     .register(meterRegistry);
@@ -53,6 +58,20 @@ public class ScrapperMetrics {
                         .publishPercentileHistogram()
                         .register(meterRegistry))
                 .record(elapsedMs);
+    }
+
+    public void recordTrackedLinkCreated(LinkSourceType type) {
+        AtomicLong count = trackedLinks.get(type);
+        if (count != null) {
+            count.incrementAndGet();
+        }
+    }
+
+    public void recordTrackedLinkDeleted(LinkSourceType type) {
+        AtomicLong count = trackedLinks.get(type);
+        if (count != null) {
+            count.updateAndGet(value -> Math.max(0, value - 1));
+        }
     }
 
     private static String durationKey(String scope, String scopeType) {

@@ -1,6 +1,8 @@
 package backend.academy.linktracker.scrapper.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -113,6 +115,7 @@ class LinkPollingServiceTest {
         ArgumentCaptor<LinkUpdate> captor = ArgumentCaptor.forClass(LinkUpdate.class);
         verify(updatePublisher).publish(captor.capture());
         verify(linkRepository).updatePollingState(any(Long.class), any(Instant.class), any(Instant.class));
+        verify(metrics).recordRequestDuration(eq("scrape"), eq("github"), anyLong());
         org.junit.jupiter.api.Assertions.assertEquals(
                 List.of(1L, 3L), captor.getValue().getTgChatIds());
     }

@@ -7,6 +7,7 @@ import backend.academy.linktracker.scrapper.generated.dto.AddLinkRequest;
 import backend.academy.linktracker.scrapper.generated.dto.LinksPost200Response;
 import backend.academy.linktracker.scrapper.generated.dto.ListLinksResponse;
 import backend.academy.linktracker.scrapper.generated.dto.RemoveLinkRequest;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import backend.academy.linktracker.scrapper.model.LinkSubscription;
 import backend.academy.linktracker.scrapper.model.TrackedLink;
 import backend.academy.linktracker.scrapper.parser.ParsedLink;
@@ -31,6 +32,7 @@ public class LinkTrackingService {
     private final LinkRepository linkRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final SupportedLinkParser supportedLinkParser;
+    private final ScrapperMetrics metrics;
 
     @Transactional
     public LinksPost200Response addLink(long chatId, AddLinkRequest request) {
@@ -80,6 +82,7 @@ public class LinkTrackingService {
 
         if (!subscriptionRepository.hasSubscribers(trackedLink.id())) {
             linkRepository.deleteById(trackedLink.id());
+            metrics.recordTrackedLinkDeleted(trackedLink.type());
         }
 
         return toResponse(trackedLink, subscription);
@@ -105,10 +108,12 @@ public class LinkTrackingService {
     }
 
     private TrackedLink findOrCreateLink(ParsedLink parsedLink) {
-        return linkRepository
-                .findByUrl(parsedLink.normalizedUrl())
-                .orElseGet(() -> linkRepository.save(
-                        new TrackedLink(0L, parsedLink.normalizedUrl(), parsedLink.type(), Instant.now(), null, null)));
+        return linkRepository.findByUrl(parsedLink.normalizedUrl()).orElseGet(() -> {
+            TrackedLink trackedLink = linkRepository.save(
+                    new TrackedLink(0L, parsedLink.normalizedUrl(), parsedLink.type(), Instant.now(), null, null));
+            metrics.recordTrackedLinkCreated(trackedLink.type());
+            return trackedLink;
+        });
     }
 
     private LinksPost200Response toResponse(TrackedLink link, LinkSubscription subscription) {

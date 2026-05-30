@@ -92,7 +92,7 @@ public class LinkPollingService {
         try {
             result = updater.check(link);
         } finally {
-            metrics.recordRequestDuration("external_source", sourceName(link), updaterStartedAt);
+            metrics.recordRequestDuration("scrape", sourceName(link), updaterStartedAt);
         }
 
         Instant updatedAt = result.changed()
@@ -123,9 +123,7 @@ public class LinkPollingService {
                 .tgChatIds(chatIds);
 
         transactionTemplate.executeWithoutResult(status -> {
-            long databaseStartedAt = System.nanoTime();
             linkRepository.updatePollingState(link.id(), checkedAt, updatedAt);
-            metrics.recordRequestDuration("database", "tracked_link", databaseStartedAt);
             updatePublisher.publish(request);
         });
 

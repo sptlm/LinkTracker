@@ -7,7 +7,7 @@ groups:
     interval: 1m
     rules:
       - uid: linktracker-high-ram
-        title: High JVM RAM usage
+        title: High process RAM usage
         condition: C
         data:
           - refId: A
@@ -19,7 +19,7 @@ groups:
               datasource:
                 type: prometheus
                 uid: prometheus
-              expr: sum by (application) (jvm_memory_used_bytes{area="heap"}) / clamp_min(sum by (application) (jvm_memory_max_bytes{area="heap"}), 1) * 100
+              expr: sum by (application) (process_resident_memory_bytes)
               instant: true
               refId: A
           - refId: C
@@ -31,7 +31,7 @@ groups:
               conditions:
                 - evaluator:
                     params:
-                      - 80
+                      - 536870912
                     type: gt
                   operator:
                     type: and
@@ -49,7 +49,7 @@ groups:
               type: threshold
         for: 2m
         annotations:
-          summary: JVM heap usage is above 80% for {{ $labels.application }}.
+          summary: Process resident memory is above 512 MiB for {{ $labels.application }}.
         labels:
           severity: warning
         isPaused: false

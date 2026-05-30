@@ -31,11 +31,12 @@ public class KafkaUpdatePublisher implements UpdatePublisher {
             Object payload = kafkaProperties.usesSchemaRegistry()
                     ? avroMapper.toRecord(request)
                     : objectMapper.writeValueAsString(request);
-            kafkaTemplate.send(kafkaProperties.getUpdatesTopic(), String.valueOf(request.getId()), payload);
+            kafkaTemplate
+                    .send(kafkaProperties.getUpdatesTopic(), String.valueOf(request.getId()), payload)
+                    .whenComplete((result, error) ->
+                            metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt));
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Failed to serialize update message", e);
-        } finally {
-            metrics.recordRequestDuration("kafka", kafkaProperties.getUpdatesTopic(), startedAt);
         }
     }
 }

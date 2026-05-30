@@ -5,6 +5,7 @@ import backend.academy.linktracker.bot.metrics.BotMetrics;
 import backend.academy.linktracker.bot.service.exception.UpdateDeliveryException;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.SendMessage;
+import com.pengrad.telegrambot.response.SendResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,10 @@ public class BotUpdateService {
 
         String text = messages.updatesMessage(String.valueOf(request.getUrl()), request.getDescription());
         try {
-            bot.execute(new SendMessage(chatId, text));
+            SendResponse response = bot.execute(new SendMessage(chatId, text));
+            if (!response.isOk()) {
+                throw new UpdateDeliveryException("Telegram API rejected message: " + response.description());
+            }
             metrics.recordSentNotification();
 
             log.atInfo()
@@ -46,6 +50,14 @@ public class BotUpdateService {
                     .addKeyValue("linkId", request.getId())
                     .addKeyValue("url", request.getUrl())
                     .log("Update notification sent");
+        } catch (UpdateDeliveryException e) {
+            log.atWarn()
+                    .setCause(e)
+                    .addKeyValue("chatId", chatId)
+                    .addKeyValue("linkId", request.getId())
+                    .addKeyValue("url", request.getUrl())
+                    .log("Failed to send update notification");
+            throw e;
         } catch (Exception e) {
             log.atWarn()
                     .setCause(e)
