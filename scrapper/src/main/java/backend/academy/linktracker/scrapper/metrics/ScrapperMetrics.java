@@ -1,7 +1,6 @@
 package backend.academy.linktracker.scrapper.metrics;
 
 import backend.academy.linktracker.scrapper.model.LinkSourceType;
-import backend.academy.linktracker.scrapper.repository.LinkRepository;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
@@ -24,10 +23,10 @@ public class ScrapperMetrics {
     private final Map<String, DistributionSummary> durationSummaries = new ConcurrentHashMap<>();
     private final Map<LinkSourceType, AtomicLong> trackedLinks = new EnumMap<>(LinkSourceType.class);
 
-    public ScrapperMetrics(MeterRegistry meterRegistry, LinkRepository linkRepository) {
+    public ScrapperMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         for (LinkSourceType type : LinkSourceType.values()) {
-            AtomicLong count = new AtomicLong(linkRepository.countByType(type));
+            AtomicLong count = new AtomicLong();
             trackedLinks.put(type, count);
             Gauge.builder("links_on_track_total", count, AtomicLong::get)
                     .description("Number of active links stored for monitoring")
@@ -71,6 +70,13 @@ public class ScrapperMetrics {
         AtomicLong count = trackedLinks.get(type);
         if (count != null) {
             count.updateAndGet(value -> Math.max(0, value - 1));
+        }
+    }
+
+    public void setTrackedLinks(LinkSourceType type, long value) {
+        AtomicLong count = trackedLinks.get(type);
+        if (count != null) {
+            count.set(Math.max(0, value));
         }
     }
 

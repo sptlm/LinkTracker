@@ -386,6 +386,7 @@ services:
       SCRAPPER_VALKEY_CLUSTER_NODES: host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382
       SCRAPPER_PUSHGATEWAY_ENABLED: ${SCRAPPER_PUSHGATEWAY_ENABLED:-false}
       SCRAPPER_PUSHGATEWAY_ADDRESS: pushgateway:9091
+      SCRAPPER_MANAGEMENT_PORT: 8012
       SCRAPPER_POLLING_ENABLED: ${SCRAPPER_POLLING_ENABLED:-false}
       APP_CLIENTS_BOT_BASE_URL: http://bot:8080
       GITHUB_TOKEN: ${GITHUB_TOKEN:-local-dev-token}
@@ -393,6 +394,7 @@ services:
       STACKOVERFLOW_ACCESS_KEY: ${STACKOVERFLOW_ACCESS_KEY:-local-dev-access-token}
     ports:
       - "8081:8081"
+      - "8012:8012"
 
   bot:
     build:

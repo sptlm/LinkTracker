@@ -13,7 +13,7 @@ docker compose up -d --build
 Сервисы:
 
 - API Scrapper: `http://localhost:8081`
-- Метрики Scrapper: `http://localhost:8081/metrics`
+- Метрики Scrapper: `http://localhost:8012/metrics`
 - API Bot: `http://localhost:8080`
 - Метрики Bot: `http://localhost:8011/metrics`
 - Prometheus: `http://localhost:9090`
@@ -42,7 +42,7 @@ Scrapper:
 
 Значения `scope` для `request_duration_ms_total`:
 
-- `database` - запросы к БД; `scope_type` соответствует таблице: `tracked_link`, `link_subscription`, `tg_chat`, `subscription_tag`.
+- `database` - запросы к БД; `scope_type` соответствует операции в формате `repository#method`, например `link#findByUrl`.
 - `scrape` - одна логическая операция проверки ссылки; `scope_type` равен источнику `github` или `stackoverflow`.
 - `external_source` - отдельные HTTP-запросы к внешним источникам; `scope_type` равен домену источника.
 - `kafka` - завершение отправки сообщения в Kafka broker; `scope_type` равен имени topic.

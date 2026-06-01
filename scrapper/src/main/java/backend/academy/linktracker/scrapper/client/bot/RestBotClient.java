@@ -7,7 +7,6 @@ import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusExc
 import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -30,12 +29,6 @@ public class RestBotClient implements BotClient {
         this.restClient = restClient;
         this.retryableStatusClassifier = retryableStatusClassifier;
         this.metrics = metrics;
-    }
-
-    public RestBotClient(@Qualifier("botRestClient") RestClient restClient) {
-        this.restClient = restClient;
-        this.retryableStatusClassifier = new RetryableHttpStatusClassifier(Set.of());
-        this.metrics = null;
     }
 
     @Override
@@ -62,9 +55,7 @@ public class RestBotClient implements BotClient {
         } catch (Exception e) {
             throw new ExternalServiceException("Bot request failed", e);
         } finally {
-            if (metrics != null) {
-                metrics.recordRequestDuration("bot_api", "updatesPost", startedAt);
-            }
+            metrics.recordRequestDuration("bot_api", "updatesPost", startedAt);
         }
     }
 }

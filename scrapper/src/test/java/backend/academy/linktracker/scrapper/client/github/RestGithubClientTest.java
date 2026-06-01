@@ -6,13 +6,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
 import backend.academy.linktracker.scrapper.api.exception.RetryableHttpStatusException;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -34,7 +38,9 @@ class RestGithubClientTest {
         try {
             server.start();
             RestGithubClient client = new RestGithubClient(
-                    RestClient.builder().baseUrl(server.baseUrl()).build());
+                    RestClient.builder().baseUrl(server.baseUrl()).build(),
+                    new RetryableHttpStatusClassifier(Set.of()),
+                    mock(ScrapperMetrics.class));
 
             server.stubFor(
                     get(urlEqualTo("/repos/user/repo")).willReturn(aResponse().withStatus(400)));
@@ -58,7 +64,9 @@ class RestGithubClientTest {
         try {
             server.start();
             RestGithubClient client = new RestGithubClient(
-                    RestClient.builder().baseUrl(server.baseUrl()).build());
+                    RestClient.builder().baseUrl(server.baseUrl()).build(),
+                    new RetryableHttpStatusClassifier(Set.of()),
+                    mock(ScrapperMetrics.class));
 
             server.stubFor(get(urlEqualTo("/repos/user/repo"))
                     .willReturn(aResponse()

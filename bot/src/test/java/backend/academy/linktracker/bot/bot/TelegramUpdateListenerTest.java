@@ -1,6 +1,8 @@
 package backend.academy.linktracker.bot.bot;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -77,6 +79,7 @@ class TelegramUpdateListenerTest {
 
         verify(command).handle(any());
         verify(metrics).recordCommandRequest("/start");
+        verify(metrics).recordCommandHandlingDuration(eq("/start"), anyLong());
         verify(bot, never()).execute(any(SendMessage.class));
     }
 
@@ -90,6 +93,7 @@ class TelegramUpdateListenerTest {
         listener.process(List.of(update));
 
         verify(metrics).recordCommandRequest("unknown");
+        verify(metrics, never()).recordCommandHandlingDuration(any(), anyLong());
         verify(bot).execute(any(SendMessage.class));
     }
 

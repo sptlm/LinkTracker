@@ -4,9 +4,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
+import backend.academy.linktracker.contract.http.RetryableHttpStatusClassifier;
 import backend.academy.linktracker.scrapper.api.exception.ExternalServiceException;
+import backend.academy.linktracker.scrapper.metrics.ScrapperMetrics;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
@@ -25,7 +29,9 @@ class RestStackOverflowClientTest {
         try {
             server.start();
             RestStackOverflowClient client = new RestStackOverflowClient(
-                    RestClient.builder().baseUrl(server.baseUrl()).build());
+                    RestClient.builder().baseUrl(server.baseUrl()).build(),
+                    new RetryableHttpStatusClassifier(Set.of()),
+                    mock(ScrapperMetrics.class));
 
             server.stubFor(get(urlEqualTo("/questions/123?site=stackoverflow"))
                     .willReturn(aResponse().withStatus(500)));
@@ -48,7 +54,9 @@ class RestStackOverflowClientTest {
         try {
             server.start();
             RestStackOverflowClient client = new RestStackOverflowClient(
-                    RestClient.builder().baseUrl(server.baseUrl()).build());
+                    RestClient.builder().baseUrl(server.baseUrl()).build(),
+                    new RetryableHttpStatusClassifier(Set.of()),
+                    mock(ScrapperMetrics.class));
 
             server.stubFor(get(urlEqualTo("/questions/123?site=stackoverflow"))
                     .willReturn(aResponse()

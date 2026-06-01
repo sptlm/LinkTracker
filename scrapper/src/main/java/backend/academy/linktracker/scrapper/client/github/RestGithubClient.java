@@ -10,7 +10,6 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -34,12 +33,6 @@ public class RestGithubClient implements GithubClient {
         this.restClient = restClient;
         this.retryableStatusClassifier = retryableStatusClassifier;
         this.metrics = metrics;
-    }
-
-    public RestGithubClient(@Qualifier("githubRestClient") RestClient restClient) {
-        this.restClient = restClient;
-        this.retryableStatusClassifier = new RetryableHttpStatusClassifier(Set.of());
-        this.metrics = null;
     }
 
     @Override
@@ -115,9 +108,7 @@ public class RestGithubClient implements GithubClient {
     }
 
     private void recordExternalSourceDuration(long startedAt) {
-        if (metrics != null) {
-            metrics.recordRequestDuration("external_source", "github", startedAt);
-        }
+        metrics.recordRequestDuration("external_source", "github", startedAt);
     }
 
     private ExternalServiceException externalStatusException(String message, RestClientResponseException e) {
